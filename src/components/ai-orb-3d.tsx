@@ -1,8 +1,8 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { ContactShadows, Environment, Float, Html, Sparkles } from "@react-three/drei";
-import { Suspense, useMemo, useRef } from "react";
+import { ContactShadows, Environment, Html } from "@react-three/drei";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { Group, Mesh } from "three";
 import styles from "./ai-orb-3d.module.css";
 
@@ -71,6 +71,23 @@ const stateConfig = {
 
 export function AIOrb3D({ state = "idle", mode = "medical", className = "" }: AIOrb3DProps) {
   const config = stateConfig[state];
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    function handleChange(event: MediaQueryListEvent) {
+      setPrefersReducedMotion(event.matches);
+    }
+
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+    };
+  }, []);
 
   return (
     <section
@@ -96,15 +113,7 @@ export function AIOrb3D({ state = "idle", mode = "medical", className = "" }: AI
           <directionalLight position={[3, 4, 5]} intensity={2.4} />
           <pointLight position={[-3, -1, 3]} intensity={2.4} color={config.color} />
           <pointLight position={[3, 2, -2]} intensity={1.8} color={config.secondary} />
-          <AIHumanoidModel state={state} config={config} />
-          <Sparkles
-            count={config.sparkles}
-            scale={[4.2, 3.2, 4.2]}
-            size={2.2}
-            speed={config.speed}
-            color={config.color}
-            opacity={0.42}
-          />
+          <AIHumanoidModel state={state} config={config} reducedMotion={prefersReducedMotion} />
           <ContactShadows position={[0, -1.85, 0]} opacity={0.22} scale={5} blur={2.6} far={4} />
           <Environment preset="city" />
         </Suspense>
@@ -117,6 +126,7 @@ export function AIOrb3D({ state = "idle", mode = "medical", className = "" }: AI
 function AIHumanoidModel({
   state,
   config,
+  reducedMotion,
 }: {
   state: AIOrb3DState;
   config: {
@@ -126,10 +136,12 @@ function AIHumanoidModel({
     scale: number;
     sparkles: number;
   };
+  reducedMotion: boolean;
 }) {
   const groupRef = useRef<Group | null>(null);
   const headRef = useRef<Mesh | null>(null);
   const mouthRef = useRef<Mesh | null>(null);
+  const elapsedRef = useRef(0);
 
   const isEmergency = state === "emergency";
   const isSpeaking = state === "speaking";
@@ -153,8 +165,27 @@ function AIHumanoidModel({
     [config.color, isEmergency],
   );
 
-  useFrame((clock) => {
-    const time = clock.clock.elapsedTime;
+  useFrame((_state, delta) => {
+    if (reducedMotion) {
+      if (groupRef.current) {
+        groupRef.current.position.y = 0;
+        groupRef.current.rotation.y = 0;
+        groupRef.current.scale.setScalar(config.scale);
+      }
+
+      if (headRef.current) {
+        headRef.current.rotation.set(0, 0, 0);
+      }
+
+      if (mouthRef.current) {
+        mouthRef.current.scale.set(1, 1, 1);
+      }
+
+      return;
+    }
+
+    elapsedRef.current += delta;
+    const time = elapsedRef.current;
 
     if (groupRef.current) {
       groupRef.current.position.y = Math.sin(time * 1.15) * 0.08;
@@ -178,12 +209,7 @@ function AIHumanoidModel({
   const glowColor = isEmergency ? "#fee2e2" : "#ffffff";
 
   return (
-    <Float
-      speed={isEmergency ? 2.1 : 1.35}
-      rotationIntensity={0.22}
-      floatIntensity={0.35}
-    >
-      <group ref={groupRef} position={[0, -0.15, 0]}>
+    <group ref={groupRef} position={[0, -0.15, 0]}>
         <mesh position={[0, 0.45, -0.35]} scale={[1.65, 1.9, 0.08]}>
           <sphereGeometry args={[1, 64, 64]} />
           <meshBasicMaterial color={config.color} transparent opacity={isEmergency ? 0.16 : 0.1} />
@@ -206,14 +232,14 @@ function AIHumanoidModel({
           />
         </mesh>
 
-        <group position={[0, 0.78, 0.67]}>
+        <group position={[0, 0.78, 0.73]}>
           <mesh position={[-0.22, 0.08, 0]} scale={[1.2, 0.55, 1]}>
-            <sphereGeometry args={[0.045, 24, 24]} />
+            <sphereGeometry args={[0.052, 24, 24]} />
             <meshBasicMaterial color={glowColor} transparent opacity={0.82} />
           </mesh>
 
           <mesh position={[0.22, 0.08, 0]} scale={[1.2, 0.55, 1]}>
-            <sphereGeometry args={[0.045, 24, 24]} />
+            <sphereGeometry args={[0.052, 24, 24]} />
             <meshBasicMaterial color={glowColor} transparent opacity={0.82} />
           </mesh>
 
@@ -260,7 +286,6 @@ function AIHumanoidModel({
             <div className={styles.emergencyBadge}>Call 999 / A&amp;E</div>
           </Html>
         ) : null}
-      </group>
-    </Float>
+    </group>
   );
 }

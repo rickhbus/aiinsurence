@@ -1,235 +1,107 @@
 "use client";
 
-import {
-  Activity,
-  AlertTriangle,
-  ArrowRight,
-  Bot,
-  ClipboardCheck,
-  HeartPulse,
-  Hospital,
-  Languages,
-  MessageSquareText,
-  Mic,
-  ShieldCheck,
-  Stethoscope,
-  UserRoundCheck,
-  type LucideIcon,
-} from "lucide-react";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import type { User } from "@supabase/supabase-js";
-import { AuthPanel } from "@/components/auth/auth-panel";
-import { AIOrb3D } from "@/components/ai-orb-3d";
-import { UserMenu } from "@/components/auth/user-menu";
-import { MemoryConsentCard } from "@/components/memory/memory-consent-card";
-import { getDoctorAvatarState } from "@/components/virtual-doctor-avatar";
+import { AlertTriangle, ArrowUp, LoaderCircle, Mic, ShieldCheck } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AIOrb3D, type AIOrb3DState } from "@/components/ai-orb-3d";
 import type { NavigationGuideResponse } from "@/lib/ai/types";
 import { analyzeIntake, type IntakeMode, type Recommendation } from "@/lib/navigation-engine";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import {
-  clearSession,
-  getOrCreateProfile,
-  getSafetyLevel,
-  mapRecommendationMode,
-  saveConversationMessage,
-  saveConversationSession,
-  saveRecommendation,
-  saveUserPreference,
-  type ConversationMode,
-  type Profile,
-} from "@/lib/user-memory";
 import styles from "./navigation-workspace.module.css";
 
-type ActionId = "symptom" | "department" | "insurance";
-type CarePreference = "public" | "private";
+type AssistantStatus = "Ready" | "Listening" | "Thinking" | "Explaining" | "Emergency";
 
-const actionCards: Array<{
-  id: ActionId;
-  mode: IntakeMode;
-  titleZh: string;
-  titleEn: string;
-  bodyZh: string;
-  accent: "teal" | "blue" | "violet";
-  icon: LucideIcon;
-}> = [
-  {
-    id: "symptom",
-    mode: "medical",
-    titleZh: "症狀評估",
-    titleEn: "Symptom Check",
-    bodyZh: "評估症狀嚴重程度\n並提供初步建議",
-    accent: "teal",
-    icon: Stethoscope,
-  },
-  {
-    id: "department",
-    mode: "medical",
-    titleZh: "搵科別",
-    titleEn: "Find Department",
-    bodyZh: "根據你的情況\n推薦合適科別",
-    accent: "blue",
-    icon: Hospital,
-  },
-  {
-    id: "insurance",
-    mode: "insurance",
-    titleZh: "保險建議",
-    titleEn: "Insurance Guidance",
-    bodyZh: "了解保障範圍及\n索償流程建議",
-    accent: "violet",
-    icon: ShieldCheck,
-  },
+const insuranceTerms = [
+  "insurance",
+  "coverage",
+  "claim",
+  "claims",
+  "underwriting",
+  "policy",
+  "premium",
+  "保險",
+  "保障",
+  "索償",
+  "理賠",
+  "保單",
+  "核保",
+  "保費",
+  "自願醫保",
+  "危疾",
+  "住院醫療",
 ];
 
-const examples: Record<ActionId, string> = {
-  symptom: "例如：頭痛兩日、發燒、保險索償問題...",
-  department: "例如：小朋友發燒出疹，應該睇咩科？",
-  insurance: "例如：自僱，沒有僱主醫療，想了解保障類型...",
-};
-
-const navItems = [
-  { label: "首頁", icon: HeartPulse, href: "#home" },
-  { label: "對話記錄", icon: MessageSquareText, href: "#memory" },
-  { label: "健康資訊", icon: Activity, href: "#health-info" },
-  { label: "保險知識", icon: ShieldCheck, href: "#insurance-info" },
-  { label: "我的", icon: UserRoundCheck, href: "#account" },
-];
-
-const featureChips = [
-  { zh: "保障私隱", en: "Privacy Protected", icon: ShieldCheck },
-  { zh: "AI 專業分析", en: "AI Powered", icon: Bot },
-  { zh: "24/7 全天候支援", en: "24/7 Support", icon: Activity },
-];
-
-const routeRows = [
-  ["急症室 / A&E", "胸痛、呼吸困難、中風徵兆、大量出血、自傷即時風險"],
-  ["普通科 / GP", "非緊急但持續症狀、初步檢查、轉介建議"],
-  ["相關專科 / Specialist", "按醫生評估及症狀範圍，再考慮眼科、皮膚科、兒科等"],
-];
-
-const coverageRows = [
-  "住院醫療 / Hospital",
-  "門診 / Outpatient",
-  "危疾 / Critical illness",
-  "意外 / Accident",
-  "牙科 / Dental",
-  "旅遊 / Travel",
-];
+const policyTerms = ["claim", "claims", "policy", "索償", "理賠", "保單", "拒賠", "條款"];
 
 export function NavigationWorkspace() {
-  const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
-  const [activeAction, setActiveAction] = useState<ActionId>("symptom");
-  const [carePreference, setCarePreference] = useState<CarePreference>("public");
   const [input, setInput] = useState("");
+  const [isMicActive, setIsMicActive] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const [result, setResult] = useState<Recommendation | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [authReady, setAuthReady] = useState(() => !supabase);
-  const [saveHistory, setSaveHistory] = useState(false);
-  const [showUpgrade, setShowUpgrade] = useState(false);
-  const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
-  const [memoryStatus, setMemoryStatus] = useState<string | null>(null);
-  const [isSavingMemory, startSavingMemory] = useTransition();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const activeCard = actionCards.find((card) => card.id === activeAction) ?? actionCards[0];
-  const avatarState = getDoctorAvatarState({
-    result,
+  const trimmedInput = input.trim();
+  const inferredMode = useMemo(() => inferMode(trimmedInput), [trimmedInput]);
+  const isEmergency = result?.urgency.level === 1;
+  const assistantStatus = getAssistantStatus({
+    hasInput: trimmedInput.length > 0,
+    isMicActive,
     isSubmitting,
-    input: result ? "" : input,
+    isEmergency,
+    hasResult: Boolean(result),
   });
+  const assistantState = mapAssistantState(assistantStatus);
+  const visualMode: "medical" | "insurance" =
+    isEmergency ? "medical" : inferredMode === "insurance" || inferredMode === "policy" ? "insurance" : "medical";
 
   useEffect(() => {
-    if (!supabase) {
+    inputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const textarea = inputRef.current;
+
+    if (!textarea) {
       return;
     }
 
-    let isMounted = true;
-
-    async function syncUser(nextUser: User | null) {
-      setUser(nextUser);
-      setSaveHistory(Boolean(nextUser));
-
-      if (!nextUser || !supabase) {
-        setProfile(null);
-        return;
-      }
-
-      try {
-        const nextProfile = await getOrCreateProfile(nextUser, supabase);
-        if (isMounted) {
-          setProfile(nextProfile);
-        }
-      } catch (error) {
-        if (isMounted) {
-          setMemoryStatus(
-            error instanceof Error
-              ? `未能載入用戶資料 / Could not load profile: ${error.message}`
-              : "未能載入用戶資料 / Could not load profile.",
-          );
-        }
-      }
-    }
-
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!isMounted) {
-        return;
-      }
-
-      await syncUser(data.session?.user ?? null);
-      setAuthReady(true);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      void syncUser(session?.user ?? null);
-    });
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
-
-  function handleActionSelect(actionId: ActionId) {
-    setActiveAction(actionId);
-    setResult(null);
-    setSavedSessionId(null);
-    setMemoryStatus(null);
-    window.requestAnimationFrame(() => inputRef.current?.focus());
-  }
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 132)}px`;
+  }, [input]);
 
   function handleInputChange(nextInput: string) {
     setInput(nextInput);
+    setErrorMessage(null);
     setResult(null);
-    setSavedSessionId(null);
-    setMemoryStatus(null);
   }
 
   async function handleSubmit() {
-    const trimmedInput = input.trim();
+    const currentInput = input.trim();
 
-    if (!trimmedInput) {
-      setMemoryStatus("請先描述症狀或保險問題。Please describe your symptom or insurance question first.");
+    if (!currentInput || isSubmitting) {
       inputRef.current?.focus();
       return;
     }
 
+    const mode = inferMode(currentInput);
+    const deterministicResult = analyzeIntake(mode, currentInput);
+
+    setErrorMessage(null);
     setIsSubmitting(true);
     setResult(null);
-    setSavedSessionId(null);
-    setMemoryStatus(null);
+
+    if (deterministicResult.urgency.level === 1) {
+      setResult(deterministicResult);
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const response = await fetch("/api/navigation/guide", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          input: trimmedInput,
-          mode: activeCard.mode,
+          input: currentInput,
+          mode,
         }),
       });
 
@@ -240,439 +112,103 @@ export function NavigationWorkspace() {
       const payload = (await response.json()) as NavigationGuideResponse;
       setResult(payload.recommendation);
     } catch {
-      setResult(analyzeIntake(activeCard.mode, trimmedInput));
-      setMemoryStatus(
-        "AI 暫時未能連線，已顯示安全規則建議。AI connection unavailable; showing safe rule-based guidance.",
-      );
+      setResult(deterministicResult);
+      setErrorMessage("AI connection unavailable. Showing safe rule-based guidance.");
     } finally {
       setIsSubmitting(false);
+      setIsMicActive(false);
     }
-  }
-
-  function handleSignOut() {
-    if (!supabase) {
-      return;
-    }
-
-    void supabase.auth.signOut().then(() => {
-      setUser(null);
-      setProfile(null);
-      setSaveHistory(false);
-      setShowUpgrade(false);
-      setSavedSessionId(null);
-      setMemoryStatus("已登出。Signed out.");
-    });
-  }
-
-  function handleClearSession() {
-    if (!supabase || !user || !savedSessionId) {
-      setSavedSessionId(null);
-      setMemoryStatus("已清除本機狀態。Local session state cleared.");
-      return;
-    }
-
-    startSavingMemory(async () => {
-      try {
-        await clearSession(savedSessionId, user.id, supabase);
-        setSavedSessionId(null);
-        setMemoryStatus("已清除今次雲端紀錄。Saved session cleared.");
-      } catch (error) {
-        setMemoryStatus(
-          error instanceof Error
-            ? `清除失敗 / Could not clear: ${error.message}`
-            : "清除失敗 / Could not clear saved session.",
-        );
-      }
-    });
-  }
-
-  function handleSaveRecommendation() {
-    if (!result) {
-      setMemoryStatus("未有建議可保存。There is no recommendation to save yet.");
-      return;
-    }
-
-    if (!supabase || !user) {
-      setMemoryStatus("請先匿名開始或登入，才可保存。Start anonymously or log in before saving.");
-      return;
-    }
-
-    if (!saveHistory) {
-      setMemoryStatus("你已關閉保存紀錄。Save history is currently off.");
-      return;
-    }
-
-    startSavingMemory(async () => {
-      try {
-        const sessionMode: ConversationMode =
-          activeAction === "department" ? "department" : mapRecommendationMode(result.mode);
-        const session = await saveConversationSession(
-          user.id,
-          sessionMode,
-          input.slice(0, 72),
-          "zh-Hant",
-          supabase,
-        );
-        const safetyLevel = getSafetyLevel(result);
-
-        await Promise.all([
-          saveConversationMessage(session.id, user.id, "user", input, safetyLevel, supabase),
-          saveConversationMessage(
-            session.id,
-            user.id,
-            "assistant",
-            `${result.assistantMessage ? `${result.assistantMessage}\n\n` : ""}${result.classification}\n${result.nextAction}`,
-            safetyLevel,
-            supabase,
-          ),
-          saveUserPreference(user.id, "preferred_language", "zh-Hant", "explicit_user_choice", supabase),
-          saveUserPreference(
-            user.id,
-            "care_preference",
-            carePreference,
-            "explicit_user_choice",
-            supabase,
-          ),
-          supabase
-            .from("consent_events")
-            .insert({
-              user_id: user.id,
-              consent_type: "save_memory",
-              granted: true,
-            })
-            .then(({ error }) => {
-              if (error) {
-                throw new Error(`Could not save consent event: ${error.message}`);
-              }
-            }),
-        ]);
-
-        await saveRecommendation(user.id, session.id, result, supabase);
-        setSavedSessionId(session.id);
-        setMemoryStatus("已保存今次建議。This recommendation has been saved.");
-      } catch (error) {
-        setMemoryStatus(
-          error instanceof Error
-            ? `保存失敗 / Could not save: ${error.message}`
-            : "保存失敗 / Could not save recommendation.",
-        );
-      }
-    });
-  }
-
-  function handleDeclineMemory() {
-    setMemoryStatus("今次不要保存。This recommendation will not be saved.");
   }
 
   return (
-    <main className={styles.shell} id="home">
-      <section
-        className={styles.appShell}
-        aria-label="AI healthcare navigation workspace"
-      >
-        <header className={styles.topbar}>
-          <a className={styles.brand} href="#home" aria-label="智健導航 AI Healthcare Guide">
-            <span className={styles.brandMark}>
-              <HeartPulse size={27} aria-hidden="true" />
-            </span>
-            <span>
-              <strong>智健導航</strong>
-              <small>AI Healthcare Guide</small>
-            </span>
-          </a>
-        </header>
+    <main className={styles.shell}>
+      <h1 className={styles.srOnly}>Hong Kong AI Healthcare and Insurance Navigation</h1>
 
-        <div className={`${styles.workspace} ${result || isSubmitting ? styles.workspaceWithResult : ""}`}>
-          <section className={styles.hero} aria-label="Virtual AI doctor">
-            <div className={styles.heroCopy}>
-              <h1>
-                你好，
-                <span>我係你的</span>
-                <span>AI 醫療顧問</span>
-              </h1>
-              <p>Your AI healthcare guide</p>
-              <div className={styles.trustBadge}>
-                <ShieldCheck size={18} aria-hidden="true" />
-                <span>
-                  值得信賴・專業・私隱保障
-                  <small>Trusted・Professional・Private</small>
-                </span>
-              </div>
-              <div className={styles.topControls} aria-label="Preferences">
-                <button
-                  className={styles.controlPill}
-                  type="button"
-                  aria-pressed={carePreference === "public"}
-                  onClick={() => setCarePreference(carePreference === "public" ? "private" : "public")}
-                >
-                  <Hospital size={20} aria-hidden="true" />
-                  <span>
-                    公立 / 私家
-                    <small>Public / Private</small>
-                  </span>
-                </button>
-                <button className={styles.controlPill} type="button">
-                  <Languages size={20} aria-hidden="true" />
-                  <span>
-                    繁中
-                    <small>English</small>
-                  </span>
-                </button>
-              </div>
-            </div>
-          </section>
+      <section className={styles.experience} aria-label="AI healthcare navigation workspace">
+        <div className={styles.assistantStage} aria-label="3D AI healthcare guide">
+          <AIOrb3D state={assistantState} mode={visualMode} />
+        </div>
 
-        <section className={styles.chatCard} aria-label="Question input">
-          <div className={styles.inputHeading}>
-            <div>
-              <h2>請描述你的症狀或保險問題</h2>
-              <p>Describe your symptom or insurance question</p>
-            </div>
-          </div>
+        <form
+          className={`${styles.inputDock} ${visualMode === "insurance" ? styles.insuranceDock : ""} ${
+            isEmergency ? styles.emergencyDock : ""
+          }`}
+          aria-label="Ask the AI healthcare guide"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleSubmit();
+          }}
+        >
+          <textarea
+            ref={inputRef}
+            className={styles.textarea}
+            value={input}
+            rows={1}
+            aria-label="Tell the AI healthcare guide what is going on"
+            placeholder="Tell me what is going on..."
+            onChange={(event) => handleInputChange(event.target.value)}
+            onKeyDown={(event) => {
+              if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+                event.preventDefault();
+                void handleSubmit();
+              }
+            }}
+          />
 
-          <div className={styles.inputShell}>
-            <textarea
-              ref={inputRef}
-              className={styles.textarea}
-              value={input}
-              rows={2}
-              placeholder={examples[activeAction]}
-              onChange={(event) => handleInputChange(event.target.value)}
-              onKeyDown={(event) => {
-                if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-                  void handleSubmit();
-                }
-              }}
-            />
-            <button
-              className={isRecording ? styles.micActive : styles.micButton}
-              type="button"
-              aria-pressed={isRecording}
-              aria-label={isRecording ? "停止語音輸入" : "開始語音輸入"}
-              onClick={() => setIsRecording((current) => !current)}
-            >
-              <Mic size={22} aria-hidden="true" />
-            </button>
-            <button
-              className={styles.sendButton}
-              type="button"
-              aria-label="提交問題"
-              disabled={isSubmitting}
-              onClick={() => void handleSubmit()}
-            >
-              <ArrowRight size={25} aria-hidden="true" />
-            </button>
-          </div>
+          <button
+            className={`${styles.iconButton} ${isMicActive ? styles.micActive : ""}`}
+            type="button"
+            aria-label={isMicActive ? "Stop microphone input" : "Start microphone input"}
+            aria-pressed={isMicActive}
+            onClick={() => {
+              setIsMicActive((current) => !current);
+              setErrorMessage(null);
+            }}
+          >
+            <Mic size={20} aria-hidden="true" />
+          </button>
 
-          <div className={styles.featureChips}>
-            {featureChips.map((chip) => {
-              const Icon = chip.icon;
-              return (
-                <span key={chip.zh}>
-                  <Icon size={18} aria-hidden="true" />
-                  <strong>{chip.zh}</strong>
-                  <small>{chip.en}</small>
-                </span>
-              );
-            })}
-          </div>
-        </section>
+          <button
+            className={styles.sendButton}
+            type="submit"
+            aria-label="Send message"
+            disabled={!trimmedInput || isSubmitting}
+          >
+            {isSubmitting ? (
+              <LoaderCircle className={styles.spinnerIcon} size={20} aria-hidden="true" />
+            ) : (
+              <ArrowUp size={20} aria-hidden="true" />
+            )}
+          </button>
+        </form>
 
-        <section className={styles.actionGrid} aria-label="Main actions">
-          {actionCards.map((card) => {
-            const Icon = card.icon;
-            const isActive = activeAction === card.id;
-
-            return (
-              <button
-                className={`${styles.actionCard} ${styles[card.accent]} ${
-                  isActive ? styles.actionCardActive : ""
-                }`}
-                key={card.id}
-                type="button"
-                aria-pressed={isActive}
-                onClick={() => handleActionSelect(card.id)}
-              >
-                <span className={styles.actionIcon}>
-                  <Icon size={34} aria-hidden="true" />
-                </span>
-                <strong>{card.titleZh}</strong>
-                <small>{card.titleEn}</small>
-                <span>{card.bodyZh}</span>
-                <i aria-hidden="true">
-                  <ArrowRight size={20} />
-                </i>
-              </button>
-            );
-          })}
-        </section>
-
-        {(isSubmitting || result) && (
-          <ResultCard
+        {(result || isSubmitting) && (
+          <AnswerPanel
             result={result}
             isSubmitting={isSubmitting}
-            canSave={Boolean(user && saveHistory)}
-            isSaved={Boolean(savedSessionId)}
-            isSaving={isSavingMemory}
-            memoryStatus={memoryStatus}
-            onSave={handleSaveRecommendation}
-            onDecline={handleDeclineMemory}
+            errorMessage={errorMessage}
           />
         )}
-
-        <a className={styles.emergencyBar} href="tel:999" aria-label="Call 999 for emergency">
-          <AlertTriangle size={26} aria-hidden="true" />
-          <span>
-            如有胸痛、呼吸困難或其他緊急情況，請立即前往急症室
-            <small>For emergencies, go to A&E immediately.</small>
-          </span>
-          <ArrowRight size={21} aria-hidden="true" />
-        </a>
-
-          <aside className={styles.assistantPanel} aria-label="Virtual AI healthcare assistant">
-            <AIOrb3D
-              state={avatarState === "reassuring" ? "speaking" : avatarState}
-              mode={activeAction === "insurance" ? "insurance" : "medical"}
-              className={styles.heroAvatar}
-            />
-          </aside>
-        </div>
-
-        <nav className={styles.bottomNav} aria-label="Bottom navigation">
-          {navItems.map((item, index) => {
-            const Icon = item.icon;
-            return (
-              <a className={index === 0 ? styles.navActive : ""} href={item.href} key={item.label}>
-                <Icon size={23} aria-hidden="true" />
-                <span>{item.label}</span>
-              </a>
-            );
-          })}
-        </nav>
-      </section>
-
-      <section className={styles.accountSection} id="account" aria-label="Login and memory settings">
-        <div className={styles.accountHeader}>
-          <p>登入及記憶 / Login and Memory</p>
-          <h2>匿名開始，之後再選擇保存</h2>
-          <span>
-            Start anonymously, upgrade later, and save health navigation history only with consent.
-          </span>
-        </div>
-
-        <div className={styles.authGrid} id="memory">
-          {!user || showUpgrade ? (
-            <AuthPanel
-              supabase={supabase}
-              user={user}
-              variant={showUpgrade ? "upgrade" : "start"}
-              onUserReady={setUser}
-              onProfileReady={(nextProfile) => {
-                setProfile(nextProfile);
-                setSaveHistory(true);
-                setShowUpgrade(false);
-              }}
-            />
-          ) : (
-            <UserMenu
-              user={user}
-              profile={profile}
-              saveHistory={saveHistory}
-              hasSavedSession={Boolean(savedSessionId)}
-              onToggleSaveHistory={setSaveHistory}
-              onSignOut={handleSignOut}
-              onClearSession={handleClearSession}
-              onUpgradeAccount={() => setShowUpgrade(true)}
-            />
-          )}
-
-          <div className={styles.authStateCard}>
-            <p className={styles.panelKicker}>登入狀態 / Auth state</p>
-            <h2>
-              {user
-                ? profile?.is_anonymous || user.is_anonymous
-                  ? "匿名模式已開啟 / Anonymous mode is on"
-                  : "已登入並可保存 / Logged in and ready to save"
-                : "未登入也可先使用 / You can use it before login"}
-            </h2>
-            <span>
-              記憶狀態：{user && saveHistory ? "同意後可保存" : "不會保存"} / Memory:{" "}
-              {user && saveHistory ? "save after consent" : "off"}
-            </span>
-            {profile?.is_anonymous || user?.is_anonymous ? (
-              <button type="button" onClick={() => setShowUpgrade(true)}>
-                保存紀錄並建立帳戶 / Save history and create account
-              </button>
-            ) : null}
-            <small>
-              {authReady
-                ? "每次保存前都會詢問，不會自動保存敏感病歷。You will be asked before saving sensitive context."
-                : "正在確認登入狀態... Checking auth state..."}
-            </small>
-          </div>
-        </div>
-      </section>
-
-      <section className={styles.referenceGrid} aria-label="Safety references">
-        <ReferencePanel
-          id="health-info"
-          icon={Hospital}
-          title="香港醫療路徑"
-          subtitle="Hong Kong care routing"
-          rows={routeRows}
-        />
-        <ReferencePanel
-          id="insurance-info"
-          icon={ShieldCheck}
-          title="保障分類"
-          subtitle="Coverage categories"
-          tags={coverageRows}
-        />
-        <div className={styles.referencePanel}>
-          <div className={styles.sectionTitle}>
-            <ClipboardCheck size={20} aria-hidden="true" />
-            <div>
-              <h2>安全邊界</h2>
-              <p>Safety boundaries</p>
-            </div>
-          </div>
-          <p className={styles.referenceCopy}>
-            本服務只提供導航、科別方向及保險類別教育，不作診斷、不處方、不推薦指定保險公司或產品。
-          </p>
-          <p className={styles.referenceCopy}>
-            Product purchase decisions require a future licensed insurance adviser workflow.
-          </p>
-        </div>
       </section>
     </main>
   );
 }
 
-function ResultCard({
+function AnswerPanel({
   result,
   isSubmitting,
-  canSave,
-  isSaved,
-  isSaving,
-  memoryStatus,
-  onSave,
-  onDecline,
+  errorMessage,
 }: {
   result: Recommendation | null;
   isSubmitting: boolean;
-  canSave: boolean;
-  isSaved: boolean;
-  isSaving: boolean;
-  memoryStatus: string | null;
-  onSave: () => void;
-  onDecline: () => void;
+  errorMessage: string | null;
 }) {
   if (isSubmitting) {
     return (
-      <section className={styles.resultCard} aria-live="polite">
-        <div className={styles.thinkingRow}>
-          <Activity size={18} aria-hidden="true" />
-          <span>正在分析… / Analyzing...</span>
+      <section className={styles.answerPanel} aria-live="polite">
+        <div className={styles.thinkingLine}>
+          <LoaderCircle size={16} aria-hidden="true" />
+          <span>Checking urgent warning signs first...</span>
         </div>
       </section>
     );
@@ -683,129 +219,122 @@ function ResultCard({
   }
 
   const isEmergency = result.urgency.level === 1;
+  const isInsurance = result.mode === "insurance" || result.mode === "policy";
+  const summary = getConciseSummary(result);
 
   return (
     <section
-      className={`${styles.resultCard} ${isEmergency ? styles.resultEmergency : ""}`}
+      className={`${styles.answerPanel} ${isEmergency ? styles.answerEmergency : ""} ${
+        isInsurance ? styles.answerInsurance : ""
+      }`}
       aria-live={isEmergency ? "assertive" : "polite"}
     >
-      <div className={styles.resultHeader}>
-        <div>
-          <p>{result.classification}</p>
-          <h2>{result.urgency.label}</h2>
-        </div>
-        <span>{isEmergency ? "999 / A&E" : "Next step"}</span>
+      <div className={styles.answerHeader}>
+        <span className={styles.urgencyLabel}>{result.urgency.label}</span>
+        {isInsurance && !isEmergency ? (
+          <span className={styles.coverageLabel}>
+            <ShieldCheck size={14} aria-hidden="true" />
+            Coverage categories only
+          </span>
+        ) : null}
       </div>
 
-      <p className={styles.resultSummary}>{result.urgency.summary}</p>
-      {result.assistantMessage ? (
-        <div className={styles.guideMessage}>
-          <Bot size={17} aria-hidden="true" />
-          <div>
-            {result.assistantMessage.split(/\n{2,}/).map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
-            ))}
-          </div>
-        </div>
+      <p className={styles.answerText}>{summary}</p>
+      <p className={styles.nextStep}>
+        <strong>Next step:</strong> {result.nextAction}
+      </p>
+
+      {isInsurance && !isEmergency ? (
+        <p className={styles.categoryLine}>
+          {result.insuranceCategories.slice(0, 3).join(" · ")}
+        </p>
       ) : null}
-      <ResultBlock icon={ArrowRight} title="下一步 / Next step" content={result.nextAction} />
-      <ResultBlock icon={Hospital} title="科別方向 / Department direction" content={result.careRoute} />
-      <ResultList title="可能相關 / Possible options" items={result.possibleDepartments} />
-      <ResultList title="保險分類 / Insurance categories" items={result.insuranceCategories} />
 
-      <div className={styles.escalationBox}>
-        <AlertTriangle size={18} aria-hidden="true" />
-        <span>{result.escalation}</span>
-      </div>
+      {isEmergency ? (
+        <a className={styles.emergencyCta} href="tel:999" aria-label="Call 999 or go to Accident and Emergency now">
+          <AlertTriangle size={18} aria-hidden="true" />
+          Call 999 / Go to A&amp;E now
+        </a>
+      ) : null}
 
-      <MemoryConsentCard
-        canSave={canSave}
-        isSaved={isSaved}
-        isSaving={isSaving}
-        status={memoryStatus}
-        onSave={onSave}
-        onDecline={onDecline}
-      />
-
-      <p className={styles.disclaimer}>{result.disclaimer}</p>
+      {errorMessage ? <p className={styles.errorNote}>{errorMessage}</p> : null}
     </section>
   );
 }
 
-function ResultBlock({
-  icon: Icon,
-  title,
-  content,
-}: {
-  icon: LucideIcon;
-  title: string;
-  content: string;
-}) {
-  return (
-    <div className={styles.resultBlock}>
-      <Icon size={16} aria-hidden="true" />
-      <div>
-        <h3>{title}</h3>
-        <p>{content}</p>
-      </div>
-    </div>
-  );
+function inferMode(input: string): IntakeMode {
+  const normalized = input.toLowerCase();
+
+  if (!normalized) {
+    return "medical";
+  }
+
+  if (policyTerms.some((term) => normalized.includes(term.toLowerCase()))) {
+    return "policy";
+  }
+
+  if (insuranceTerms.some((term) => normalized.includes(term.toLowerCase()))) {
+    return "insurance";
+  }
+
+  return "medical";
 }
 
-function ResultList({ title, items }: { title: string; items: string[] }) {
-  return (
-    <div className={styles.resultList}>
-      <h3>{title}</h3>
-      <ul>
-        {items.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
-    </div>
-  );
+function getAssistantStatus({
+  hasInput,
+  isMicActive,
+  isSubmitting,
+  isEmergency,
+  hasResult,
+}: {
+  hasInput: boolean;
+  isMicActive: boolean;
+  isSubmitting: boolean;
+  isEmergency: boolean;
+  hasResult: boolean;
+}): AssistantStatus {
+  if (isEmergency) {
+    return "Emergency";
+  }
+
+  if (isSubmitting) {
+    return "Thinking";
+  }
+
+  if (hasResult) {
+    return "Explaining";
+  }
+
+  if (hasInput || isMicActive) {
+    return "Listening";
+  }
+
+  return "Ready";
 }
 
-function ReferencePanel({
-  id,
-  icon: Icon,
-  title,
-  subtitle,
-  rows,
-  tags,
-}: {
-  id: string;
-  icon: LucideIcon;
-  title: string;
-  subtitle: string;
-  rows?: string[][];
-  tags?: string[];
-}) {
-  return (
-    <div className={styles.referencePanel} id={id}>
-      <div className={styles.sectionTitle}>
-        <Icon size={20} aria-hidden="true" />
-        <div>
-          <h2>{title}</h2>
-          <p>{subtitle}</p>
-        </div>
-      </div>
-      {rows ? (
-        <div className={styles.routeList}>
-          {rows.map(([label, body]) => (
-            <div className={styles.routeRow} key={label}>
-              <strong>{label}</strong>
-              <span>{body}</span>
-            </div>
-          ))}
-        </div>
-      ) : null}
-      {tags ? (
-        <div className={styles.coverageGrid}>
-          {tags.map((tag) => (
-            <span key={tag}>{tag}</span>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
+function mapAssistantState(status: AssistantStatus): AIOrb3DState {
+  switch (status) {
+    case "Listening":
+      return "listening";
+    case "Thinking":
+      return "thinking";
+    case "Explaining":
+      return "speaking";
+    case "Emergency":
+      return "emergency";
+    case "Ready":
+    default:
+      return "idle";
+  }
+}
+
+function getConciseSummary(result: Recommendation) {
+  const text = result.assistantMessage || result.urgency.summary;
+  const firstParagraph = text.split(/\n{2,}/)[0]?.trim() || result.urgency.summary;
+
+  if (firstParagraph.length <= 320) {
+    return firstParagraph;
+  }
+
+  return `${firstParagraph.slice(0, 317).trim()}...`;
 }

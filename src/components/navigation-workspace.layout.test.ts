@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-describe("responsive healthcare workspace layout", () => {
-  it("uses a real responsive app shell instead of a centered phone mockup", () => {
+describe("minimal AI assistant home layout", () => {
+  it("keeps the home experience centered, sparse, and assistant-led", () => {
     const css = readFileSync(
       new URL("./navigation-workspace.module.css", import.meta.url),
       "utf8",
@@ -12,20 +12,18 @@ describe("responsive healthcare workspace layout", () => {
       "utf8",
     );
 
-    expect(css).toMatch(/\.appShell\s*\{[\s\S]*width:\s*min\(100%,\s*1180px\)/);
-    expect(css).toMatch(/\.workspace\s*\{[\s\S]*grid-template-areas:[\s\S]*"hero assistant"/);
-    expect(css).toMatch(/\.workspaceWithResult\s*\{[\s\S]*"hero result"[\s\S]*"input result"/);
-    expect(css).toContain("@media (max-width: 900px)");
+    expect(css).toMatch(/\.experience\s*\{[\s\S]*width:\s*min\(100%,\s*720px\)/);
+    expect(css).toMatch(/\.assistantStage\s*\{[\s\S]*width:\s*min\(100%,\s*520px\)/);
+    expect(css).toMatch(/\.inputDock\s*\{[\s\S]*width:\s*min\(100%,\s*640px\)/);
+    expect(css).toMatch(/\.answerPanel\s*\{[\s\S]*width:\s*min\(100%,\s*640px\)/);
     expect(css).toContain("@media (max-width: 760px)");
-    expect(css).toMatch(/\.actionGrid\s*\{[\s\S]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
-    expect(css).toMatch(/\.heroAvatar\s*\{[\s\S]*position:\s*relative/);
-    expect(css).toMatch(/\.bottomNav\s*\{[\s\S]*display:\s*none/);
-    expect(css).not.toContain(".phone");
-    expect(css).not.toContain("border: 8px solid");
-    expect(css).not.toContain("border-radius: 42px");
-    expect(css).not.toContain("min-height: 844px");
+    expect(css).toContain("@media (prefers-reduced-motion: reduce)");
     expect(component).toContain('aria-label="AI healthcare navigation workspace"');
-    expect(component).not.toContain("mobile app preview");
-    expect(component).not.toContain("statusBar");
+    expect(component).toContain('placeholder="Tell me what is going on..."');
+    expect(component).toContain("analyzeIntake(mode, currentInput)");
+    expect(component).toContain("deterministicResult.urgency.level === 1");
+    expect(component).not.toContain("actionCards");
+    expect(component).not.toContain("bottomNav");
+    expect(component).not.toContain("AuthPanel");
   });
 });
