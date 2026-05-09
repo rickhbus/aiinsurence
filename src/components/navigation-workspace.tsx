@@ -1,15 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import { AlertTriangle, ArrowUp, Mic } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
-import { AIOrb3D, type AIOrb3DState } from "@/components/ai-orb-3d";
 import type { NavigationGuideResponse } from "@/lib/ai/types";
 import {
   analyzeIntake,
   type IntakeMode,
   type Recommendation,
 } from "@/lib/navigation-engine";
-import styles from "./minimal-ai-home.module.css";
+import styles from "./human-ai-home.module.css";
 
 export function NavigationWorkspace() {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -24,7 +24,7 @@ export function NavigationWorkspace() {
     [input, result],
   );
 
-  const aiState = getAIState({
+  const visualState = getVisualState({
     input,
     isRecording,
     isSubmitting,
@@ -78,13 +78,57 @@ export function NavigationWorkspace() {
 
   return (
     <main className={`${styles.shell} ${isEmergency ? styles.emergencyShell : ""}`}>
-      <section className={styles.home} aria-label="Minimal AI healthcare assistant">
-        <div className={styles.aiStage}>
-          <AIOrb3D
-            state={aiState}
-            mode={inferredMode === "insurance" ? "insurance" : "medical"}
-            className={styles.aiModel}
-          />
+      <section
+        className={`${styles.home} ${styles[visualState]} ${
+          inferredMode === "insurance" ? styles.insuranceMode : ""
+        }`}
+        aria-label="AI healthcare guide"
+      >
+        <header className={styles.topbar}>
+          <a className={styles.brand} href="#home" aria-label="AI Healthcare Guide">
+            <span className={styles.brandMark}>✚</span>
+            <span>
+              <strong>智健導航</strong>
+              <small>AI Healthcare Guide</small>
+            </span>
+          </a>
+
+          <div className={styles.topActions}>
+            <button type="button">公立 / 私家</button>
+            <button type="button">繁中 / English</button>
+          </div>
+        </header>
+
+        <div className={styles.hero}>
+          <div className={styles.heroCopy}>
+            <span className={styles.kicker}>AI Healthcare Guide</span>
+            <h1>
+              你好，我係你的
+              <span>AI 醫療顧問</span>
+            </h1>
+            <p>Describe your symptom, care question, or insurance concern.</p>
+          </div>
+
+          <div className={styles.avatarStage}>
+            <div className={styles.statusPill}>
+              <span />
+              {getStatusLabel(visualState)}
+            </div>
+
+            <Image
+              className={styles.avatarImage}
+              src="/ai-healthcare-guide.png"
+              alt="AI healthcare navigation guide, not a real doctor"
+              width={900}
+              height={1100}
+              priority
+            />
+
+            <div className={styles.avatarBadge}>
+              <strong>智健導航</strong>
+              <small>AI Healthcare Guide</small>
+            </div>
+          </div>
         </div>
 
         <form
@@ -99,7 +143,7 @@ export function NavigationWorkspace() {
             className={styles.textarea}
             value={input}
             rows={1}
-            placeholder="Tell me what is going on..."
+            placeholder="請描述症狀或保險問題..."
             aria-label="Describe your symptom, care question, or insurance concern"
             onChange={(event) => handleInputChange(event.target.value)}
             onKeyDown={(event) => {
@@ -163,9 +207,66 @@ export function NavigationWorkspace() {
             ) : null}
           </section>
         )}
+
+        <p className={styles.safetyNote}>
+          AI healthcare navigation only. Not a diagnosis.
+        </p>
       </section>
     </main>
   );
+}
+
+type VisualState =
+  | "ready"
+  | "listening"
+  | "thinking"
+  | "explaining"
+  | "emergency";
+
+function getVisualState({
+  input,
+  isRecording,
+  isSubmitting,
+  result,
+}: {
+  input: string;
+  isRecording: boolean;
+  isSubmitting: boolean;
+  result: Recommendation | null;
+}): VisualState {
+  if (result?.urgency.level === 1) {
+    return "emergency";
+  }
+
+  if (isSubmitting) {
+    return "thinking";
+  }
+
+  if (result) {
+    return "explaining";
+  }
+
+  if (isRecording || input.trim().length > 0) {
+    return "listening";
+  }
+
+  return "ready";
+}
+
+function getStatusLabel(state: VisualState) {
+  switch (state) {
+    case "listening":
+      return "Listening";
+    case "thinking":
+      return "Thinking";
+    case "explaining":
+      return "Explaining";
+    case "emergency":
+      return "Emergency";
+    case "ready":
+    default:
+      return "Ready";
+  }
 }
 
 function inferMode(text: string): IntakeMode {
@@ -188,34 +289,4 @@ function inferMode(text: string): IntakeMode {
   return insuranceTerms.some((term) => normalized.includes(term))
     ? "insurance"
     : "medical";
-}
-
-function getAIState({
-  input,
-  isRecording,
-  isSubmitting,
-  result,
-}: {
-  input: string;
-  isRecording: boolean;
-  isSubmitting: boolean;
-  result: Recommendation | null;
-}): AIOrb3DState {
-  if (result?.urgency.level === 1) {
-    return "emergency";
-  }
-
-  if (isSubmitting) {
-    return "thinking";
-  }
-
-  if (result) {
-    return "speaking";
-  }
-
-  if (isRecording || input.trim().length > 0) {
-    return "listening";
-  }
-
-  return "idle";
 }
