@@ -96,7 +96,7 @@ export function AIOrb3D({ state = "idle", mode = "medical", className = "" }: AI
           <directionalLight position={[3, 4, 5]} intensity={2.4} />
           <pointLight position={[-3, -1, 3]} intensity={2.4} color={config.color} />
           <pointLight position={[3, 2, -2]} intensity={1.8} color={config.secondary} />
-          <AIOrbModel state={state} config={config} />
+          <AIHumanoidModel state={state} config={config} />
           <Sparkles
             count={config.sparkles}
             scale={[4.2, 3.2, 4.2]}
@@ -114,7 +114,7 @@ export function AIOrb3D({ state = "idle", mode = "medical", className = "" }: AI
   );
 }
 
-function AIOrbModel({
+function AIHumanoidModel({
   state,
   config,
 }: {
@@ -128,23 +128,27 @@ function AIOrbModel({
   };
 }) {
   const groupRef = useRef<Group | null>(null);
-  const coreRef = useRef<Mesh | null>(null);
-  const ringOneRef = useRef<Mesh | null>(null);
-  const ringTwoRef = useRef<Mesh | null>(null);
-  const ringThreeRef = useRef<Mesh | null>(null);
+  const headRef = useRef<Mesh | null>(null);
+  const mouthRef = useRef<Mesh | null>(null);
+
   const isEmergency = state === "emergency";
   const isSpeaking = state === "speaking";
-  const materialProps = useMemo(
+  const isListening = state === "listening";
+  const isThinking = state === "thinking";
+
+  const glassMaterial = useMemo(
     () => ({
       color: config.color,
       emissive: config.color,
-      emissiveIntensity: isEmergency ? 0.48 : 0.28,
-      roughness: 0.18,
-      metalness: 0.08,
-      transmission: 0.55,
-      thickness: 1.2,
+      emissiveIntensity: isEmergency ? 0.35 : 0.18,
+      roughness: 0.08,
+      metalness: 0.05,
+      transmission: 0.68,
+      thickness: 1.4,
       transparent: true,
-      opacity: 0.92,
+      opacity: 0.78,
+      clearcoat: 1,
+      clearcoatRoughness: 0.08,
     }),
     [config.color, isEmergency],
   );
@@ -153,48 +157,44 @@ function AIOrbModel({
     const time = clock.clock.elapsedTime;
 
     if (groupRef.current) {
-      groupRef.current.rotation.y = Math.sin(time * 0.35) * 0.18;
-      groupRef.current.rotation.x = Math.sin(time * 0.25) * 0.08;
-      groupRef.current.position.y = Math.sin(time * 1.1) * 0.08;
-      groupRef.current.scale.setScalar(
-        config.scale + Math.sin(time * (isSpeaking ? 5 : 2.2)) * 0.015,
-      );
+      groupRef.current.position.y = Math.sin(time * 1.15) * 0.08;
+      groupRef.current.rotation.y = Math.sin(time * 0.45) * 0.12;
+      groupRef.current.scale.setScalar(config.scale + Math.sin(time * 2.2) * 0.01);
     }
 
-    if (coreRef.current) {
-      coreRef.current.rotation.y += 0.004 * config.speed;
-      coreRef.current.rotation.x += 0.002 * config.speed;
+    if (headRef.current) {
+      headRef.current.rotation.y = Math.sin(time * 0.7) * 0.08;
+      headRef.current.rotation.x = isListening
+        ? -0.08 + Math.sin(time * 0.8) * 0.03
+        : Math.sin(time * 0.5) * 0.035;
     }
 
-    if (ringOneRef.current) {
-      ringOneRef.current.rotation.z += 0.008 * config.speed;
-      ringOneRef.current.rotation.x = 1.18;
-    }
-
-    if (ringTwoRef.current) {
-      ringTwoRef.current.rotation.z -= 0.006 * config.speed;
-      ringTwoRef.current.rotation.y = 1.05;
-    }
-
-    if (ringThreeRef.current) {
-      ringThreeRef.current.rotation.z += 0.004 * config.speed;
-      ringThreeRef.current.rotation.x = 0.72;
-      ringThreeRef.current.rotation.y = 0.52;
+    if (mouthRef.current) {
+      const pulse = isSpeaking ? 1 + Math.sin(time * 9) * 0.55 : 1;
+      mouthRef.current.scale.set(1, pulse, 1);
     }
   });
 
+  const glowColor = isEmergency ? "#fee2e2" : "#ffffff";
+
   return (
     <Float
-      speed={state === "emergency" ? 2.2 : 1.4}
-      rotationIntensity={0.35}
-      floatIntensity={0.45}
+      speed={isEmergency ? 2.1 : 1.35}
+      rotationIntensity={0.22}
+      floatIntensity={0.35}
     >
-      <group ref={groupRef}>
-        <mesh ref={coreRef}>
-          <sphereGeometry args={[1.06, 96, 96]} />
-          <meshPhysicalMaterial {...materialProps} />
+      <group ref={groupRef} position={[0, -0.15, 0]}>
+        <mesh position={[0, 0.45, -0.35]} scale={[1.65, 1.9, 0.08]}>
+          <sphereGeometry args={[1, 64, 64]} />
+          <meshBasicMaterial color={config.color} transparent opacity={isEmergency ? 0.16 : 0.1} />
         </mesh>
-        <mesh scale={0.72}>
+
+        <mesh ref={headRef} position={[0, 0.75, 0]}>
+          <sphereGeometry args={[0.72, 96, 96]} />
+          <meshPhysicalMaterial {...glassMaterial} />
+        </mesh>
+
+        <mesh position={[0, 0.73, 0.08]} scale={[0.48, 0.5, 0.48]}>
           <sphereGeometry args={[1, 64, 64]} />
           <meshStandardMaterial
             color={config.secondary}
@@ -205,23 +205,56 @@ function AIOrbModel({
             roughness={0.12}
           />
         </mesh>
-        <mesh position={[-0.32, 0.34, 0.9]} scale={[0.24, 0.12, 0.04]}>
-          <sphereGeometry args={[1, 32, 16]} />
-          <meshBasicMaterial color="#ffffff" transparent opacity={0.78} />
+
+        <group position={[0, 0.78, 0.67]}>
+          <mesh position={[-0.22, 0.08, 0]} scale={[1.2, 0.55, 1]}>
+            <sphereGeometry args={[0.045, 24, 24]} />
+            <meshBasicMaterial color={glowColor} transparent opacity={0.82} />
+          </mesh>
+
+          <mesh position={[0.22, 0.08, 0]} scale={[1.2, 0.55, 1]}>
+            <sphereGeometry args={[0.045, 24, 24]} />
+            <meshBasicMaterial color={glowColor} transparent opacity={0.82} />
+          </mesh>
+
+          <mesh ref={mouthRef} position={[0, -0.18, 0]}>
+            <boxGeometry args={[0.24, 0.025, 0.015]} />
+            <meshBasicMaterial color={glowColor} transparent opacity={0.58} />
+          </mesh>
+        </group>
+
+        <mesh position={[0, -0.05, 0]} scale={[0.28, 0.5, 0.28]}>
+          <capsuleGeometry args={[0.38, 0.55, 24, 48]} />
+          <meshPhysicalMaterial {...glassMaterial} opacity={0.52} />
         </mesh>
-        <mesh ref={ringOneRef}>
-          <torusGeometry args={[1.45, 0.012, 16, 160]} />
-          <meshBasicMaterial color={config.color} transparent opacity={0.62} />
+
+        <mesh position={[0, -0.72, 0]} scale={[1.35, 0.42, 0.58]}>
+          <sphereGeometry args={[1, 96, 48]} />
+          <meshPhysicalMaterial {...glassMaterial} opacity={0.5} />
         </mesh>
-        <mesh ref={ringTwoRef}>
-          <torusGeometry args={[1.65, 0.01, 16, 160]} />
-          <meshBasicMaterial color={config.secondary} transparent opacity={0.42} />
+
+        <mesh position={[0, -0.54, 0.53]}>
+          <sphereGeometry args={[0.08, 32, 32]} />
+          <meshBasicMaterial color={glowColor} transparent opacity={isThinking ? 0.95 : 0.68} />
         </mesh>
-        <mesh ref={ringThreeRef}>
-          <torusGeometry args={[1.86, 0.008, 16, 180]} />
-          <meshBasicMaterial color={config.color} transparent opacity={0.26} />
+
+        <mesh rotation={[1.16, 0.08, 0]}>
+          <torusGeometry args={[1.28, 0.008, 16, 180]} />
+          <meshBasicMaterial color={config.color} transparent opacity={0.45} />
         </mesh>
-        <AIFace speaking={isSpeaking} emergency={isEmergency} />
+
+        <mesh rotation={[0.74, 0.75, 0.2]}>
+          <torusGeometry args={[1.52, 0.007, 16, 180]} />
+          <meshBasicMaterial color={config.secondary} transparent opacity={0.28} />
+        </mesh>
+
+        {(isListening || isThinking) && (
+          <mesh position={[0, 0.75, 0]} rotation={[1.35, 0, 0]}>
+            <torusGeometry args={[0.96, 0.01, 16, 180]} />
+            <meshBasicMaterial color={config.color} transparent opacity={0.62} />
+          </mesh>
+        )}
+
         {isEmergency ? (
           <Html center position={[0, -1.55, 0]}>
             <div className={styles.emergencyBadge}>Call 999 / A&amp;E</div>
@@ -229,37 +262,5 @@ function AIOrbModel({
         ) : null}
       </group>
     </Float>
-  );
-}
-
-function AIFace({ speaking, emergency }: { speaking: boolean; emergency: boolean }) {
-  const mouthRef = useRef<Mesh | null>(null);
-
-  useFrame((clock) => {
-    if (!mouthRef.current) return;
-
-    const time = clock.clock.elapsedTime;
-    const scaleX = speaking ? 1 + Math.sin(time * 9) * 0.28 : 1;
-    const scaleY = speaking ? 1 + Math.sin(time * 9) * 0.65 : 1;
-    mouthRef.current.scale.set(scaleX, scaleY, 1);
-  });
-
-  const eyeColor = emergency ? "#fee2e2" : "#ffffff";
-
-  return (
-    <group position={[0, 0.02, 1.02]}>
-      <mesh position={[-0.28, 0.14, 0]}>
-        <sphereGeometry args={[0.055, 24, 24]} />
-        <meshBasicMaterial color={eyeColor} />
-      </mesh>
-      <mesh position={[0.28, 0.14, 0]}>
-        <sphereGeometry args={[0.055, 24, 24]} />
-        <meshBasicMaterial color={eyeColor} />
-      </mesh>
-      <mesh ref={mouthRef} position={[0, -0.22, 0]} scale={[1, 0.8, 1]}>
-        <boxGeometry args={[0.34, 0.045, 0.02]} />
-        <meshBasicMaterial color={eyeColor} transparent opacity={0.88} />
-      </mesh>
-    </group>
   );
 }
