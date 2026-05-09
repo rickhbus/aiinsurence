@@ -19,12 +19,10 @@ import {
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { User } from "@supabase/supabase-js";
 import { AuthPanel } from "@/components/auth/auth-panel";
+import { AIOrb3D } from "@/components/ai-orb-3d";
 import { UserMenu } from "@/components/auth/user-menu";
 import { MemoryConsentCard } from "@/components/memory/memory-consent-card";
-import {
-  DoctorAvatar,
-  getDoctorAvatarState,
-} from "@/components/virtual-doctor-avatar";
+import { getDoctorAvatarState } from "@/components/virtual-doctor-avatar";
 import type { NavigationGuideResponse } from "@/lib/ai/types";
 import { analyzeIntake, type IntakeMode, type Recommendation } from "@/lib/navigation-engine";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -532,7 +530,11 @@ export function NavigationWorkspace() {
         </a>
 
           <aside className={styles.assistantPanel} aria-label="Virtual AI healthcare assistant">
-            <DoctorAvatar state={avatarState} className={styles.heroAvatar} showSafetyLabel />
+            <AIOrb3D
+              state={avatarState === "reassuring" ? "speaking" : avatarState}
+              mode={activeAction === "insurance" ? "insurance" : "medical"}
+              className={styles.heroAvatar}
+            />
           </aside>
         </div>
 
