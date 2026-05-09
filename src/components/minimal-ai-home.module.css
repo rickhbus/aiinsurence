@@ -1,0 +1,222 @@
+.shell {
+  min-height: 100vh;
+  padding: clamp(18px, 4vw, 44px);
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(20, 184, 166, 0.11), transparent 30%),
+    radial-gradient(circle at 84% 20%, rgba(37, 99, 235, 0.1), transparent 34%),
+    linear-gradient(180deg, #f8fbff 0%, #edf7ff 100%);
+  color: #0f172a;
+}
+
+.emergencyShell {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(220, 38, 38, 0.14), transparent 34%),
+    linear-gradient(180deg, #fffafa 0%, #fff1f2 100%);
+}
+
+.home {
+  width: min(100%, 720px);
+  display: grid;
+  justify-items: center;
+  gap: clamp(14px, 2.4vw, 22px);
+}
+
+.aiStage {
+  width: min(100%, 520px);
+  display: grid;
+  place-items: center;
+}
+
+.aiModel {
+  width: min(100%, 500px);
+  height: clamp(430px, 58vh, 620px);
+  min-height: 430px;
+}
+
+.inputDock {
+  width: min(100%, 640px);
+  min-height: 76px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 48px 52px;
+  align-items: end;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(203, 213, 225, 0.76);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(24px);
+}
+
+.textarea {
+  min-width: 0;
+  max-height: 150px;
+  min-height: 52px;
+  resize: none;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #0f172a;
+  padding: 15px 4px 12px 10px;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.textarea::placeholder {
+  color: #64748b;
+}
+
+.iconButton,
+.sendButton {
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    opacity 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease,
+    color 180ms ease;
+}
+
+.iconButton {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.recording {
+  background: rgba(20, 184, 166, 0.14);
+  color: #0f766e;
+  box-shadow: 0 0 0 8px rgba(20, 184, 166, 0.1);
+}
+
+.sendButton {
+  background: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
+}
+
+.sendButton:disabled {
+  cursor: not-allowed;
+  background: #cbd5e1;
+  color: #ffffff;
+  opacity: 0.85;
+  box-shadow: none;
+}
+
+.iconButton:not(:disabled):hover,
+.sendButton:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.answer {
+  width: min(100%, 640px);
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 26px;
+  border: 1px solid rgba(203, 213, 225, 0.7);
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: 0 22px 70px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(24px);
+}
+
+.answerEmergency {
+  border-color: rgba(248, 113, 113, 0.36);
+  background: rgba(255, 241, 242, 0.84);
+}
+
+.answerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.answerHeader span {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 30px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 11px;
+  background: rgba(20, 184, 166, 0.12);
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.answerEmergency .answerHeader span {
+  background: rgba(220, 38, 38, 0.1);
+  color: #991b1b;
+}
+
+.answerHeader small,
+.statusMessage {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.answerText,
+.nextStep {
+  margin: 0;
+  color: #1e293b;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.nextStep {
+  color: #475569;
+}
+
+.emergencyCta {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  border-radius: 999px;
+  padding: 0 14px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 850;
+  box-shadow: 0 16px 34px rgba(220, 38, 38, 0.24);
+}
+
+@media (max-width: 640px) {
+  .shell {
+    align-items: start;
+    padding: 16px;
+  }
+
+  .home {
+    min-height: calc(100vh - 32px);
+    align-content: center;
+  }
+
+  .aiModel {
+    height: 430px;
+  }
+
+  .inputDock {
+    grid-template-columns: minmax(0, 1fr) 44px 48px;
+    border-radius: 24px;
+    padding: 10px;
+  }
+
+  .iconButton,
+  .sendButton {
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
+  }
+}

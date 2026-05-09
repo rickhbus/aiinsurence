@@ -1,12 +1,23 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { ContactShadows, Environment, Html } from "@react-three/drei";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import type { Group, Mesh } from "three";
+import {
+  ContactShadows,
+  Environment,
+  Float,
+  Html,
+  Sparkles,
+} from "@react-three/drei";
+import { Suspense, useMemo, useRef } from "react";
+import { DoubleSide, type Group, type Mesh } from "three";
 import styles from "./ai-orb-3d.module.css";
 
-export type AIOrb3DState = "idle" | "listening" | "thinking" | "speaking" | "emergency";
+export type AIOrb3DState =
+  | "idle"
+  | "listening"
+  | "thinking"
+  | "speaking"
+  | "emergency";
 
 type AIOrb3DProps = {
   state?: AIOrb3DState;
@@ -28,35 +39,35 @@ const stateConfig = {
     secondary: "#2563eb",
     speed: 0.35,
     scale: 1,
-    sparkles: 22,
+    sparkles: 16,
   },
   listening: {
     color: "#06b6d4",
     secondary: "#2563eb",
     speed: 0.65,
-    scale: 1.04,
-    sparkles: 34,
+    scale: 1.025,
+    sparkles: 26,
   },
   thinking: {
     color: "#2563eb",
     secondary: "#7c3aed",
-    speed: 1.15,
-    scale: 1.02,
-    sparkles: 46,
+    speed: 1.08,
+    scale: 1.015,
+    sparkles: 34,
   },
   speaking: {
     color: "#14b8a6",
     secondary: "#38bdf8",
-    speed: 0.9,
-    scale: 1.06,
-    sparkles: 38,
+    speed: 0.88,
+    scale: 1.035,
+    sparkles: 30,
   },
   emergency: {
     color: "#dc2626",
     secondary: "#f97316",
-    speed: 1.45,
-    scale: 1.07,
-    sparkles: 54,
+    speed: 1.35,
+    scale: 1.045,
+    sparkles: 42,
   },
 } satisfies Record<
   AIOrb3DState,
@@ -69,38 +80,26 @@ const stateConfig = {
   }
 >;
 
-export function AIOrb3D({ state = "idle", mode = "medical", className = "" }: AIOrb3DProps) {
+export function AIOrb3D({
+  state = "idle",
+  mode = "medical",
+  className = "",
+}: AIOrb3DProps) {
   const config = stateConfig[state];
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  );
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-    function handleChange(event: MediaQueryListEvent) {
-      setPrefersReducedMotion(event.matches);
-    }
-
-    mediaQuery.addEventListener("change", handleChange);
-
-    return () => {
-      mediaQuery.removeEventListener("change", handleChange);
-    };
-  }, []);
 
   return (
     <section
-      className={`${styles.shell} ${styles[mode]} ${styles[state]} ${className}`}
+      className={`${styles.shell} ${styles[mode] ?? ""} ${styles[state] ?? ""} ${className}`}
       aria-label={`3D AI assistant: ${stateLabel[state]}`}
     >
       <div className={styles.statusPill}>
         <span />
         {stateLabel[state]}
       </div>
+
       <Canvas
         className={styles.canvas}
-        camera={{ position: [0, 0.2, 5.2], fov: 42 }}
+        camera={{ position: [0, 0.18, 5.7], fov: 36 }}
         dpr={[1, 1.75]}
         gl={{
           antialias: true,
@@ -109,24 +108,44 @@ export function AIOrb3D({ state = "idle", mode = "medical", className = "" }: AI
         }}
       >
         <Suspense fallback={null}>
-          <ambientLight intensity={1.6} />
-          <directionalLight position={[3, 4, 5]} intensity={2.4} />
-          <pointLight position={[-3, -1, 3]} intensity={2.4} color={config.color} />
-          <pointLight position={[3, 2, -2]} intensity={1.8} color={config.secondary} />
-          <AIHumanoidModel state={state} config={config} reducedMotion={prefersReducedMotion} />
-          <ContactShadows position={[0, -1.85, 0]} opacity={0.22} scale={5} blur={2.6} far={4} />
+          <ambientLight intensity={1.55} />
+          <directionalLight position={[3, 4.2, 5]} intensity={2.4} />
+          <pointLight position={[-3.2, 0.2, 3]} intensity={2.1} color={config.color} />
+          <pointLight position={[3, 2.6, -2]} intensity={1.45} color={config.secondary} />
+
+          <AIHumanoidBust state={state} config={config} />
+
+          <Sparkles
+            count={config.sparkles}
+            scale={[3.7, 3.2, 3.7]}
+            size={1.55}
+            speed={config.speed}
+            color={config.color}
+            opacity={0.3}
+          />
+
+          <ContactShadows
+            position={[0, -1.88, 0]}
+            opacity={0.18}
+            scale={4.25}
+            blur={2.9}
+            far={4}
+          />
+
           <Environment preset="city" />
         </Suspense>
       </Canvas>
-      <p className={styles.safetyNote}>AI healthcare navigation only. Not a diagnosis.</p>
+
+      <p className={styles.safetyNote}>
+        AI healthcare navigation only. Not a diagnosis.
+      </p>
     </section>
   );
 }
 
-function AIHumanoidModel({
+function AIHumanoidBust({
   state,
   config,
-  reducedMotion,
 }: {
   state: AIOrb3DState;
   config: {
@@ -136,12 +155,14 @@ function AIHumanoidModel({
     scale: number;
     sparkles: number;
   };
-  reducedMotion: boolean;
 }) {
   const groupRef = useRef<Group | null>(null);
   const headRef = useRef<Mesh | null>(null);
+  const leftEyeRef = useRef<Mesh | null>(null);
+  const rightEyeRef = useRef<Mesh | null>(null);
   const mouthRef = useRef<Mesh | null>(null);
-  const elapsedRef = useRef(0);
+  const haloOneRef = useRef<Mesh | null>(null);
+  const haloTwoRef = useRef<Mesh | null>(null);
 
   const isEmergency = state === "emergency";
   const isSpeaking = state === "speaking";
@@ -152,140 +173,195 @@ function AIHumanoidModel({
     () => ({
       color: config.color,
       emissive: config.color,
-      emissiveIntensity: isEmergency ? 0.35 : 0.18,
-      roughness: 0.08,
-      metalness: 0.05,
-      transmission: 0.68,
-      thickness: 1.4,
+      emissiveIntensity: isEmergency ? 0.32 : 0.14,
+      roughness: 0.055,
+      metalness: 0.035,
+      transmission: 0.72,
+      thickness: 1.85,
       transparent: true,
-      opacity: 0.78,
+      opacity: 0.72,
       clearcoat: 1,
-      clearcoatRoughness: 0.08,
+      clearcoatRoughness: 0.055,
     }),
     [config.color, isEmergency],
   );
 
-  useFrame((_state, delta) => {
-    if (reducedMotion) {
-      if (groupRef.current) {
-        groupRef.current.position.y = 0;
-        groupRef.current.rotation.y = 0;
-        groupRef.current.scale.setScalar(config.scale);
-      }
+  const bodyMaterial = useMemo(
+    () => ({
+      ...glassMaterial,
+      opacity: 0.42,
+      emissiveIntensity: isEmergency ? 0.2 : 0.08,
+    }),
+    [glassMaterial, isEmergency],
+  );
 
-      if (headRef.current) {
-        headRef.current.rotation.set(0, 0, 0);
-      }
-
-      if (mouthRef.current) {
-        mouthRef.current.scale.set(1, 1, 1);
-      }
-
-      return;
-    }
-
-    elapsedRef.current += delta;
-    const time = elapsedRef.current;
+  useFrame((clock) => {
+    const time = clock.clock.elapsedTime;
 
     if (groupRef.current) {
-      groupRef.current.position.y = Math.sin(time * 1.15) * 0.08;
-      groupRef.current.rotation.y = Math.sin(time * 0.45) * 0.12;
-      groupRef.current.scale.setScalar(config.scale + Math.sin(time * 2.2) * 0.01);
+      groupRef.current.position.y = Math.sin(time * 1.05) * 0.055;
+      groupRef.current.rotation.y = Math.sin(time * 0.38) * 0.09;
+      groupRef.current.scale.setScalar(
+        config.scale + Math.sin(time * 1.6) * 0.006,
+      );
     }
 
     if (headRef.current) {
-      headRef.current.rotation.y = Math.sin(time * 0.7) * 0.08;
+      headRef.current.rotation.y = Math.sin(time * 0.62) * 0.055;
       headRef.current.rotation.x = isListening
-        ? -0.08 + Math.sin(time * 0.8) * 0.03
-        : Math.sin(time * 0.5) * 0.035;
+        ? -0.06 + Math.sin(time * 0.8) * 0.018
+        : Math.sin(time * 0.45) * 0.022;
+    }
+
+    if (haloOneRef.current) {
+      haloOneRef.current.rotation.z += 0.0042 * config.speed;
+    }
+
+    if (haloTwoRef.current) {
+      haloTwoRef.current.rotation.z -= 0.0035 * config.speed;
     }
 
     if (mouthRef.current) {
-      const pulse = isSpeaking ? 1 + Math.sin(time * 9) * 0.55 : 1;
+      const pulse = isSpeaking ? 1 + Math.sin(time * 9) * 0.45 : 1;
       mouthRef.current.scale.set(1, pulse, 1);
+    }
+
+    const blink = Math.sin(time * 2.7) > 0.985 ? 0.18 : 1;
+
+    if (leftEyeRef.current) {
+      leftEyeRef.current.scale.y = blink;
+    }
+
+    if (rightEyeRef.current) {
+      rightEyeRef.current.scale.y = blink;
     }
   });
 
-  const glowColor = isEmergency ? "#fee2e2" : "#ffffff";
+  const faceColor = isEmergency ? "#fee2e2" : "#ffffff";
 
   return (
-    <group ref={groupRef} position={[0, -0.15, 0]}>
-        <mesh position={[0, 0.45, -0.35]} scale={[1.65, 1.9, 0.08]}>
+    <Float
+      speed={isEmergency ? 1.9 : 1.18}
+      rotationIntensity={0.14}
+      floatIntensity={0.28}
+    >
+      <group ref={groupRef} position={[0, -0.12, 0]}>
+        <mesh position={[0, 0.25, -0.55]} scale={[1.55, 2.05, 0.08]}>
           <sphereGeometry args={[1, 64, 64]} />
-          <meshBasicMaterial color={config.color} transparent opacity={isEmergency ? 0.16 : 0.1} />
-        </mesh>
-
-        <mesh ref={headRef} position={[0, 0.75, 0]}>
-          <sphereGeometry args={[0.72, 96, 96]} />
-          <meshPhysicalMaterial {...glassMaterial} />
-        </mesh>
-
-        <mesh position={[0, 0.73, 0.08]} scale={[0.48, 0.5, 0.48]}>
-          <sphereGeometry args={[1, 64, 64]} />
-          <meshStandardMaterial
-            color={config.secondary}
-            emissive={config.secondary}
-            emissiveIntensity={0.44}
+          <meshBasicMaterial
+            color={config.color}
             transparent
-            opacity={0.24}
-            roughness={0.12}
+            opacity={isEmergency ? 0.11 : 0.065}
           />
         </mesh>
 
-        <group position={[0, 0.78, 0.73]}>
-          <mesh position={[-0.22, 0.08, 0]} scale={[1.2, 0.55, 1]}>
-            <sphereGeometry args={[0.052, 24, 24]} />
-            <meshBasicMaterial color={glowColor} transparent opacity={0.82} />
+        <mesh ref={headRef} position={[0, 0.88, 0]} scale={[0.66, 0.88, 0.58]}>
+          <sphereGeometry args={[0.82, 96, 96]} />
+          <meshPhysicalMaterial {...glassMaterial} />
+        </mesh>
+
+        <mesh position={[0, 0.9, 0.02]} scale={[0.24, 0.4, 0.22]}>
+          <sphereGeometry args={[1, 48, 48]} />
+          <meshStandardMaterial
+            color={config.secondary}
+            emissive={config.secondary}
+            emissiveIntensity={0.42}
+            transparent
+            opacity={0.22}
+            roughness={0.08}
+          />
+        </mesh>
+
+        <group position={[0, 0.9, 0.49]}>
+          <mesh ref={leftEyeRef} position={[-0.18, 0.08, 0]} scale={[1.45, 0.44, 1]}>
+            <sphereGeometry args={[0.036, 24, 24]} />
+            <meshBasicMaterial color={faceColor} transparent opacity={0.82} />
           </mesh>
 
-          <mesh position={[0.22, 0.08, 0]} scale={[1.2, 0.55, 1]}>
-            <sphereGeometry args={[0.052, 24, 24]} />
-            <meshBasicMaterial color={glowColor} transparent opacity={0.82} />
+          <mesh ref={rightEyeRef} position={[0.18, 0.08, 0]} scale={[1.45, 0.44, 1]}>
+            <sphereGeometry args={[0.036, 24, 24]} />
+            <meshBasicMaterial color={faceColor} transparent opacity={0.82} />
           </mesh>
 
-          <mesh ref={mouthRef} position={[0, -0.18, 0]}>
-            <boxGeometry args={[0.24, 0.025, 0.015]} />
-            <meshBasicMaterial color={glowColor} transparent opacity={0.58} />
+          <mesh position={[0, -0.035, 0]} scale={[0.55, 1.05, 0.35]}>
+            <sphereGeometry args={[0.034, 16, 16]} />
+            <meshBasicMaterial color={faceColor} transparent opacity={0.16} />
+          </mesh>
+
+          <mesh ref={mouthRef} position={[0, -0.19, 0]}>
+            <boxGeometry args={[0.19, 0.018, 0.01]} />
+            <meshBasicMaterial color={faceColor} transparent opacity={0.44} />
           </mesh>
         </group>
 
-        <mesh position={[0, -0.05, 0]} scale={[0.28, 0.5, 0.28]}>
-          <capsuleGeometry args={[0.38, 0.55, 24, 48]} />
-          <meshPhysicalMaterial {...glassMaterial} opacity={0.52} />
+        <mesh position={[0, 0.04, 0]} scale={[0.2, 0.48, 0.2]}>
+          <capsuleGeometry args={[0.34, 0.52, 24, 48]} />
+          <meshPhysicalMaterial {...bodyMaterial} opacity={0.5} />
         </mesh>
 
-        <mesh position={[0, -0.72, 0]} scale={[1.35, 0.42, 0.58]}>
-          <sphereGeometry args={[1, 96, 48]} />
-          <meshPhysicalMaterial {...glassMaterial} opacity={0.5} />
+        <mesh position={[0, -0.68, 0]} scale={[1, 1, 0.62]}>
+          <cylinderGeometry args={[0.46, 0.92, 1.0, 96, 1, true]} />
+          <meshPhysicalMaterial
+            {...bodyMaterial}
+            opacity={0.38}
+            side={DoubleSide}
+          />
         </mesh>
 
-        <mesh position={[0, -0.54, 0.53]}>
-          <sphereGeometry args={[0.08, 32, 32]} />
-          <meshBasicMaterial color={glowColor} transparent opacity={isThinking ? 0.95 : 0.68} />
+        <mesh
+          position={[-0.54, -0.62, 0]}
+          scale={[0.54, 0.2, 0.38]}
+          rotation={[0, 0, -0.16]}
+        >
+          <sphereGeometry args={[1, 64, 32]} />
+          <meshPhysicalMaterial {...bodyMaterial} opacity={0.34} />
         </mesh>
 
-        <mesh rotation={[1.16, 0.08, 0]}>
-          <torusGeometry args={[1.28, 0.008, 16, 180]} />
-          <meshBasicMaterial color={config.color} transparent opacity={0.45} />
+        <mesh
+          position={[0.54, -0.62, 0]}
+          scale={[0.54, 0.2, 0.38]}
+          rotation={[0, 0, 0.16]}
+        >
+          <sphereGeometry args={[1, 64, 32]} />
+          <meshPhysicalMaterial {...bodyMaterial} opacity={0.34} />
         </mesh>
 
-        <mesh rotation={[0.74, 0.75, 0.2]}>
-          <torusGeometry args={[1.52, 0.007, 16, 180]} />
-          <meshBasicMaterial color={config.secondary} transparent opacity={0.28} />
+        <mesh position={[0, -0.38, 0.44]}>
+          <sphereGeometry args={[0.06, 32, 32]} />
+          <meshBasicMaterial
+            color={faceColor}
+            transparent
+            opacity={isThinking ? 0.86 : 0.52}
+          />
+        </mesh>
+
+        <mesh ref={haloOneRef} rotation={[1.18, 0.08, 0]}>
+          <torusGeometry args={[1.2, 0.0065, 16, 180]} />
+          <meshBasicMaterial color={config.color} transparent opacity={0.36} />
+        </mesh>
+
+        <mesh ref={haloTwoRef} rotation={[0.72, 0.78, 0.18]}>
+          <torusGeometry args={[1.43, 0.006, 16, 180]} />
+          <meshBasicMaterial
+            color={config.secondary}
+            transparent
+            opacity={0.22}
+          />
         </mesh>
 
         {(isListening || isThinking) && (
-          <mesh position={[0, 0.75, 0]} rotation={[1.35, 0, 0]}>
-            <torusGeometry args={[0.96, 0.01, 16, 180]} />
-            <meshBasicMaterial color={config.color} transparent opacity={0.62} />
+          <mesh position={[0, 0.82, 0]} rotation={[1.35, 0, 0]}>
+            <torusGeometry args={[0.82, 0.008, 16, 180]} />
+            <meshBasicMaterial color={config.color} transparent opacity={0.48} />
           </mesh>
         )}
 
         {isEmergency ? (
-          <Html center position={[0, -1.55, 0]}>
+          <Html center position={[0, -1.42, 0]}>
             <div className={styles.emergencyBadge}>Call 999 / A&amp;E</div>
           </Html>
         ) : null}
-    </group>
+      </group>
+    </Float>
   );
 }
