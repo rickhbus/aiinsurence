@@ -348,14 +348,9 @@ export function NavigationWorkspace() {
   return (
     <main className={styles.shell} id="home">
       <section
-        className={`${styles.phone} ${result || isSubmitting ? styles.phoneWithResult : ""}`}
-        aria-label="智健導航 mobile app preview"
+        className={styles.appShell}
+        aria-label="AI healthcare navigation workspace"
       >
-        <div className={styles.statusBar} aria-hidden="true">
-          <span>9:41</span>
-          <span className={styles.statusIcons}>●●●  Wi-Fi  ▰</span>
-        </div>
-
         <header className={styles.topbar}>
           <a className={styles.brand} href="#home" aria-label="智健導航 AI Healthcare Guide">
             <span className={styles.brandMark}>
@@ -366,48 +361,47 @@ export function NavigationWorkspace() {
               <small>AI Healthcare Guide</small>
             </span>
           </a>
-
-          <div className={styles.topControls} aria-label="Preferences">
-            <button
-              className={styles.controlPill}
-              type="button"
-              aria-pressed={carePreference === "public"}
-              onClick={() => setCarePreference(carePreference === "public" ? "private" : "public")}
-            >
-              <Hospital size={20} aria-hidden="true" />
-              <span>
-                公立 / 私家
-                <small>Public / Private</small>
-              </span>
-            </button>
-            <button className={styles.controlPill} type="button">
-              <Languages size={20} aria-hidden="true" />
-              <span>
-                繁中
-                <small>English</small>
-              </span>
-            </button>
-          </div>
         </header>
 
-        <section className={styles.hero} aria-label="Virtual AI doctor">
-          <div className={styles.heroCopy}>
-            <h1>
-              你好，
-              <span>我係你的</span>
-              <span>AI 醫療顧問</span>
-            </h1>
-            <p>Your AI healthcare guide</p>
-            <div className={styles.trustBadge}>
-              <ShieldCheck size={18} aria-hidden="true" />
-              <span>
-                值得信賴・專業・私隱保障
-                <small>Trusted・Professional・Private</small>
-              </span>
+        <div className={`${styles.workspace} ${result || isSubmitting ? styles.workspaceWithResult : ""}`}>
+          <section className={styles.hero} aria-label="Virtual AI doctor">
+            <div className={styles.heroCopy}>
+              <h1>
+                你好，
+                <span>我係你的</span>
+                <span>AI 醫療顧問</span>
+              </h1>
+              <p>Your AI healthcare guide</p>
+              <div className={styles.trustBadge}>
+                <ShieldCheck size={18} aria-hidden="true" />
+                <span>
+                  值得信賴・專業・私隱保障
+                  <small>Trusted・Professional・Private</small>
+                </span>
+              </div>
+              <div className={styles.topControls} aria-label="Preferences">
+                <button
+                  className={styles.controlPill}
+                  type="button"
+                  aria-pressed={carePreference === "public"}
+                  onClick={() => setCarePreference(carePreference === "public" ? "private" : "public")}
+                >
+                  <Hospital size={20} aria-hidden="true" />
+                  <span>
+                    公立 / 私家
+                    <small>Public / Private</small>
+                  </span>
+                </button>
+                <button className={styles.controlPill} type="button">
+                  <Languages size={20} aria-hidden="true" />
+                  <span>
+                    繁中
+                    <small>English</small>
+                  </span>
+                </button>
+              </div>
             </div>
-          </div>
-          <DoctorAvatar state={avatarState} className={styles.heroAvatar} showSafetyLabel />
-        </section>
+          </section>
 
         <section className={styles.chatCard} aria-label="Question input">
           <div className={styles.inputHeading}>
@@ -515,6 +509,11 @@ export function NavigationWorkspace() {
           </span>
           <ArrowRight size={21} aria-hidden="true" />
         </a>
+
+          <aside className={styles.assistantPanel} aria-label="Virtual AI healthcare assistant">
+            <DoctorAvatar state={avatarState} className={styles.heroAvatar} showSafetyLabel />
+          </aside>
+        </div>
 
         <nav className={styles.bottomNav} aria-label="Bottom navigation">
           {navItems.map((item, index) => {

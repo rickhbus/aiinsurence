@@ -1,71 +1,66 @@
 .shell {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 20% 8%, rgba(46, 194, 203, 0.22), transparent 28%),
-    radial-gradient(circle at 82% 18%, rgba(126, 111, 236, 0.12), transparent 24%),
-    linear-gradient(180deg, #f7fcff 0%, #eaf6ff 45%, #f9fdff 100%);
+  background: linear-gradient(180deg, #f7fcff 0%, #eaf6ff 48%, #f9fdff 100%);
   color: #0b2145;
-  padding: 28px 18px 46px;
+  padding: 32px 20px 56px;
   display: grid;
   justify-items: center;
   gap: 24px;
 }
 
-.phone {
-  width: min(100%, 430px);
-  min-height: 844px;
+.appShell {
+  width: min(100%, 1180px);
   position: relative;
-  overflow: hidden;
-  border: 8px solid #13284a;
-  border-radius: 42px;
+  overflow: clip;
+  border: 1px solid rgba(210, 226, 238, 0.92);
+  border-radius: 28px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(235, 247, 255, 0.92)),
-    radial-gradient(circle at 74% 27%, rgba(93, 190, 255, 0.28), transparent 28%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(235, 247, 255, 0.88)),
     #f6fbff;
-  box-shadow: 0 28px 80px rgba(12, 38, 72, 0.22);
-  padding: 18px 18px 96px;
+  box-shadow: 0 28px 80px rgba(12, 38, 72, 0.14);
+  padding: 28px;
 }
 
-.phone::before {
-  content: "";
-  position: absolute;
-  inset: 88px -80px auto auto;
-  width: 260px;
-  height: 260px;
-  border-radius: 50%;
-  background: rgba(143, 210, 255, 0.28);
-  filter: blur(6px);
-  pointer-events: none;
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+  grid-template-areas:
+    "hero assistant"
+    "input assistant"
+    "actions assistant"
+    "result assistant"
+    "emergency assistant";
+  gap: 18px 24px;
+  align-items: start;
+  margin-top: 18px;
 }
 
-.statusBar {
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: #071939;
-  font-size: 17px;
-  font-weight: 850;
-  line-height: 1;
-  padding: 0 18px;
+.workspaceWithResult {
+  grid-template-areas:
+    "hero result"
+    "input result"
+    "actions assistant"
+    "emergency assistant";
+}
+
+.workspaceWithResult .assistantPanel {
   position: relative;
-  z-index: 2;
+  top: auto;
+  min-height: 340px;
 }
 
-.statusIcons {
-  font-size: 11px;
-  font-weight: 750;
+.workspaceWithResult .heroAvatar {
+  width: min(100%, 260px);
+  max-width: 260px;
+  height: 310px;
 }
 
 .topbar {
   min-height: 68px;
   position: relative;
   z-index: 2;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
+  display: flex;
   align-items: center;
-  margin-top: 2px;
 }
 
 .brand {
@@ -116,7 +111,9 @@
 .topControls {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+  margin-top: 20px;
 }
 
 .controlPill {
@@ -146,28 +143,24 @@
 }
 
 .hero {
+  grid-area: hero;
   position: relative;
   z-index: 1;
-  min-height: 355px;
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(190px, 1.1fr);
-  align-items: end;
-  gap: 0;
-  margin-top: 12px;
+  min-height: 0;
+  display: block;
 }
 
 .heroCopy {
-  align-self: center;
   position: relative;
-  z-index: 3;
-  padding-bottom: 36px;
+  z-index: 1;
+  max-width: 660px;
 }
 
 .heroCopy h1 {
   color: #071d45;
-  font-size: 42px;
+  font-size: clamp(44px, 5.3vw, 72px);
   font-weight: 920;
-  line-height: 1.18;
+  line-height: 1.02;
 }
 
 .heroCopy h1 span {
@@ -175,16 +168,16 @@
 }
 
 .heroCopy p {
-  margin-top: 14px;
+  margin-top: 16px;
   color: #1d3b68;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 650;
-  line-height: 1.35;
+  line-height: 1.45;
 }
 
 .trustBadge {
   width: max-content;
-  max-width: 250px;
+  max-width: 100%;
   min-height: 50px;
   margin-top: 18px;
   border-radius: 14px;
@@ -205,25 +198,41 @@
 }
 
 .heroAvatar {
-  position: absolute;
-  right: -44px;
-  bottom: -8px;
-  width: 282px;
-  height: 390px;
-  z-index: 2;
+  position: relative;
+  right: auto;
+  bottom: auto;
+  width: min(100%, 340px);
+  max-width: 340px;
+  height: clamp(360px, 38vw, 460px);
+  z-index: 1;
 }
 
 .heroAvatar .avatarSafetyPill {
-  left: -18px;
-  right: 34px;
-  bottom: 50px;
-  font-size: 9px;
-  line-height: 1.12;
+  left: 20px;
+  right: 20px;
+  bottom: 28px;
+  font-size: 11px;
+  line-height: 1.2;
 }
 
 .heroAvatar .avatarSafetyPill small {
-  font-size: 8px;
-  line-height: 1.1;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.assistantPanel {
+  grid-area: assistant;
+  position: sticky;
+  top: 24px;
+  min-height: 560px;
+  border: 1px solid rgba(216, 230, 239, 0.9);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(228, 246, 255, 0.9));
+  box-shadow: 0 18px 50px rgba(27, 72, 112, 0.1);
+  display: grid;
+  place-items: center;
+  padding: 26px 18px;
+  overflow: hidden;
 }
 
 .doctorAvatar {
@@ -367,14 +376,14 @@
 }
 
 .chatCard {
+  grid-area: input;
   position: relative;
   z-index: 4;
-  margin-top: -26px;
-  border-radius: 24px;
+  border-radius: 20px;
   background: rgba(255, 255, 255, 0.94);
   border: 1px solid rgba(225, 235, 243, 0.92);
   box-shadow: 0 18px 50px rgba(27, 72, 112, 0.13);
-  padding: 18px 16px 16px;
+  padding: 22px;
 }
 
 .inputHeading {
@@ -411,22 +420,22 @@
 .inputShell {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 52px;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) 58px;
+  gap: 12px;
   align-items: stretch;
 }
 
 .textarea {
   min-width: 0;
-  min-height: 72px;
+  min-height: 126px;
   resize: none;
   border: 1px solid #d2e0eb;
-  border-radius: 17px;
+  border-radius: 18px;
   background: #fcfeff;
   color: #0d2b55;
-  padding: 18px 52px 14px 16px;
+  padding: 18px 58px 16px 18px;
   font: inherit;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 580;
   line-height: 1.45;
   outline: none;
@@ -445,11 +454,10 @@
 .micButton,
 .micActive {
   position: absolute;
-  right: 72px;
-  top: 50%;
+  right: 78px;
+  top: 22px;
   width: 38px;
   height: 38px;
-  transform: translateY(-50%);
   border: 0;
   border-radius: 14px;
   background: transparent;
@@ -466,8 +474,8 @@
 }
 
 .sendButton {
-  width: 52px;
-  height: 52px;
+  width: 58px;
+  height: 58px;
   align-self: center;
   border: 0;
   border-radius: 50%;
@@ -533,10 +541,10 @@
 }
 
 .actionGrid {
+  grid-area: actions;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 14px;
+  gap: 14px;
 }
 
 .actionCard {
@@ -631,7 +639,7 @@
 }
 
 .resultCard {
-  margin-top: 14px;
+  grid-area: result;
   border: 1px solid #dce8f1;
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.95);
@@ -766,8 +774,8 @@
 }
 
 .emergencyBar {
+  grid-area: emergency;
   min-height: 66px;
-  margin-top: 18px;
   border-radius: 19px;
   border: 1px solid #facbc5;
   background: rgba(255, 245, 244, 0.96);
@@ -791,16 +799,16 @@
 }
 
 .bottomNav {
-  position: absolute;
-  left: 18px;
-  right: 18px;
-  bottom: 18px;
+  display: none;
+  position: sticky;
+  bottom: 10px;
+  width: 100%;
+  margin-top: 18px;
   min-height: 70px;
   border: 1px solid rgba(220, 231, 239, 0.9);
   border-radius: 26px;
   background: rgba(255, 255, 255, 0.93);
   box-shadow: 0 16px 36px rgba(19, 54, 94, 0.13);
-  display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: center;
   padding: 7px;
@@ -832,7 +840,7 @@
 
 .accountSection,
 .referenceGrid {
-  width: min(100%, 980px);
+  width: min(100%, 1180px);
 }
 
 .accountSection {
@@ -1348,52 +1356,85 @@
   }
 }
 
-@media (max-width: 980px) {
+@media (max-width: 1080px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 330px);
+    gap: 18px;
+  }
+
+  .assistantPanel {
+    min-height: 500px;
+  }
+
+  .heroAvatar {
+    height: 400px;
+  }
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "hero"
+      "assistant"
+      "input"
+      "actions"
+      "result"
+      "emergency";
+  }
+
+  .workspaceWithResult {
+    grid-template-areas:
+      "hero"
+      "assistant"
+      "input"
+      "result"
+      "actions"
+      "emergency";
+  }
+
+  .assistantPanel {
+    position: relative;
+    top: auto;
+    min-height: 360px;
+    padding: 18px;
+  }
+
+  .heroAvatar {
+    height: 340px;
+    max-width: 300px;
+  }
+
+  .workspaceWithResult .heroAvatar {
+    width: min(100%, 300px);
+    max-width: 300px;
+    height: 340px;
+  }
+
   .authGrid,
   .referenceGrid {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 430px) {
+@media (max-width: 760px) {
   .shell {
     padding: 0;
     background: #f6fbff;
     overflow-x: hidden;
+    gap: 16px;
   }
 
-  .phone {
+  .appShell {
     width: 100%;
-    max-width: 430px;
-    height: 844px;
-    min-height: 844px;
     border: 0;
     border-radius: 0;
     box-shadow: none;
-    padding: 10px 12px 92px;
-  }
-
-  .phoneWithResult {
-    height: auto;
-    overflow: hidden;
-    padding-bottom: 12px;
-  }
-
-  .statusBar {
-    height: 26px;
-    padding: 0 16px;
-    font-size: 16px;
+    padding: 18px 14px 16px;
   }
 
   .topbar {
-    grid-template-columns: minmax(130px, 1fr) auto;
-    min-height: 54px;
-    gap: 6px;
-  }
-
-  .topControls {
-    justify-content: flex-end;
-    gap: 6px;
+    min-height: 52px;
   }
 
   .brandMark {
@@ -1410,42 +1451,19 @@
     font-size: 11px;
   }
 
-  .controlPill {
-    flex: 0 0 92px;
-    min-height: 42px;
-    border-radius: 14px;
-    gap: 5px;
-    padding: 5px 6px;
-    font-size: 12px;
-  }
-
-  .controlPill svg {
-    width: 17px;
-    height: 17px;
-  }
-
-  .controlPill small {
-    font-size: 10px;
-  }
-
-  .hero {
-    min-height: 298px;
-    grid-template-columns: 0.82fr 1fr;
-    margin-top: 2px;
-  }
-
-  .heroCopy {
-    padding-bottom: 38px;
+  .workspace {
+    margin-top: 12px;
+    gap: 14px;
   }
 
   .heroCopy h1 {
-    font-size: 34px;
-    line-height: 1.12;
+    font-size: 36px;
+    line-height: 1.08;
   }
 
   .heroCopy p {
     margin-top: 10px;
-    font-size: 14px;
+    font-size: 15px;
   }
 
   .trustBadge {
@@ -1459,60 +1477,107 @@
     font-size: 10px;
   }
 
+  .topControls {
+    margin-top: 12px;
+    gap: 7px;
+  }
+
+  .controlPill {
+    min-height: 42px;
+    border-radius: 14px;
+    gap: 6px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .controlPill svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .controlPill small {
+    font-size: 10px;
+  }
+
+  .assistantPanel {
+    min-height: 278px;
+    border-radius: 20px;
+    padding: 10px;
+  }
+
+  .workspaceWithResult .assistantPanel {
+    min-height: 278px;
+  }
+
   .heroAvatar {
-    width: 248px;
-    height: 344px;
-    right: -48px;
-    bottom: 0;
+    width: min(100%, 246px);
+    height: 270px;
+  }
+
+  .workspaceWithResult .heroAvatar {
+    width: min(100%, 246px);
+    max-width: 246px;
+    height: 270px;
+  }
+
+  .heroAvatar .avatarSafetyPill {
+    left: 8px;
+    right: 8px;
+    bottom: 10px;
+    font-size: 9px;
+  }
+
+  .heroAvatar .avatarSafetyPill small {
+    font-size: 8px;
   }
 
   .avatarStatePill {
-    top: 18px;
+    top: 14px;
+    right: 8px;
     font-size: 10px;
     padding: 6px 8px;
   }
 
   .chatCard {
-    margin-top: -62px;
-    padding: 12px 14px 10px;
-    border-radius: 22px;
+    padding: 16px 14px 14px;
+    border-radius: 20px;
   }
 
   .inputHeading {
-    grid-template-columns: 1fr;
     gap: 4px;
     margin-bottom: 10px;
   }
 
   .inputHeading h2 {
-    font-size: 17px;
+    font-size: 18px;
   }
 
   .inputHeading p {
     font-size: 12px;
   }
 
-  .heroAvatar .avatarSafetyPill {
-    left: -118px;
-    right: 126px;
-    bottom: 58px;
+  .inputShell {
+    grid-template-columns: minmax(0, 1fr) 48px;
+    gap: 9px;
   }
 
   .textarea {
-    min-height: 54px;
-    padding-top: 11px;
-    padding-bottom: 8px;
-    font-size: 13px;
+    min-height: 112px;
+    padding: 13px 48px 12px 13px;
+    font-size: 15px;
   }
 
   .sendButton {
-    width: 46px;
-    height: 46px;
+    width: 48px;
+    height: 48px;
   }
 
   .micButton,
   .micActive {
-    right: 68px;
+    right: 58px;
+    top: 12px;
+    width: 34px;
+    height: 34px;
   }
 
   .featureChips {
@@ -1520,61 +1585,51 @@
   }
 
   .featureChips span {
-    min-height: 36px;
-    padding: 5px;
+    min-height: 42px;
+    padding: 6px;
   }
 
   .featureChips strong {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .featureChips small {
-    font-size: 9px;
+    font-size: 10px;
   }
 
   .actionGrid {
-    gap: 8px;
-    margin-top: 12px;
+    gap: 9px;
   }
 
   .actionCard {
-    height: 104px;
-    min-height: 0;
-    border-radius: 20px;
+    min-height: 124px;
+    border-radius: 18px;
     gap: 4px;
-    padding-top: 7px;
-    padding-left: 6px;
-    padding-right: 6px;
-    padding-bottom: 7px;
-    overflow: hidden;
+    padding: 12px 7px 10px;
   }
 
   .actionIcon {
-    width: 30px;
-    height: 30px;
+    width: 38px;
+    height: 38px;
     margin-bottom: 2px;
   }
 
   .actionIcon svg {
-    width: 19px;
-    height: 19px;
+    width: 22px;
+    height: 22px;
   }
 
   .actionCard strong {
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .actionCard small {
-    font-size: 9px;
+    font-size: 10px;
   }
 
   .actionCard > span:last-of-type {
-    display: -webkit-box;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    font-size: 8px;
-    line-height: 1.25;
+    font-size: 10px;
+    line-height: 1.32;
     margin-top: 2px;
   }
 
@@ -1583,30 +1638,11 @@
   }
 
   .emergencyBar {
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: 80px;
     min-height: 60px;
-    margin-top: 0;
     border-radius: 17px;
     padding: 10px 11px;
     gap: 9px;
     font-size: 12px;
-  }
-
-  .phoneWithResult .emergencyBar {
-    position: static;
-    margin-top: 12px;
-  }
-
-  .phoneWithResult .bottomNav {
-    position: sticky;
-    left: auto;
-    right: auto;
-    width: 100%;
-    bottom: 8px;
-    margin-top: 12px;
   }
 
   .emergencyBar small {
@@ -1614,9 +1650,7 @@
   }
 
   .bottomNav {
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
+    display: grid;
   }
 
   .accountSection,
@@ -1630,17 +1664,8 @@
   }
 }
 
-@media (max-width: 374px) {
-  .heroCopy h1 {
-    font-size: 34px;
-  }
-
-  .heroAvatar {
-    width: 246px;
-    height: 348px;
-    right: -60px;
-  }
-
+@media (max-width: 420px) {
+  .actionGrid,
   .featureChips {
     grid-template-columns: 1fr;
   }
@@ -1654,11 +1679,22 @@
     border-bottom: 0;
   }
 
-  .actionGrid {
-    grid-template-columns: 1fr;
+  .actionCard {
+    min-height: 112px;
+    justify-items: start;
+    text-align: left;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    align-content: center;
+    column-gap: 10px;
   }
 
-  .actionCard {
-    min-height: 130px;
+  .actionIcon {
+    grid-row: span 3;
+    margin-bottom: 0;
+  }
+
+  .actionCard > span:last-of-type {
+    grid-column: 2;
   }
 }
