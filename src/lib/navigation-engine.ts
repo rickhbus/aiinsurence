@@ -5,6 +5,12 @@ export type UrgencyLevel = 1 | 2 | 3 | 4;
 export type Recommendation = {
   mode: IntakeMode;
   classification: string;
+  assistantMessage?: string;
+  ai?: {
+    provider: "groq" | "openai";
+    model: string;
+    status: "generated" | "safety_locked" | "unconfigured" | "failed";
+  };
   urgency: {
     level: UrgencyLevel;
     label: string;

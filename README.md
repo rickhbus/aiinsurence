@@ -35,6 +35,29 @@ npm run dev
 
 Open http://localhost:3000.
 
+## AI Provider
+
+The app keeps deterministic safety triage first, then asks the configured model
+for the short guide message. Groq is the default provider:
+
+```bash
+GROQ_API_KEY=...
+AI_PROVIDER=groq
+GROQ_MODEL=llama-3.3-70b-versatile
+```
+
+To switch later without changing call sites:
+
+```bash
+OPENAI_API_KEY=...
+AI_PROVIDER=openai
+OPENAI_MODEL=gpt-5-mini
+```
+
+`AI_MODEL` can override the provider-specific model variable for either
+provider. If no key is configured, the UI falls back to the safe rule-based
+recommendation.
+
 ## Verification
 
 ```bash

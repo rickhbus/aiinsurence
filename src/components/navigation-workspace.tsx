@@ -25,6 +25,7 @@ import {
   DoctorAvatar,
   getDoctorAvatarState,
 } from "@/components/virtual-doctor-avatar";
+import type { NavigationGuideResponse } from "@/lib/ai/types";
 import { analyzeIntake, type IntakeMode, type Recommendation } from "@/lib/navigation-engine";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
@@ -210,7 +211,7 @@ export function NavigationWorkspace() {
     setMemoryStatus(null);
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const trimmedInput = input.trim();
 
     if (!trimmedInput) {
@@ -224,10 +225,30 @@ export function NavigationWorkspace() {
     setSavedSessionId(null);
     setMemoryStatus(null);
 
-    window.setTimeout(() => {
+    try {
+      const response = await fetch("/api/navigation/guide", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          input: trimmedInput,
+          mode: activeCard.mode,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Guide request failed with ${response.status}`);
+      }
+
+      const payload = (await response.json()) as NavigationGuideResponse;
+      setResult(payload.recommendation);
+    } catch {
       setResult(analyzeIntake(activeCard.mode, trimmedInput));
+      setMemoryStatus(
+        "AI 暫時未能連線，已顯示安全規則建議。AI connection unavailable; showing safe rule-based guidance.",
+      );
+    } finally {
       setIsSubmitting(false);
-    }, 520);
+    }
   }
 
   function handleSignOut() {
@@ -302,7 +323,7 @@ export function NavigationWorkspace() {
             session.id,
             user.id,
             "assistant",
-            `${result.classification}\n${result.nextAction}`,
+            `${result.assistantMessage ? `${result.assistantMessage}\n\n` : ""}${result.classification}\n${result.nextAction}`,
             safetyLevel,
             supabase,
           ),
@@ -421,7 +442,7 @@ export function NavigationWorkspace() {
               onChange={(event) => handleInputChange(event.target.value)}
               onKeyDown={(event) => {
                 if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-                  handleSubmit();
+                  void handleSubmit();
                 }
               }}
             />
@@ -439,7 +460,7 @@ export function NavigationWorkspace() {
               type="button"
               aria-label="提交問題"
               disabled={isSubmitting}
-              onClick={handleSubmit}
+              onClick={() => void handleSubmit()}
             >
               <ArrowRight size={25} aria-hidden="true" />
             </button>
@@ -675,6 +696,16 @@ function ResultCard({
       </div>
 
       <p className={styles.resultSummary}>{result.urgency.summary}</p>
+      {result.assistantMessage ? (
+        <div className={styles.guideMessage}>
+          <Bot size={17} aria-hidden="true" />
+          <div>
+            {result.assistantMessage.split(/\n{2,}/).map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <ResultBlock icon={ArrowRight} title="下一步 / Next step" content={result.nextAction} />
       <ResultBlock icon={Hospital} title="科別方向 / Department direction" content={result.careRoute} />
       <ResultList title="可能相關 / Possible options" items={result.possibleDepartments} />

@@ -709,6 +709,33 @@
   line-height: 1.55;
 }
 
+.guideMessage {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 10px;
+  border: 1px solid #d8eef3;
+  border-radius: 16px;
+  background: #f6fcfd;
+  color: #244560;
+  padding: 12px;
+}
+
+.guideMessage svg {
+  color: #168895;
+  margin-top: 2px;
+}
+
+.guideMessage p {
+  color: #31516d;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.guideMessage p + p {
+  margin-top: 8px;
+}
+
 .resultBlock {
   margin-top: 12px;
   display: grid;
