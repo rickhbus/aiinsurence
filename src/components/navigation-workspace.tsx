@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { HumanDoctor3D, type HumanDoctor3DState } from "@/components/human-doctor-3d";
 import { AlertTriangle, ArrowUp, Mic } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import type { NavigationGuideResponse } from "@/lib/ai/types";
@@ -10,6 +10,7 @@ import {
   type Recommendation,
 } from "@/lib/navigation-engine";
 import styles from "./human-ai-home.module.css";
+
 
 export function NavigationWorkspace() {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -115,13 +116,9 @@ export function NavigationWorkspace() {
               {getStatusLabel(visualState)}
             </div>
 
-            <Image
-              className={styles.avatarImage}
-              src="/ai-healthcare-guide.png"
-              alt="AI healthcare navigation guide, not a real doctor"
-              width={900}
-              height={1100}
-              priority
+            <HumanDoctor3D
+              state={toDoctorState(visualState)}
+              className={styles.avatar3D}
             />
 
             <div className={styles.avatarBadge}>
@@ -266,6 +263,22 @@ function getStatusLabel(state: VisualState) {
     case "ready":
     default:
       return "Ready";
+  }
+}
+
+function toDoctorState(state: VisualState): HumanDoctor3DState {
+  switch (state) {
+    case "listening":
+      return "listening";
+    case "thinking":
+      return "thinking";
+    case "explaining":
+      return "explaining";
+    case "emergency":
+      return "emergency";
+    case "ready":
+    default:
+      return "ready";
   }
 }
 
