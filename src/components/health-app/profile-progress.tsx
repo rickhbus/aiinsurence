@@ -156,7 +156,7 @@ export function MemoryPage({ locale }: { locale: Locale }) {
         groups[item.category].push(item);
         return groups;
       },
-      { profile: [], fitness: [], nutrition: [], healthcare: [], behavior: [] },
+      { profile: [], fitness: [], nutrition: [], healthcare: [], insurance: [], behavior: [] },
     );
   }, []);
 
@@ -165,6 +165,7 @@ export function MemoryPage({ locale }: { locale: Locale }) {
     fitness: { zh: "健身記憶", en: "Fitness memory" },
     nutrition: { zh: "營養記憶", en: "Nutrition memory" },
     healthcare: { zh: "醫療記憶", en: "Healthcare memory" },
+    insurance: { zh: "保險記憶", en: "Insurance memory" },
     behavior: { zh: "行為記憶", en: "Behavior memory" },
   };
 
@@ -187,9 +188,12 @@ export function MemoryPage({ locale }: { locale: Locale }) {
             {grouped[category].map((item) => (
               <Card key={item.id} className="bg-background/60">
                 <CardHeader>
-                  <CardTitle>{text(item.title, locale)}</CardTitle>
+                  <CardTitle className="flex items-center justify-between gap-3">
+                    <span>{text(item.title, locale)}</span>
+                    <Badge variant="secondary">{text(categoryLabels[item.category], locale)}</Badge>
+                  </CardTitle>
                   <CardDescription>
-                    {text(item.source, locale)} · {item.updatedAt}
+                    {text(item.source, locale)} · {locale === "zh-Hant" ? "建立日期" : "Created"}: {item.updatedAt}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

@@ -492,6 +492,15 @@ export const memoryItems: MemoryItem[] = [
   },
   {
     id: "mem-5",
+    category: "insurance",
+    title: { zh: "保險教育偏好", en: "Insurance education preference" },
+    content: { zh: "想理解保障類型、常見不保事項和索償文件，不需要產品推薦。", en: "Wants to understand coverage types, common exclusions, and claim documents, not product recommendations." },
+    source: { zh: "使用者確認", en: "User confirmed" },
+    consentStatus: "saved",
+    updatedAt: "2026-05-11",
+  },
+  {
+    id: "mem-6",
     category: "behavior",
     title: { zh: "提醒風格", en: "Reminder style" },
     content: { zh: "喜歡短、實用、不誇張的提示。", en: "Likes short, practical reminders without hype." },
@@ -523,9 +532,9 @@ export const suggestedPrompts = [
   { zh: "減脂應該吃甚麼？", en: "What should I eat for fat loss?" },
   { zh: "建立今週健身計劃", en: "Create a gym plan for this week" },
   { zh: "用簡單方式解釋蛋白質", en: "Explain protein in simple terms" },
-  { zh: "跑步膝痛要留意甚麼？", en: "I have knee pain when running, what should I consider?" },
-  { zh: "我應該看普通科、專科還是急症？", en: "Should I go to a GP, specialist, or emergency care?" },
-  { zh: "幫我理解保險保障", en: "Help me understand my insurance coverage" },
+  { zh: "跑步膝蓋不適怎樣處理？", en: "What should I do about knee discomfort when running?" },
+  { zh: "應該看普通科、專科或急症？", en: "Should I see a GP, specialist, or emergency care?" },
+  { zh: "整理保險索償文件", en: "Organize insurance claim documents" },
 ];
 
 export const foodRecommendations = [

@@ -42,7 +42,7 @@ export function ProgressChart({
   if (!mounted) {
     return (
       <div
-        className={cn("grid h-40 min-h-40 w-full place-items-center rounded-lg bg-muted/35", className)}
+        className={cn("grid h-40 min-h-40 w-full min-w-0 place-items-center rounded-lg bg-muted/35", className)}
         style={{ height }}
         aria-hidden="true"
       />
@@ -50,7 +50,7 @@ export function ProgressChart({
   }
 
   return (
-    <div className={cn("h-40 min-h-40 w-full", className)} style={{ height }}>
+    <div className={cn("h-40 min-h-40 w-full min-w-0 overflow-hidden", className)} style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         {variant === "bar" ? (
           <BarChart data={data} margin={{ top: 8, right: 0, left: -24, bottom: 0 }}>

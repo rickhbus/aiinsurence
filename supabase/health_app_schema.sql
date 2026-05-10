@@ -19,7 +19,7 @@ create table if not exists public.profiles (
 create table if not exists public.health_memory (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  memory_type text not null check (memory_type in ('profile', 'fitness', 'nutrition', 'healthcare', 'behavior')),
+  memory_type text not null check (memory_type in ('profile', 'fitness', 'nutrition', 'healthcare', 'insurance', 'behavior')),
   content text not null,
   source text not null default 'user_confirmed',
   consent_status text not null default 'saved' check (consent_status in ('saved', 'declined', 'edited', 'deleted')),
@@ -148,6 +148,33 @@ create table if not exists public.ai_recommendations (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.symptom_checks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  symptom_text text not null,
+  duration text,
+  severity text check (severity in ('mild', 'moderate', 'severe')),
+  red_flags text[] not null default '{}',
+  public_private_preference text check (public_private_preference in ('public', 'private', 'either', 'not_sure')),
+  suggested_next_step text check (suggested_next_step in ('self_care_education', 'gp_family_doctor', 'specialist', 'ae_emergency')),
+  safety_locked boolean not null default false,
+  disclaimer text not null default '這不是診斷。',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.insurance_notes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  insurance_type text not null check (insurance_type in ('hospital', 'outpatient', 'critical_illness', 'accident', 'dental', 'travel', 'other')),
+  topic text not null,
+  notes text,
+  claim_documents text[] not null default '{}',
+  questions_to_ask text[] not null default '{}',
+  disclaimer text not null default 'This is general insurance education, not product advice or a claim guarantee.',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 alter table public.profiles enable row level security;
 alter table public.health_memory enable row level security;
 alter table public.workouts enable row level security;
@@ -159,6 +186,8 @@ alter table public.body_metrics enable row level security;
 alter table public.sleep_logs enable row level security;
 alter table public.goals enable row level security;
 alter table public.ai_recommendations enable row level security;
+alter table public.symptom_checks enable row level security;
+alter table public.insurance_notes enable row level security;
 
 create policy "profiles are private" on public.profiles
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
@@ -191,6 +220,12 @@ create policy "goals are private" on public.goals
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create policy "recommendations are private" on public.ai_recommendations
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "symptom checks are private" on public.symptom_checks
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "insurance notes are private" on public.insurance_notes
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create policy "lessons are readable by everyone" on public.health_lessons

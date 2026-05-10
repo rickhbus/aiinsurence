@@ -107,6 +107,7 @@ export type MemoryCategory =
   | "fitness"
   | "nutrition"
   | "healthcare"
+  | "insurance"
   | "behavior";
 
 export type MemoryItem = {

@@ -296,10 +296,89 @@ export function GenericTrackerPage({ page, locale }: { page: HealthPage; locale:
           </Button>
         </CardContent>
       </Card>
+      <SpecificTrackerPanel page={page} locale={locale} />
       {page === "sleep" ? <SleepCard locale={locale} /> : null}
       {page === "water" ? <WaterCard locale={locale} /> : null}
     </div>
   );
+}
+
+function SpecificTrackerPanel({ page, locale }: { page: HealthPage; locale: Locale }) {
+  if (page === "sleep") {
+    return (
+      <Card className="bg-card/80 shadow-sm">
+        <CardHeader>
+          <CardTitle>{locale === "zh-Hant" ? "睡眠詳情" : "Sleep details"}</CardTitle>
+          <CardDescription>{locale === "zh-Hant" ? "記錄睡眠時間、質素和作息一致性。" : "Track sleep hours, quality, and schedule consistency."}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-3">
+          <FormInput label={{ zh: "睡眠小時", en: "Sleep hours" }} locale={locale} placeholder="7.2" />
+          <FormInput label={{ zh: "睡眠質素 1-10", en: "Sleep quality 1-10" }} locale={locale} placeholder="8" />
+          <FormInput label={{ zh: "一致性", en: "Consistency" }} locale={locale} placeholder="22:45 - 06:45" />
+          <FormInput label={{ zh: "上床時間", en: "Bedtime" }} locale={locale} placeholder="22:45" />
+          <FormInput label={{ zh: "起床時間", en: "Wake time" }} locale={locale} placeholder="06:45" />
+          <div className="rounded-lg bg-muted/45 p-3 text-sm leading-6 text-muted-foreground">
+            {locale === "zh-Hant"
+              ? "AI 睡眠建議：今晚先把睡前手機時間縮短 15 分鐘。"
+              : "AI sleep suggestion: reduce late phone time by 15 minutes tonight."}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (page === "water") {
+    return (
+      <Card className="bg-card/80 shadow-sm">
+        <CardHeader>
+          <CardTitle>{locale === "zh-Hant" ? "飲水目標" : "Hydration goal"}</CardTitle>
+          <CardDescription>{locale === "zh-Hant" ? "快速新增 250ml、500ml 或自訂飲水量。" : "Quick add 250ml, 500ml, or a custom amount."}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_2fr]">
+          <Button variant="outline">250ml</Button>
+          <Button variant="outline">500ml</Button>
+          <Input placeholder={locale === "zh-Hant" ? "自訂 ml" : "Custom ml"} aria-label={locale === "zh-Hant" ? "自訂飲水量" : "Custom water amount"} />
+          <div className="rounded-lg bg-muted/45 p-3 text-sm leading-6 text-muted-foreground">
+            {locale === "zh-Hant" ? "今日目標 3.0L，連續 5 日達標。" : "Daily goal 3.0L, 5-day hydration streak."}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (page === "body") {
+    return (
+      <Card className="bg-card/80 shadow-sm">
+        <CardHeader>
+          <CardTitle>{locale === "zh-Hant" ? "身體指標趨勢" : "Body metrics trend"}</CardTitle>
+          <CardDescription>{locale === "zh-Hant" ? "看長期趨勢，不被單日波動影響。" : "Read long-term trends, not single-day changes."}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-5 lg:grid-cols-[360px_1fr]">
+          <div className="grid gap-3">
+            <FormInput label={{ zh: "體重 kg", en: "Weight kg" }} locale={locale} placeholder="72.4" />
+            <FormInput label={{ zh: "腰圍 cm", en: "Waist cm" }} locale={locale} placeholder="82" />
+            <FormInput label={{ zh: "體脂（可選）", en: "Body fat optional" }} locale={locale} placeholder="18%" />
+            <label className="grid gap-2 text-sm font-medium">
+              {locale === "zh-Hant" ? "備註" : "Notes"}
+              <Textarea placeholder={locale === "zh-Hant" ? "例如：早上空腹量度。" : "Example: measured fasted in the morning."} />
+            </label>
+          </div>
+          <ProgressChart
+            data={[
+              { label: "W1", value: 73.1 },
+              { label: "W2", value: 72.8 },
+              { label: "W3", value: 72.6 },
+              { label: "W4", value: 72.4 },
+            ]}
+            variant="line"
+            height={220}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return null;
 }
 
 function QuickAddRunForm({ locale }: { locale: Locale }) {

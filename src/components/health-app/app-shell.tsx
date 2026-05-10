@@ -31,24 +31,40 @@ export function HealthAppShell({
   lessonSlug?: string;
 }) {
   const [locale, setLocale] = useState<Locale>("zh-Hant");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [coachOpen, setCoachOpen] = useState(true);
   const showRightCoach = currentPage !== "coach" && currentPage !== "auth";
 
   return (
-    <div className="min-h-dvh bg-[radial-gradient(circle_at_top_left,var(--health-glow),transparent_32rem),linear-gradient(135deg,var(--health-bg-start),var(--background)_42%,var(--health-bg-end))]">
+    <div className="min-h-dvh bg-[linear-gradient(135deg,var(--health-bg-start),var(--background)_46%,var(--health-bg-end))]">
       <div className="flex min-h-dvh">
-        <Sidebar currentPage={currentPage} locale={locale} />
+        <Sidebar
+          currentPage={currentPage}
+          locale={locale}
+          collapsed={sidebarCollapsed}
+          onCollapsedChange={setSidebarCollapsed}
+        />
         <div className="flex min-w-0 flex-1 flex-col">
-          <TopHeader currentPage={currentPage} locale={locale} setLocale={setLocale} />
+          <TopHeader
+            currentPage={currentPage}
+            locale={locale}
+            setLocale={setLocale}
+            sidebarCollapsed={sidebarCollapsed}
+            onSidebarToggle={() => setSidebarCollapsed((current) => !current)}
+            coachOpen={coachOpen}
+            onCoachToggle={() => setCoachOpen((current) => !current)}
+            showCoachToggle={showRightCoach}
+          />
           <main
             className={cn(
-              "mx-auto w-full max-w-[1480px] flex-1 px-4 pb-28 pt-5 lg:px-6 lg:pb-8",
-              showRightCoach ? "xl:max-w-[1120px]" : "xl:max-w-[1240px]",
+              "mx-auto w-full flex-1 px-4 pb-28 pt-5 lg:px-6 lg:pb-8",
+              showRightCoach && coachOpen ? "xl:max-w-[1180px]" : "xl:max-w-[1360px]",
             )}
           >
             <PageContent currentPage={currentPage} lessonSlug={lessonSlug} locale={locale} />
           </main>
         </div>
-        {showRightCoach ? <RightCoachPanel locale={locale} /> : null}
+        {showRightCoach && coachOpen ? <RightCoachPanel locale={locale} onClose={() => setCoachOpen(false)} /> : null}
         <MobileBottomNav currentPage={currentPage} locale={locale} />
         <QuickAddButton locale={locale} />
       </div>

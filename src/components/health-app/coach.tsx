@@ -2,35 +2,34 @@
 
 import {
   Brain,
-  ClipboardCheck,
   DatabaseZap,
+  Mic,
   Send,
   ShieldAlert,
   Sparkles,
   Stethoscope,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { coachMessages, memoryItems, suggestedPrompts } from "@/lib/health-app/mock-data";
 import { emergencyCopy, label, safetyCopy, text, ui } from "@/lib/health-app/i18n";
 import type { Locale } from "@/lib/health-app/types";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { MemoryConsentCard } from "./memory-consent-card";
 
-export function RightCoachPanel({ locale }: { locale: Locale }) {
+export function RightCoachPanel({ locale, onClose }: { locale: Locale; onClose?: () => void }) {
   return (
-    <aside className="sticky top-0 hidden h-dvh w-[360px] shrink-0 border-l bg-background/72 p-4 backdrop-blur-xl xl:flex xl:flex-col">
-      <CoachSurface locale={locale} compact />
+    <aside className="sticky top-0 hidden h-dvh w-[360px] shrink-0 overflow-y-auto border-l bg-background/82 p-3 backdrop-blur-xl xl:flex xl:flex-col">
+      <CoachSurface locale={locale} compact onClose={onClose} />
     </aside>
   );
 }
@@ -43,7 +42,15 @@ export function CoachPage({ locale }: { locale: Locale }) {
   );
 }
 
-export function CoachSurface({ locale, compact = false }: { locale: Locale; compact?: boolean }) {
+export function CoachSurface({
+  locale,
+  compact = false,
+  onClose,
+}: {
+  locale: Locale;
+  compact?: boolean;
+  onClose?: () => void;
+}) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState(coachMessages);
 
@@ -59,102 +66,116 @@ export function CoachSurface({ locale, compact = false }: { locale: Locale; comp
       {
         role: "assistant",
         content: {
-          zh: "我會用安全方式處理：先檢查是否有緊急警號，再根據你的近期訓練、飲食和偏好給一個實際下一步。這不是診斷。",
-          en: "I’ll handle this safely: first check urgent warning signs, then use your recent training, food, and preferences to suggest one practical next step. This is not a diagnosis.",
+          zh: "我會先檢查緊急警號，再用你的近期訓練、飲食和偏好，給一個安全、實際的下一步。這不是診斷。",
+          en: "I’ll first check urgent warning signs, then use your recent training, food, and preferences to give one safe practical next step. This is not a diagnosis.",
         },
       },
     ]);
     setInput("");
   }
 
-  return (
-    <Card className="flex min-h-[calc(100dvh-7rem)] flex-col bg-card/82 shadow-sm backdrop-blur-md xl:min-h-0 xl:flex-1">
-      <CardHeader className="gap-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <span className="grid size-11 place-items-center rounded-lg bg-primary text-primary-foreground">
-              <Brain aria-hidden="true" />
-            </span>
-            <div>
-              <CardTitle>{text(ui.coach, locale)}</CardTitle>
-              <CardDescription>
-                {locale === "zh-Hant"
-                  ? "友善、實用、教育式，並會保留安全邊界。"
-                  : "Friendly, practical, educational, and safety-bounded."}
-              </CardDescription>
-            </div>
-          </div>
-          <Button variant="outline" size="sm">
-            <Sparkles data-icon="inline-start" aria-hidden="true" />
-            {locale === "zh-Hant" ? "今日建議" : "Today"}
-          </Button>
-        </div>
-      </CardHeader>
+  const surface = (
+    <div className={cn("flex min-h-0 flex-1 flex-col gap-4", compact ? "h-full" : "min-h-[calc(100dvh-7rem)]")}>
+      <CoachHeader locale={locale} compact={compact} onClose={onClose} />
 
-      <CardContent className="flex min-h-0 flex-1 flex-col gap-4">
-        <div className="rounded-lg border bg-muted/35 p-3 text-xs leading-5 text-muted-foreground">
-          <strong className="text-foreground">{label(ui.safety, locale)}: </strong>
+      <StatusChips locale={locale} />
+
+      <SectionFrame
+        icon={ShieldAlert}
+        title={label(ui.safety, locale)}
+        tone="danger"
+      >
+        <p className="text-xs leading-5 text-muted-foreground">
           {locale === "zh-Hant" ? safetyCopy.zh : safetyCopy.en}
+        </p>
+      </SectionFrame>
+
+      <SectionFrame
+        icon={Sparkles}
+        title={locale === "zh-Hant" ? "今日 AI 建議" : "Today AI Recommendation"}
+      >
+        <div className="grid gap-2 text-sm leading-6">
+          <p className="font-medium">
+            {locale === "zh-Hant" ? "上身力量 30 分鐘 + 午餐加蛋白質" : "Upper-body strength 30 min + protein at lunch"}
+          </p>
+          <p className="text-muted-foreground">
+            {locale === "zh-Hant"
+              ? "原因：昨日跑步較用力，今天以維持活動和恢復為主。"
+              : "Reason: yesterday’s run was harder, so today should maintain activity and recovery."}
+          </p>
+          <p className="text-muted-foreground">
+            {locale === "zh-Hant"
+              ? "行動：完成 4 個上身動作，各 2-3 組，RPE 6-7。"
+              : "Action: complete four upper-body movements, 2-3 sets each, RPE 6-7."}
+          </p>
+          <p className="text-muted-foreground">
+            {locale === "zh-Hant"
+              ? "安全：如有胸痛、嚴重氣促或痛楚惡化，停止並求醫。"
+              : "Safety: stop and seek care for chest pain, severe breathlessness, or worsening pain."}
+          </p>
         </div>
+      </SectionFrame>
 
-        <ScrollArea className={compact ? "h-[30dvh] min-h-56" : "h-[42dvh] min-h-72"}>
-          <div className="flex flex-col gap-3 pr-3">
-            {messages.map((message, index) => (
-              <div
-                key={`${message.role}-${index}`}
-                className={
-                  message.role === "user"
-                    ? "ml-8 rounded-lg bg-primary p-3 text-sm leading-6 text-primary-foreground"
-                    : "mr-8 rounded-lg bg-muted/55 p-3 text-sm leading-6 text-muted-foreground"
-                }
-              >
-                {text(message.content, locale)}
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
+      <div className="flex flex-wrap gap-2">
+        {suggestedPrompts.slice(0, compact ? 7 : suggestedPrompts.length).map((prompt) => (
+          <Button
+            key={prompt.en}
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-auto min-h-8 whitespace-normal rounded-2xl text-left"
+            onClick={() => sendMessage(text(prompt, locale))}
+          >
+            {text(prompt, locale)}
+          </Button>
+        ))}
+      </div>
 
-        <div className="flex flex-wrap gap-2">
-          {suggestedPrompts.slice(0, compact ? 4 : suggestedPrompts.length).map((prompt) => (
-            <Button
-              key={prompt.en}
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-auto min-h-8 whitespace-normal text-left"
-              onClick={() => sendMessage(text(prompt, locale))}
+      <ScrollArea className={cn("min-h-0 rounded-2xl border bg-background/50", compact ? "h-[24dvh]" : "h-[34dvh]")}>
+        <div className="flex flex-col gap-3 p-3">
+          {messages.map((message, index) => (
+            <div
+              key={`${message.role}-${index}`}
+              className={cn(
+                "max-w-[92%] rounded-2xl p-3 text-sm leading-6",
+                message.role === "user"
+                  ? "ml-auto bg-primary text-primary-foreground"
+                  : "mr-auto bg-muted/65 text-muted-foreground",
+              )}
             >
-              {text(prompt, locale)}
-            </Button>
+              {text(message.content, locale)}
+            </div>
           ))}
         </div>
+      </ScrollArea>
 
+      {!compact ? (
         <div className="grid gap-3 md:grid-cols-2">
           <CoachInfoPanel
             icon={DatabaseZap}
             title={locale === "zh-Hant" ? "健康記憶摘要" : "Memory summary"}
-            lines={memoryItems.slice(0, 3).map((item) => text(item.content, locale))}
+            lines={memoryItems.slice(0, 4).map((item) => text(item.content, locale))}
           />
           <CoachInfoPanel
-            icon={ClipboardCheck}
-            title={locale === "zh-Hant" ? "快捷操作" : "Quick actions"}
+            icon={Stethoscope}
+            title={locale === "zh-Hant" ? "安全邊界" : "Safety boundary"}
             lines={[
-              locale === "zh-Hant" ? "新增跑步 / 健身 / 飲食紀錄" : "Add run / gym / food log",
-              locale === "zh-Hant" ? "檢查普通科、專科或急症方向" : "Check GP, specialist, or emergency route",
-              locale === "zh-Hant" ? "整理保險索償文件" : "Organize claim documents",
+              locale === "zh-Hant" ? "不診斷、不處方、不取代醫生。" : "No diagnosis, prescribing, or replacement for clinicians.",
+              locale === "zh-Hant" ? "保險內容只作教育，不作銷售建議。" : "Insurance content is education, not sales advice.",
+              locale === "zh-Hant" ? "記憶需要你確認才保存。" : "Memory is saved only after confirmation.",
             ]}
           />
         </div>
+      ) : null}
 
-        {!compact ? <MemoryConsentCard locale={locale} /> : null}
+      {!compact ? <MemoryConsentCard locale={locale} /> : null}
 
-        <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-xs leading-5 text-muted-foreground">
-          <ShieldAlert aria-hidden="true" className="mb-2 text-destructive" />
-          {locale === "zh-Hant" ? emergencyCopy.zh : emergencyCopy.en}
-        </div>
-      </CardContent>
+      <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-3 text-xs leading-5 text-muted-foreground">
+        <ShieldAlert aria-hidden="true" className="mb-2 text-destructive" />
+        {locale === "zh-Hant" ? emergencyCopy.zh : emergencyCopy.en}
+      </div>
 
-      <CardFooter className="flex flex-col gap-3">
+      <div className="mt-auto flex flex-col gap-3 rounded-2xl border bg-background/65 p-3">
         <Textarea
           value={input}
           onChange={(event) => setInput(event.target.value)}
@@ -164,20 +185,102 @@ export function CoachSurface({ locale, compact = false }: { locale: Locale; comp
               : "Ask about today’s workout, meals, care navigation, or insurance concepts..."
           }
           aria-label={text(ui.coach, locale)}
-          className="min-h-20"
+          className="min-h-16 rounded-xl border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
         />
         <div className="flex w-full gap-2">
-          <Button type="button" className="flex-1" onClick={() => sendMessage()}>
+          <Button type="button" className="flex-1 rounded-xl" onClick={() => sendMessage()}>
             <Send data-icon="inline-start" aria-hidden="true" />
             {locale === "zh-Hant" ? "傳送" : "Send"}
           </Button>
-          <Button type="button" variant="outline">
-            <Stethoscope data-icon="inline-start" aria-hidden="true" />
-            {locale === "zh-Hant" ? "導航" : "Route"}
+          <Button type="button" variant="outline" size="icon" aria-label={locale === "zh-Hant" ? "語音輸入佔位" : "Voice input placeholder"}>
+            <Mic aria-hidden="true" />
           </Button>
         </div>
-      </CardFooter>
+      </div>
+    </div>
+  );
+
+  if (compact) {
+    return surface;
+  }
+
+  return (
+    <Card className="bg-card/86 shadow-sm backdrop-blur-md">
+      <CardContent className="pt-0">{surface}</CardContent>
     </Card>
+  );
+}
+
+function CoachHeader({
+  locale,
+  compact,
+  onClose,
+}: {
+  locale: Locale;
+  compact: boolean;
+  onClose?: () => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-2xl border bg-card/78 p-3 shadow-sm">
+      <div className="flex items-start gap-3">
+        <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground">
+          <Brain aria-hidden="true" />
+        </span>
+        <div>
+          <h2 className="text-base font-semibold tracking-normal">{text(ui.coach, locale)}</h2>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            {locale === "zh-Hant"
+              ? "友善、實用、教育式，並會保留安全邊界。"
+              : "Friendly, practical, educational, and safety-bounded."}
+          </p>
+        </div>
+      </div>
+      {compact && onClose ? (
+        <Button variant="ghost" size="icon-sm" aria-label={locale === "zh-Hant" ? "關閉教練" : "Close coach"} onClick={onClose}>
+          <X aria-hidden="true" />
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+function StatusChips({ locale }: { locale: Locale }) {
+  const items = [
+    locale === "zh-Hant" ? "記憶: 開啟" : "Memory: on",
+    locale === "zh-Hant" ? "語言: 繁體中文" : "Language: Traditional Chinese",
+    locale === "zh-Hant" ? "安全模式: 開啟" : "Safety mode: on",
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {items.map((item) => (
+        <Badge key={item} variant="secondary">
+          {item}
+        </Badge>
+      ))}
+    </div>
+  );
+}
+
+function SectionFrame({
+  icon: Icon,
+  title,
+  tone = "default",
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  tone?: "default" | "danger";
+  children: React.ReactNode;
+}) {
+  return (
+    <section className={cn("rounded-2xl border bg-background/62 p-3", tone === "danger" && "border-destructive/20 bg-destructive/5")}>
+      <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+        <Icon aria-hidden="true" className={tone === "danger" ? "text-destructive" : "text-primary"} />
+        {title}
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -191,7 +294,7 @@ function CoachInfoPanel({
   lines: string[];
 }) {
   return (
-    <div className="rounded-lg border bg-background/65 p-3">
+    <div className="rounded-2xl border bg-background/65 p-3">
       <div className="mb-2 flex items-center gap-2 font-medium">
         <Icon aria-hidden="true" />
         {title}

@@ -18,8 +18,8 @@ import { Textarea } from "@/components/ui/textarea";
 export function MemoryConsentCard({
   locale,
   defaultText = {
-    zh: "使用者偏好少糖餐單，並在跑步時偶爾膝部不適。",
-    en: "User prefers low-sugar meals and has occasional knee discomfort during running.",
+    zh: "使用者偏好高蛋白、少糖、香港本地食物，並表示跑步時偶爾膝蓋不適。",
+    en: "User prefers high-protein, lower-sugar Hong Kong local food, and reports occasional knee discomfort when running.",
   },
 }: {
   locale: Locale;
@@ -37,7 +37,7 @@ export function MemoryConsentCard({
           </span>
           <div>
             <CardTitle>
-              {locale === "zh-Hant" ? "保存到你的健康記憶？" : "Save this to your health memory?"}
+              {locale === "zh-Hant" ? "是否儲存到健康記憶？" : "Save this to Health Memory?"}
             </CardTitle>
             <CardDescription>
               {locale === "zh-Hant"
@@ -67,11 +67,11 @@ export function MemoryConsentCard({
       <CardFooter className="flex flex-wrap gap-2">
         <Button type="button" disabled={status === "saved"} onClick={() => setStatus("saved")}>
           <Check data-icon="inline-start" aria-hidden="true" />
-          {label(ui.save, locale)}
+          {locale === "zh-Hant" ? "儲存" : label(ui.save, locale)}
         </Button>
         <Button type="button" variant="outline" onClick={() => setStatus("declined")}>
           <X data-icon="inline-start" aria-hidden="true" />
-          {label(ui.dontSave, locale)}
+          {locale === "zh-Hant" ? "不儲存" : label(ui.dontSave, locale)}
         </Button>
         <Button type="button" variant="ghost" onClick={() => setStatus("editing")}>
           <Edit3 data-icon="inline-start" aria-hidden="true" />
