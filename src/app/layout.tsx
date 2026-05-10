@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "香港 AI 醫療及保險導航",
+  title: "AI Health Guide / 智健導航",
   description:
-    "A Hong Kong-focused virtual AI doctor and insurance navigation assistant for safe care routing, coverage education, and human escalation.",
+    "A bilingual Hong Kong health, fitness, nutrition, AI coaching, healthcare navigation, and insurance education app with consent-based health memory.",
 };
 
 export default function RootLayout({
