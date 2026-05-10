@@ -2,12 +2,11 @@
 
 import {
   HumanDoctor3D,
-  type DoctorEmotion,
-  type HumanDoctor3DState,
 } from "@/components/human-doctor-3d";
 import { AlertTriangle, ArrowUp, Mic, Volume2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { NavigationGuideResponse } from "@/lib/ai/types";
+import { deriveDoctorAffect } from "@/lib/doctor-emotion-engine";
 import {
   analyzeIntake,
   type IntakeMode,
@@ -45,19 +44,20 @@ export function NavigationWorkspace() {
     !isRecording &&
     !result;
 
-  const doctorState = getDoctorState({
-    input,
-    isRecording,
-    isSubmitting,
-    result,
-    showGreeting: shouldShowGreeting,
-  });
-  const doctorEmotion = getDoctorEmotion({
-    input,
-    isRecording,
-    isSubmitting,
-    result,
-  });
+  const doctorAffect = useMemo(
+    () =>
+      deriveDoctorAffect({
+        input,
+        isRecording,
+        isSubmitting,
+        mode: inferredMode,
+        result,
+        showGreeting: shouldShowGreeting,
+      }),
+    [inferredMode, input, isRecording, isSubmitting, result, shouldShowGreeting],
+  );
+  const doctorState = doctorAffect.state;
+  const doctorEmotion = doctorAffect.emotion;
 
   useEffect(() => {
     if (
@@ -297,72 +297,6 @@ export function NavigationWorkspace() {
       </section>
     </main>
   );
-}
-
-function getDoctorState({
-  input,
-  isRecording,
-  isSubmitting,
-  result,
-  showGreeting,
-}: {
-  input: string;
-  isRecording: boolean;
-  isSubmitting: boolean;
-  result: Recommendation | null;
-  showGreeting: boolean;
-}): HumanDoctor3DState {
-  if (result?.urgency.level === 1) {
-    return "emergency";
-  }
-
-  if (isSubmitting) {
-    return "thinking";
-  }
-
-  if (result || showGreeting) {
-    return "explaining";
-  }
-
-  if (isRecording || input.trim().length > 0) {
-    return "listening";
-  }
-
-  return "ready";
-}
-
-function getDoctorEmotion({
-  input,
-  isRecording,
-  isSubmitting,
-  result,
-}: {
-  input: string;
-  isRecording: boolean;
-  isSubmitting: boolean;
-  result: Recommendation | null;
-}): DoctorEmotion {
-  if (result?.urgency.level === 1) {
-    return "urgent";
-  }
-
-  if (isSubmitting) {
-    return "focused";
-  }
-
-  if (result?.urgency.level === 2) {
-    return "concerned";
-  }
-
-  if (result) {
-    return "reassuring";
-  }
-
-  if (isRecording || input.trim().length > 0) {
-    return "listening";
-  }
-
-  return "warm";
 }
 
 function inferMode(text: string): IntakeMode {

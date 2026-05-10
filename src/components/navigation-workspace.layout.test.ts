@@ -28,11 +28,13 @@ describe("human AI assistant home layout", () => {
     expect(doctorCss).toMatch(/@media \(max-width:\s*520px\)\s*\{[\s\S]*\.stage\s*\{[\s\S]*width:\s*min\(78vw,\s*380px\)/);
     expect(component).toContain('aria-label="AI healthcare guide"');
     expect(component).toContain("styles.titleIntro");
+    expect(component).toContain("deriveDoctorAffect");
     expect(component).toContain('placeholder="請描述症狀、照護或保險問題..."');
     expect(component).toContain("analyzeIntake(mode, trimmedInput)");
     expect(component).toContain("deterministicResult.urgency.level === 1");
     expect(doctorComponent).toContain('const MODEL_PATH = "/models/ai-doctor-guide.glb"');
     expect(doctorComponent).toContain("const TARGET_MODEL_HEIGHT = 2.86");
+    expect(doctorComponent).toContain("const BASE_MODEL_ROTATION_X = 0.072");
     expect(doctorComponent).toContain("const CAMERA_LOOK_AT");
   });
 });

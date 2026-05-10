@@ -46,10 +46,10 @@ export type HumanDoctor3DProps = {
 const MODEL_PATH = "/models/ai-doctor-guide.glb";
 const TARGET_MODEL_HEIGHT = 2.86;
 const MODEL_Y_OFFSET = -1.16;
-const BASE_MODEL_ROTATION_X = 0.044;
+const BASE_MODEL_ROTATION_X = 0.072;
 const BASE_MODEL_ROTATION_Y = 0;
-const CAMERA_POSITION: [number, number, number] = [0, 0.64, 4.18];
-const CAMERA_LOOK_AT: [number, number, number] = [0, 0.12, 0];
+const CAMERA_POSITION: [number, number, number] = [0, 0.58, 4.18];
+const CAMERA_LOOK_AT: [number, number, number] = [0, 0.18, 0];
 const CAMERA_FOV = 33;
 
 const stateLabel: Record<HumanDoctor3DState, string> = {
