@@ -249,13 +249,17 @@
 
 @media (max-width: 520px) {
   .stage {
-    width: min(112vw, 480px);
-    height: 470px;
-    min-height: 470px;
+    width: min(82vw, 420px);
+    height: clamp(330px, 52svh, 400px);
+    min-height: 0;
   }
 
   .glow {
-    inset: 6% 4% 2%;
+    inset: 10% 4% 4%;
+  }
+
+  .statusPill {
+    top: 8px;
   }
 
   .emergencyBadge {

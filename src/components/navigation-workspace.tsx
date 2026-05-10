@@ -162,7 +162,7 @@ export function NavigationWorkspace() {
         <div className={styles.hero}>
           <div className={styles.heroCopy}>
             <h1>
-              你好，我係你的
+              <span className={styles.titleIntro}>你好，我係你的</span>
               <span>AI 醫療導航</span>
             </h1>
             <p>

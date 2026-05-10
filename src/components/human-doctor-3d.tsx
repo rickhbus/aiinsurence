@@ -44,7 +44,7 @@ export type HumanDoctor3DProps = {
 };
 
 const MODEL_PATH = "/models/ai-doctor-guide.glb";
-const TARGET_MODEL_HEIGHT = 3.6;
+const TARGET_MODEL_HEIGHT = 3.28;
 const MODEL_Y_OFFSET = -1.54;
 const BASE_MODEL_ROTATION_X = 0;
 const BASE_MODEL_ROTATION_Y = 0;

@@ -41,13 +41,21 @@
 .heroCopy h1 {
   margin: 0;
   color: #07182f;
-  font-size: clamp(44px, 5.5vw, 76px);
+  font-size: clamp(2rem, 8vw, 4.5rem);
   font-weight: 900;
   letter-spacing: 0;
-  line-height: 0.98;
+  line-height: 0.95;
 }
 
-.heroCopy h1 span {
+.titleIntro {
+  display: block;
+  color: #21405a;
+  font-size: 0.58em;
+  line-height: 1.05;
+  margin-bottom: 0.16em;
+}
+
+.heroCopy h1 span:not(.titleIntro) {
   display: block;
   color: #0f5367;
 }
@@ -387,10 +395,10 @@
 .safetyNote {
   justify-self: center;
   margin: 14px 0 0;
-  color: #61778d;
-  font-size: 11px;
+  color: #405871;
+  font-size: 0.85rem;
   font-weight: 650;
-  opacity: 0.68;
+  opacity: 0.75;
 }
 
 @media (max-width: 920px) {
@@ -413,8 +421,8 @@
   }
 
   .heroCopy h1 {
-    font-size: clamp(38px, 9vw, 58px);
-    line-height: 1.04;
+    font-size: clamp(2rem, 8vw, 3.625rem);
+    line-height: 0.96;
   }
 
   .heroCopy p {
@@ -487,16 +495,17 @@
 
 @media (max-width: 560px) {
   .shell {
-    padding: 0 0 18px;
+    padding: 0 0 16px;
   }
 
   .home {
     width: 100%;
     min-height: 100svh;
-    padding: 28px 0 0;
+    padding: max(18px, env(safe-area-inset-top)) 0 0;
   }
 
   .hero {
+    gap: 0;
     padding: 0 16px;
   }
 
@@ -506,40 +515,51 @@
   }
 
   .heroCopy h1 {
-    font-size: clamp(36px, 12vw, 48px);
+    font-size: clamp(2rem, 8vw, 2.8rem);
+    line-height: 0.96;
+  }
+
+  .titleIntro {
+    font-size: 0.62em;
+    margin-bottom: 0.2em;
   }
 
   .heroCopy p {
     max-width: 330px;
-    margin-left: 0;
-    font-size: 15px;
+    margin: 10px 0 0;
+    font-size: 14px;
+    line-height: 1.48;
   }
 
   .avatarPanel {
-    min-height: 470px;
+    min-height: clamp(310px, 50svh, 390px);
     width: 100%;
+    margin: 1rem auto 0;
   }
 
   .avatarHero {
-    width: min(112vw, 480px);
-    height: 470px;
-    min-height: 470px;
+    width: min(82vw, 420px);
+    height: clamp(330px, 52svh, 400px);
+    min-height: 0;
   }
 
   .greetingBubble {
-    left: 5%;
-    top: 25%;
+    left: 8%;
+    top: 18%;
     max-width: 235px;
     border-radius: 18px;
     padding: 10px 11px;
   }
 
   .inputDock {
-    width: min(calc(100% - 24px), 760px);
+    position: sticky;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    width: auto;
     min-height: 72px;
+    justify-self: stretch;
     grid-template-columns: minmax(0, 1fr) 46px 48px;
     gap: 8px;
-    margin-top: -18px;
+    margin: 8px 12px 0;
     padding: 10px;
     border-radius: 26px;
   }

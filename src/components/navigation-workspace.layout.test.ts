@@ -1,29 +1,37 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-describe("minimal AI assistant home layout", () => {
-  it("keeps the home experience centered, sparse, and assistant-led", () => {
-    const css = readFileSync(
-      new URL("./navigation-workspace.module.css", import.meta.url),
+describe("human AI assistant home layout", () => {
+  it("keeps the mobile avatar, greeting, input, and disclaimer controlled", () => {
+    const homeCss = readFileSync(
+      new URL("./human-ai-home.module.css", import.meta.url),
+      "utf8",
+    );
+    const doctorCss = readFileSync(
+      new URL("./human-doctor-3d.module.css", import.meta.url),
       "utf8",
     );
     const component = readFileSync(
       new URL("./navigation-workspace.tsx", import.meta.url),
       "utf8",
     );
+    const doctorComponent = readFileSync(
+      new URL("./human-doctor-3d.tsx", import.meta.url),
+      "utf8",
+    );
 
-    expect(css).toMatch(/\.experience\s*\{[\s\S]*width:\s*min\(100%,\s*720px\)/);
-    expect(css).toMatch(/\.assistantStage\s*\{[\s\S]*width:\s*min\(100%,\s*520px\)/);
-    expect(css).toMatch(/\.inputDock\s*\{[\s\S]*width:\s*min\(100%,\s*640px\)/);
-    expect(css).toMatch(/\.answerPanel\s*\{[\s\S]*width:\s*min\(100%,\s*640px\)/);
-    expect(css).toContain("@media (max-width: 760px)");
-    expect(css).toContain("@media (prefers-reduced-motion: reduce)");
-    expect(component).toContain('aria-label="AI healthcare navigation workspace"');
-    expect(component).toContain('placeholder="Tell me what is going on..."');
-    expect(component).toContain("analyzeIntake(mode, currentInput)");
+    expect(homeCss).toMatch(/\.heroCopy h1\s*\{[\s\S]*font-size:\s*clamp\(2rem,\s*8vw,\s*4\.5rem\)/);
+    expect(homeCss).toContain(".titleIntro");
+    expect(homeCss).toMatch(/\.safetyNote\s*\{[\s\S]*opacity:\s*0\.75/);
+    expect(homeCss).toMatch(/@media \(max-width:\s*560px\)\s*\{[\s\S]*\.avatarHero\s*\{[\s\S]*width:\s*min\(82vw,\s*420px\)/);
+    expect(homeCss).toMatch(/@media \(max-width:\s*560px\)\s*\{[\s\S]*\.inputDock\s*\{[\s\S]*position:\s*sticky/);
+    expect(doctorCss).toMatch(/@media \(max-width:\s*520px\)\s*\{[\s\S]*\.stage\s*\{[\s\S]*width:\s*min\(82vw,\s*420px\)/);
+    expect(component).toContain('aria-label="AI healthcare guide"');
+    expect(component).toContain("styles.titleIntro");
+    expect(component).toContain('placeholder="請描述症狀、照護或保險問題..."');
+    expect(component).toContain("analyzeIntake(mode, trimmedInput)");
     expect(component).toContain("deterministicResult.urgency.level === 1");
-    expect(component).not.toContain("actionCards");
-    expect(component).not.toContain("bottomNav");
-    expect(component).not.toContain("AuthPanel");
+    expect(doctorComponent).toContain('const MODEL_PATH = "/models/ai-doctor-guide.glb"');
+    expect(doctorComponent).toContain("const TARGET_MODEL_HEIGHT = 3.28");
   });
 });
