@@ -1,8 +1,12 @@
 "use client";
 
-import { HumanDoctor3D, type HumanDoctor3DState } from "@/components/human-doctor-3d";
-import { AlertTriangle, ArrowUp, Mic } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import {
+  HumanDoctor3D,
+  type DoctorEmotion,
+  type HumanDoctor3DState,
+} from "@/components/human-doctor-3d";
+import { AlertTriangle, ArrowUp, Mic, Volume2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { NavigationGuideResponse } from "@/lib/ai/types";
 import {
   analyzeIntake,
@@ -11,6 +15,10 @@ import {
 } from "@/lib/navigation-engine";
 import styles from "./human-ai-home.module.css";
 
+const greetingLines = [
+  "Hi, I'm your AI healthcare guide.",
+  "Tell me what's going on.",
+];
 
 export function NavigationWorkspace() {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -19,25 +27,83 @@ export function NavigationWorkspace() {
   const [isRecording, setIsRecording] = useState(false);
   const [result, setResult] = useState<Recommendation | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [showGreeting, setShowGreeting] = useState(false);
+  const [greetingDismissed, setGreetingDismissed] = useState(false);
 
   const inferredMode = useMemo(
     () => inferMode(input || result?.classification || ""),
     [input, result],
   );
+  const isEmergency = result?.urgency.level === 1;
+  const isSameDayCare = result?.urgency.level === 2;
+  const isInsuranceMode = inferredMode === "insurance";
+  const shouldShowGreeting =
+    showGreeting &&
+    !isEmergency &&
+    !input.trim() &&
+    !isSubmitting &&
+    !isRecording &&
+    !result;
 
-  const visualState = getVisualState({
+  const doctorState = getDoctorState({
+    input,
+    isRecording,
+    isSubmitting,
+    result,
+    showGreeting: shouldShowGreeting,
+  });
+  const doctorEmotion = getDoctorEmotion({
     input,
     isRecording,
     isSubmitting,
     result,
   });
 
-  const isEmergency = result?.urgency.level === 1;
+  useEffect(() => {
+    if (
+      greetingDismissed ||
+      input.trim() ||
+      result ||
+      isSubmitting ||
+      isRecording
+    ) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setShowGreeting(true);
+    }, 700);
+
+    return () => window.clearTimeout(timer);
+  }, [greetingDismissed, input, isRecording, isSubmitting, result]);
 
   function handleInputChange(nextInput: string) {
     setInput(nextInput);
     setResult(null);
     setStatusMessage(null);
+
+    if (nextInput.trim()) {
+      setShowGreeting(false);
+      setGreetingDismissed(true);
+    }
+  }
+
+  function handleRecordingToggle() {
+    setIsRecording((current) => !current);
+    setShowGreeting(false);
+    setGreetingDismissed(true);
+  }
+
+  function speakGreeting() {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(greetingLines.join(" "));
+    utterance.rate = 0.94;
+    utterance.pitch = 1;
+    window.speechSynthesis.speak(utterance);
   }
 
   async function handleSubmit() {
@@ -49,10 +115,15 @@ export function NavigationWorkspace() {
     }
 
     const mode = inferMode(trimmedInput);
+    const deterministicResult = analyzeIntake(mode, trimmedInput);
 
     setIsSubmitting(true);
-    setResult(null);
     setStatusMessage(null);
+    setShowGreeting(false);
+    setGreetingDismissed(true);
+    setResult(
+      deterministicResult.urgency.level === 1 ? deterministicResult : null,
+    );
 
     try {
       const response = await fetch("/api/navigation/guide", {
@@ -68,7 +139,7 @@ export function NavigationWorkspace() {
       const payload = (await response.json()) as NavigationGuideResponse;
       setResult(payload.recommendation);
     } catch {
-      setResult(analyzeIntake(mode, trimmedInput));
+      setResult(deterministicResult);
       setStatusMessage(
         "Showing safe rule-based guidance while AI is unavailable.",
       );
@@ -78,58 +149,56 @@ export function NavigationWorkspace() {
   }
 
   return (
-    <main className={`${styles.shell} ${isEmergency ? styles.emergencyShell : ""}`}>
+    <main
+      className={`${styles.shell} ${isEmergency ? styles.emergencyShell : ""}`}
+    >
       <section
-        className={`${styles.home} ${styles[visualState]} ${
-          inferredMode === "insurance" ? styles.insuranceMode : ""
+        id="home"
+        className={`${styles.home} ${styles[`state_${doctorState}`]} ${
+          isInsuranceMode ? styles.insuranceMode : ""
         }`}
         aria-label="AI healthcare guide"
       >
-        <header className={styles.topbar}>
-          <a className={styles.brand} href="#home" aria-label="AI Healthcare Guide">
-            <span className={styles.brandMark}>✚</span>
-            <span>
-              <strong>智健導航</strong>
-              <small>AI Healthcare Guide</small>
-            </span>
-          </a>
-
-          <div className={styles.topActions}>
-            <button type="button">公立 / 私家</button>
-            <button type="button">繁中 / English</button>
-          </div>
-        </header>
-
         <div className={styles.hero}>
           <div className={styles.heroCopy}>
-            <span className={styles.kicker}>AI Healthcare Guide</span>
             <h1>
               你好，我係你的
-              <span>AI 醫療顧問</span>
+              <span>AI 醫療導航</span>
             </h1>
-            <p>Describe your symptom, care question, or insurance concern.</p>
+            <p>
+              Describe symptoms, care questions, or insurance concerns. I will
+              check urgent signs first.
+            </p>
           </div>
 
-          <div className={styles.avatarStage}>
-            <div className={styles.statusPill}>
-              <span />
-              {getStatusLabel(visualState)}
-            </div>
-
+          <div className={styles.avatarPanel}>
             <HumanDoctor3D
-              state={toDoctorState(visualState)}
-              className={styles.avatar3D}
+              state={doctorState}
+              emotion={doctorEmotion}
+              className={styles.avatarHero}
             />
 
-            <div className={styles.avatarBadge}>
-              <strong>智健導航</strong>
-              <small>AI Healthcare Guide</small>
-            </div>
+            {shouldShowGreeting ? (
+              <button
+                type="button"
+                className={styles.greetingBubble}
+                onClick={speakGreeting}
+                aria-label="Speak greeting"
+              >
+                <Volume2 size={15} aria-hidden="true" />
+                <span>
+                  {greetingLines[0]}
+                  <small>{greetingLines[1]}</small>
+                </span>
+              </button>
+            ) : null}
           </div>
         </div>
 
         <form
-          className={styles.inputDock}
+          className={`${styles.inputDock} ${
+            isEmergency ? styles.emergencyDock : ""
+          } ${isInsuranceMode ? styles.insuranceDock : ""}`}
           onSubmit={(event) => {
             event.preventDefault();
             void handleSubmit();
@@ -140,7 +209,7 @@ export function NavigationWorkspace() {
             className={styles.textarea}
             value={input}
             rows={1}
-            placeholder="請描述症狀或保險問題..."
+            placeholder="請描述症狀、照護或保險問題..."
             aria-label="Describe your symptom, care question, or insurance concern"
             onChange={(event) => handleInputChange(event.target.value)}
             onKeyDown={(event) => {
@@ -151,11 +220,13 @@ export function NavigationWorkspace() {
           />
 
           <button
-            className={`${styles.iconButton} ${isRecording ? styles.recording : ""}`}
+            className={`${styles.iconButton} ${
+              isRecording ? styles.recording : ""
+            }`}
             type="button"
             aria-label={isRecording ? "Stop voice input" : "Start voice input"}
             aria-pressed={isRecording}
-            onClick={() => setIsRecording((current) => !current)}
+            onClick={handleRecordingToggle}
           >
             <Mic size={20} aria-hidden="true" />
           </button>
@@ -170,12 +241,34 @@ export function NavigationWorkspace() {
           </button>
         </form>
 
+        {input.trim() && !isSubmitting && !result ? (
+          <p className={styles.preSubmitHint}>
+            {"I'll check urgent signs first."}
+          </p>
+        ) : null}
+
         {(isSubmitting || result || statusMessage) && (
           <section
-            className={`${styles.answer} ${isEmergency ? styles.answerEmergency : ""}`}
+            className={`${styles.answer} ${
+              isEmergency ? styles.answerEmergency : ""
+            } ${isSameDayCare ? styles.answerConcerned : ""}`}
             aria-live={isEmergency ? "assertive" : "polite"}
           >
-            {isSubmitting ? (
+            {isEmergency && result ? (
+              <>
+                <div className={styles.answerHeader}>
+                  <span>{result.urgency.label}</span>
+                </div>
+                <a className={styles.emergencyCta} href="tel:999">
+                  <AlertTriangle size={17} aria-hidden="true" />
+                  Call 999 / Go to A&amp;E now
+                </a>
+                <p className={styles.answerText}>
+                  {result.assistantMessage || result.urgency.summary}
+                </p>
+                <p className={styles.nextStep}>{result.nextAction}</p>
+              </>
+            ) : isSubmitting ? (
               <p className={styles.answerText}>Checking urgent signs first...</p>
             ) : result ? (
               <>
@@ -189,13 +282,6 @@ export function NavigationWorkspace() {
                 </p>
 
                 <p className={styles.nextStep}>{result.nextAction}</p>
-
-                {isEmergency ? (
-                  <a className={styles.emergencyCta} href="tel:999">
-                    <AlertTriangle size={17} aria-hidden="true" />
-                    Call 999 / Go to A&amp;E now
-                  </a>
-                ) : null}
               </>
             ) : null}
 
@@ -213,24 +299,19 @@ export function NavigationWorkspace() {
   );
 }
 
-type VisualState =
-  | "ready"
-  | "listening"
-  | "thinking"
-  | "explaining"
-  | "emergency";
-
-function getVisualState({
+function getDoctorState({
   input,
   isRecording,
   isSubmitting,
   result,
+  showGreeting,
 }: {
   input: string;
   isRecording: boolean;
   isSubmitting: boolean;
   result: Recommendation | null;
-}): VisualState {
+  showGreeting: boolean;
+}): HumanDoctor3DState {
   if (result?.urgency.level === 1) {
     return "emergency";
   }
@@ -239,7 +320,7 @@ function getVisualState({
     return "thinking";
   }
 
-  if (result) {
+  if (result || showGreeting) {
     return "explaining";
   }
 
@@ -250,36 +331,38 @@ function getVisualState({
   return "ready";
 }
 
-function getStatusLabel(state: VisualState) {
-  switch (state) {
-    case "listening":
-      return "Listening";
-    case "thinking":
-      return "Thinking";
-    case "explaining":
-      return "Explaining";
-    case "emergency":
-      return "Emergency";
-    case "ready":
-    default:
-      return "Ready";
+function getDoctorEmotion({
+  input,
+  isRecording,
+  isSubmitting,
+  result,
+}: {
+  input: string;
+  isRecording: boolean;
+  isSubmitting: boolean;
+  result: Recommendation | null;
+}): DoctorEmotion {
+  if (result?.urgency.level === 1) {
+    return "urgent";
   }
-}
 
-function toDoctorState(state: VisualState): HumanDoctor3DState {
-  switch (state) {
-    case "listening":
-      return "listening";
-    case "thinking":
-      return "thinking";
-    case "explaining":
-      return "explaining";
-    case "emergency":
-      return "emergency";
-    case "ready":
-    default:
-      return "ready";
+  if (isSubmitting) {
+    return "focused";
   }
+
+  if (result?.urgency.level === 2) {
+    return "concerned";
+  }
+
+  if (result) {
+    return "reassuring";
+  }
+
+  if (isRecording || input.trim().length > 0) {
+    return "listening";
+  }
+
+  return "warm";
 }
 
 function inferMode(text: string): IntakeMode {
