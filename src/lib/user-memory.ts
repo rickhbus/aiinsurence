@@ -30,6 +30,11 @@ export type ConversationMode = "symptom" | "department" | "insurance" | "general
 export type MessageRole = "user" | "assistant" | "system";
 export type SafetyLevel = "normal" | "caution" | "emergency";
 export type RecommendationType = "department" | "insurance" | "emergency" | "followup";
+export type ConsentType =
+  | "save_memory"
+  | "health_data"
+  | "marketing"
+  | "adviser_handoff";
 
 export type ConversationSession = {
   id: string;
@@ -247,6 +252,208 @@ export async function saveRecommendation(
     .single();
 
   throwIfSupabaseError(error, "save recommendation");
+
+  return data;
+}
+
+export async function saveConsentEvent(
+  userId: string,
+  consentType: ConsentType,
+  granted: boolean,
+  supabase: MemoryClient,
+) {
+  assertUserId(userId);
+
+  const { data, error } = await supabase
+    .from("consent_events")
+    .insert({
+      user_id: userId,
+      consent_type: consentType,
+      granted,
+    })
+    .select("*")
+    .single();
+
+  throwIfSupabaseError(error, "save consent event");
+
+  return data;
+}
+
+export async function saveTriageAssessment(
+  userId: string,
+  sessionId: string | null,
+  input: string,
+  recommendation: Recommendation,
+  supabase: MemoryClient,
+) {
+  assertUserId(userId);
+
+  const { data, error } = await supabase
+    .from("triage_assessments")
+    .insert({
+      user_id: userId,
+      session_id: sessionId,
+      request_type: recommendation.requestType,
+      urgency_level: recommendation.urgency.level,
+      urgency_label: recommendation.urgency.label,
+      classification: recommendation.classification,
+      input_preview: input.trim().slice(0, 180),
+      matched_signals: recommendation.matchedSignals,
+      safety_locked: recommendation.urgency.level === 1,
+      disclaimer: recommendation.disclaimer,
+      escalation: recommendation.escalation,
+      audit: recommendation.audit,
+    })
+    .select("*")
+    .single();
+
+  throwIfSupabaseError(error, "save triage assessment");
+
+  return data;
+}
+
+export async function saveDepartmentRecommendation(
+  userId: string,
+  sessionId: string | null,
+  recommendation: Recommendation,
+  supabase: MemoryClient,
+) {
+  assertUserId(userId);
+
+  const { data, error } = await supabase
+    .from("department_recommendations")
+    .insert({
+      user_id: userId,
+      session_id: sessionId,
+      care_route: recommendation.careRoute,
+      possible_departments: recommendation.possibleDepartments,
+      next_action: recommendation.nextAction,
+      urgency_level: recommendation.urgency.level,
+      requires_human_review:
+        recommendation.urgency.level <= 2 ||
+        recommendation.escalation.includes("急症") ||
+        recommendation.escalation.includes("危險徵兆"),
+    })
+    .select("*")
+    .single();
+
+  throwIfSupabaseError(error, "save department recommendation");
+
+  return data;
+}
+
+export async function saveInsuranceProfileSnapshot(
+  userId: string,
+  sessionId: string | null,
+  recommendation: Recommendation,
+  supabase: MemoryClient,
+) {
+  assertUserId(userId);
+
+  const { data, error } = await supabase
+    .from("insurance_profiles")
+    .insert({
+      user_id: userId,
+      session_id: sessionId,
+      profile_summary: {
+        requestType: recommendation.requestType,
+        questions: recommendation.questions,
+        memoryCandidates: recommendation.memoryProposal.candidates,
+      },
+      coverage_needs: recommendation.insuranceCategories,
+      public_private_preference: null,
+      budget_range: null,
+    })
+    .select("*")
+    .single();
+
+  throwIfSupabaseError(error, "save insurance profile");
+
+  return data;
+}
+
+export async function saveInsuranceRecommendationDetail(
+  userId: string,
+  sessionId: string | null,
+  recommendation: Recommendation,
+  supabase: MemoryClient,
+) {
+  assertUserId(userId);
+
+  const { data, error } = await supabase
+    .from("insurance_recommendations")
+    .insert({
+      user_id: userId,
+      session_id: sessionId,
+      priority_coverage: recommendation.insuranceGuidance.priority,
+      useful_addons: recommendation.insuranceGuidance.addOns,
+      situational_coverage: recommendation.insuranceGuidance.situational,
+      questions_before_buying:
+        recommendation.insuranceGuidance.questionsBeforeBuying,
+      requires_licensed_adviser: true,
+      disclaimer: recommendation.disclaimer,
+    })
+    .select("*")
+    .single();
+
+  throwIfSupabaseError(error, "save insurance recommendation");
+
+  return data;
+}
+
+export async function saveEscalationCase(
+  userId: string,
+  sessionId: string | null,
+  recommendation: Recommendation,
+  reason: string,
+  supabase: MemoryClient,
+) {
+  assertUserId(userId);
+
+  const { data, error } = await supabase
+    .from("escalation_cases")
+    .insert({
+      user_id: userId,
+      session_id: sessionId,
+      case_type:
+        recommendation.urgency.level === 1
+          ? "medical_emergency"
+          : recommendation.mode === "insurance" || recommendation.mode === "policy"
+            ? "licensed_adviser"
+            : "clinical_review",
+      reason,
+      urgency: recommendation.urgency.label,
+      status: "open",
+      visible_to_adviser: true,
+      consented_at: new Date().toISOString(),
+    })
+    .select("*")
+    .single();
+
+  throwIfSupabaseError(error, "save escalation case");
+
+  return data;
+}
+
+export async function saveAuditLog(
+  userId: string,
+  eventType: string,
+  eventPayload: Json,
+  supabase: MemoryClient,
+) {
+  assertUserId(userId);
+
+  const { data, error } = await supabase
+    .from("audit_logs")
+    .insert({
+      user_id: userId,
+      event_type: eventType,
+      event_payload: eventPayload,
+    })
+    .select("*")
+    .single();
+
+  throwIfSupabaseError(error, "save audit log");
 
   return data;
 }

@@ -4,10 +4,17 @@ export type UrgencyLevel = 1 | 2 | 3 | 4;
 
 export type Recommendation = {
   mode: IntakeMode;
+  requestType:
+    | "urgent_medical"
+    | "same_day_medical"
+    | "symptom_navigation"
+    | "insurance_planning"
+    | "policy_explanation"
+    | "preventive_planning";
   classification: string;
   assistantMessage?: string;
   ai?: {
-    provider: "groq" | "openai";
+    provider: "deepseek" | "groq" | "openai";
     model: string;
     status: "generated" | "safety_locked" | "unconfigured" | "failed";
   };
@@ -21,9 +28,20 @@ export type Recommendation = {
   careRoute: string;
   possibleDepartments: string[];
   insuranceCategories: string[];
+  insuranceGuidance: {
+    priority: string[];
+    addOns: string[];
+    situational: string[];
+    questionsBeforeBuying: string[];
+  };
   questions: string[];
   decisionChecklist: string[];
   memoryCandidates: string[];
+  memoryProposal: {
+    canOffer: boolean;
+    candidates: string[];
+    blockedReason?: string;
+  };
   escalation: string;
   disclaimer: string;
   audit: string[];
@@ -200,6 +218,7 @@ export function analyzeIntake(mode: IntakeMode, input: string): Recommendation {
   if (emergencyMatches.length > 0) {
     return {
       mode,
+      requestType: "urgent_medical",
       classification: "緊急醫療問題 / Urgent medical concern",
       urgency: {
         level: 1,
@@ -211,6 +230,7 @@ export function analyzeIntake(mode: IntakeMode, input: string): Recommendation {
       careRoute: "香港急症室 / Accident & Emergency Department first",
       possibleDepartments: ["急症室 / A&E", "之後按評估可能轉介相關專科"],
       insuranceCategories: ["先求醫，保險和索償問題稍後再處理"],
+      insuranceGuidance: emptyInsuranceGuidance(),
       questions: [],
       decisionChecklist: [
         "立即致電 999 或前往最近急症室。",
@@ -218,6 +238,11 @@ export function analyzeIntake(mode: IntakeMode, input: string): Recommendation {
         "安全後才整理保單、收據及索償資料。",
       ],
       memoryCandidates: [],
+      memoryProposal: {
+        canOffer: false,
+        candidates: [],
+        blockedReason: "緊急情況不應保存或延長流程，先求急症服務。",
+      },
       escalation: "如有生命危險、嚴重痛楚、呼吸困難、中風徵兆、自傷風險或症狀快速惡化，請立即致電 999。",
       disclaimer: medicalDisclaimer(),
       audit: [
@@ -256,6 +281,12 @@ export function analyzeIntake(mode: IntakeMode, input: string): Recommendation {
 
   return {
     mode,
+    requestType:
+      sameDayMatches.length > 0
+        ? "same_day_medical"
+        : departmentMatch
+          ? "symptom_navigation"
+          : "preventive_planning",
     classification: sameDayMatches.length > 0 ? "非緊急但需即日處理 / Same-day care" : "非緊急症狀導航 / Non-urgent symptom navigation",
     urgency,
     nextAction:
@@ -265,6 +296,12 @@ export function analyzeIntake(mode: IntakeMode, input: string): Recommendation {
     careRoute: departmentMatch?.route ?? "可先由普通科或家庭醫生評估，再按需要轉介合適專科。",
     possibleDepartments: departmentMatch?.departments ?? defaultMedicalDepartments,
     insuranceCategories: inferInsuranceForCareRoute(departmentMatch),
+    insuranceGuidance: {
+      priority: inferInsuranceForCareRoute(departmentMatch).slice(0, 1),
+      addOns: inferInsuranceForCareRoute(departmentMatch).slice(1),
+      situational: ["如已有僱主醫療或公營偏好，可先比較缺口再決定是否加保。"],
+      questionsBeforeBuying: insuranceQuestionsBeforeBuying(),
+    },
     questions: [
       "年齡範圍是甚麼？",
       "症狀持續了多久，是否突然惡化？",
@@ -282,6 +319,15 @@ export function analyzeIntake(mode: IntakeMode, input: string): Recommendation {
       "公營、私營或混合醫療偏好",
       "常用地區：港島、九龍或新界",
     ],
+    memoryProposal: {
+      canOffer: true,
+      candidates: [
+        "語言偏好：繁體中文 / English",
+        "公營、私營或混合醫療偏好",
+        "常用地區：港島、九龍或新界",
+        "今次導航建議摘要",
+      ],
+    },
     escalation: "如出現危險徵兆、症狀快速惡化、嬰幼兒嚴重異常或精神健康危機，請立即求急症服務。",
     disclaimer: medicalDisclaimer(),
     audit: [
@@ -301,6 +347,7 @@ function buildInsuranceRecommendation(text: string, matches: typeof insuranceSig
 
   return {
     mode: "insurance",
+    requestType: "insurance_planning",
     classification: "保險規劃 / Insurance planning",
     urgency: {
       level: 4,
@@ -312,6 +359,18 @@ function buildInsuranceRecommendation(text: string, matches: typeof insuranceSig
     careRoute: "不是醫療求診路徑；如同時有症狀或危險徵兆，先處理醫療安全。",
     possibleDepartments: ["持牌保險顧問 / Licensed insurance adviser", "如有健康症狀，先諮詢醫生"],
     insuranceCategories: categories,
+    insuranceGuidance: {
+      priority: categories.slice(0, 2),
+      addOns: unique([
+        ...categories.slice(2),
+        "門診保險 if regular GP or specialist visits",
+      ]),
+      situational: [
+        "牙科、旅遊、產科只在對應生活階段或使用頻率下較有優先度。",
+        "危疾及人壽主要用於收入、家庭責任或按揭風險，不是醫療費報銷的替代品。",
+      ],
+      questionsBeforeBuying: insuranceQuestionsBeforeBuying(),
+    },
     questions: [
       "你是否香港居民或在港長住？",
       "有沒有僱主醫療、門診、牙科或家屬保障？",
@@ -331,6 +390,16 @@ function buildInsuranceRecommendation(text: string, matches: typeof insuranceSig
       "住院、門診、牙科、產科、危疾或旅遊保障需要",
       "本地香港或國際保障偏好",
     ],
+    memoryProposal: {
+      canOffer: true,
+      candidates: [
+        "是否已有僱主醫療福利",
+        "保險預算範圍",
+        "住院、門診、牙科、產科、危疾或旅遊保障需要",
+        "本地香港或國際保障偏好",
+        "今次保障類型建議摘要",
+      ],
+    },
     escalation: "購買前應諮詢持牌保險顧問，並細閱保單條款、不保事項、等候期、核保要求及索償流程。",
     disclaimer: insuranceDisclaimer(),
     audit: [
@@ -353,6 +422,7 @@ function buildPolicyRecommendation(text: string): Recommendation {
 
   return {
     mode: "policy",
+    requestType: "policy_explanation",
     classification: "索償或保單解釋 / Claims or policy explanation",
     urgency: {
       level: 4,
@@ -364,6 +434,12 @@ function buildPolicyRecommendation(text: string): Recommendation {
     careRoute: "如文件問題背後涉及正在惡化的症狀，先處理醫療需要。",
     possibleDepartments: ["保險公司客戶服務", "持牌保險顧問", "醫療服務提供者的賬單或病歷部門"],
     insuranceCategories: categories,
+    insuranceGuidance: {
+      priority: ["保單條款理解 / Policy wording review", "索償流程 / Claims process"],
+      addOns: ["文件清單整理 / Document checklist", "查問保險公司的問題清單"],
+      situational: ["高額費用、拒賠爭議或複雜核保問題應交由持牌顧問或合規人員覆核。"],
+      questionsBeforeBuying: insuranceQuestionsBeforeBuying(),
+    },
     questions: [
       "你想理解保障範圍、索償流程，還是拒賠原因？",
       "服務是在香港還是海外發生？",
@@ -381,6 +457,15 @@ function buildPolicyRecommendation(text: string): Recommendation {
       "索償流程偏好和常用文件清單",
       "是否需要持牌顧問 handoff",
     ],
+    memoryProposal: {
+      canOffer: true,
+      candidates: [
+        "保單類型和保障範圍摘要",
+        "索償流程偏好和常用文件清單",
+        "是否需要持牌顧問 handoff",
+        "今次文件理解建議摘要",
+      ],
+    },
     escalation: "如涉及索償爭議、高額醫療費或產品購買決定，應交由持牌顧問或合規人員覆核。",
     disclaimer: insuranceDisclaimer(),
     audit: [
@@ -412,6 +497,24 @@ function inferInsuranceForCareRoute(rule?: Rule) {
   }
 
   return ["門診保險", "住院醫療 / VHIS-style coverage if hospital care may be needed"];
+}
+
+function emptyInsuranceGuidance() {
+  return {
+    priority: [] as string[],
+    addOns: [] as string[],
+    situational: ["先處理醫療安全，保險或索償問題可在安全後再整理。"],
+    questionsBeforeBuying: [] as string[],
+  };
+}
+
+function insuranceQuestionsBeforeBuying() {
+  return [
+    "每年保障額、病房級別和醫院網絡限制是甚麼？",
+    "有沒有自付額、共同保險、等候期或續保限制？",
+    "既有病症、不保事項和核保要求如何處理？",
+    "香港以外保障、預先批核和索償流程是否清晰？",
+  ];
 }
 
 function normalize(input: string) {

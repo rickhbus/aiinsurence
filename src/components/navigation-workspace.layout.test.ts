@@ -1,40 +1,43 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-describe("human AI assistant home layout", () => {
-  it("keeps the mobile avatar, greeting, input, and disclaimer controlled", () => {
-    const homeCss = readFileSync(
-      new URL("./human-ai-home.module.css", import.meta.url),
-      "utf8",
-    );
-    const doctorCss = readFileSync(
-      new URL("./human-doctor-3d.module.css", import.meta.url),
-      "utf8",
-    );
+describe("shadcn navigation workspace composition", () => {
+  it("uses shadcn app primitives while preserving safety-critical UI text", () => {
     const component = readFileSync(
       new URL("./navigation-workspace.tsx", import.meta.url),
       "utf8",
     );
-    const doctorComponent = readFileSync(
-      new URL("./human-doctor-3d.tsx", import.meta.url),
+    const providers = readFileSync(
+      new URL("./app-providers.tsx", import.meta.url),
+      "utf8",
+    );
+    const authPanel = readFileSync(
+      new URL("./auth/auth-panel.tsx", import.meta.url),
+      "utf8",
+    );
+    const memoryCard = readFileSync(
+      new URL("./memory/memory-consent-card.tsx", import.meta.url),
       "utf8",
     );
 
-    expect(homeCss).toMatch(/\.heroCopy h1\s*\{[\s\S]*font-size:\s*clamp\(2rem,\s*8vw,\s*4\.5rem\)/);
-    expect(homeCss).toContain(".titleIntro");
-    expect(homeCss).toMatch(/\.safetyNote\s*\{[\s\S]*opacity:\s*0\.75/);
-    expect(homeCss).toMatch(/@media \(max-width:\s*560px\)\s*\{[\s\S]*\.avatarHero\s*\{[\s\S]*width:\s*min\(78vw,\s*380px\)/);
-    expect(homeCss).toMatch(/@media \(max-width:\s*560px\)\s*\{[\s\S]*\.inputDock\s*\{[\s\S]*position:\s*sticky/);
-    expect(doctorCss).toMatch(/@media \(max-width:\s*520px\)\s*\{[\s\S]*\.stage\s*\{[\s\S]*width:\s*min\(78vw,\s*380px\)/);
-    expect(component).toContain('aria-label="AI healthcare guide"');
-    expect(component).toContain("styles.titleIntro");
-    expect(component).toContain("deriveDoctorAffect");
-    expect(component).toContain('placeholder="請描述症狀、照護或保險問題..."');
-    expect(component).toContain("analyzeIntake(mode, trimmedInput)");
-    expect(component).toContain("deterministicResult.urgency.level === 1");
-    expect(doctorComponent).toContain('const MODEL_PATH = "/models/ai-doctor-guide.glb"');
-    expect(doctorComponent).toContain("const TARGET_MODEL_HEIGHT = 2.86");
-    expect(doctorComponent).toContain("const BASE_MODEL_ROTATION_X = 0.072");
-    expect(doctorComponent).toContain("const CAMERA_LOOK_AT");
+    expect(component).toContain("@/components/ui/tabs");
+    expect(component).toContain("@/components/ui/sheet");
+    expect(component).toContain("@/components/ui/dialog");
+    expect(component).toContain("@/components/ui/drawer");
+    expect(component).toContain("HumanDoctor3D");
+    expect(component).toContain("醫療導航");
+    expect(component).toContain("Insurance planning");
+    expect(component).toContain("Policy / claims");
+    expect(component).toContain("致電 999 / Call 999");
+    expect(component).toContain("Emergency guidance is not saved");
+    expect(component).toContain("AI 醫療導航，不取代醫生診斷");
+    expect(component).not.toContain("human-ai-home.module.css");
+    expect(providers).toContain("TooltipProvider");
+    expect(providers).toContain("Toaster");
+    expect(authPanel).toContain("匿名開始 / Start anonymously");
+    expect(authPanel).toContain("GOOGLE_OAUTH_ENABLED");
+    expect(memoryCard).toContain("保存 / Save");
+    expect(memoryCard).toContain("今次不要 / Not now");
+    expect(memoryCard).toContain("查看會保存甚麼 / See what will be saved");
   });
 });

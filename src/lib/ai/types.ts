@@ -1,6 +1,6 @@
 import type { IntakeMode, Recommendation } from "../navigation-engine";
 
-export type AiProviderName = "groq" | "openai";
+export type AiProviderName = "deepseek" | "groq" | "openai";
 
 export type GuideStatus =
   | "generated"

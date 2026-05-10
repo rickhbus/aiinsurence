@@ -2,11 +2,24 @@ import { describe, expect, it } from "vitest";
 import { getGuideRuntimeConfig } from "./provider";
 
 describe("AI provider config", () => {
-  it("defaults to Groq and marks the provider unconfigured without a key", () => {
+  it("defaults to DeepSeek V4 Flash and marks the provider unconfigured without a key", () => {
     expect(getGuideRuntimeConfig({})).toEqual({
-      provider: "groq",
-      model: "llama-3.3-70b-versatile",
+      provider: "deepseek",
+      model: "deepseek-v4-flash",
       isConfigured: false,
+    });
+  });
+
+  it("uses the DeepSeek key and provider-specific model when configured", () => {
+    expect(
+      getGuideRuntimeConfig({
+        DEEPSEEK_API_KEY: "test-key",
+        DEEPSEEK_MODEL: "deepseek-v4-flash",
+      }),
+    ).toEqual({
+      provider: "deepseek",
+      model: "deepseek-v4-flash",
+      isConfigured: true,
     });
   });
 
@@ -27,12 +40,12 @@ describe("AI provider config", () => {
   it("allows a shared AI_MODEL override for either provider", () => {
     expect(
       getGuideRuntimeConfig({
-        GROQ_API_KEY: "test-key",
-        AI_MODEL: "openai/gpt-oss-20b",
+        DEEPSEEK_API_KEY: "test-key",
+        AI_MODEL: "deepseek-chat",
       }),
     ).toEqual({
-      provider: "groq",
-      model: "openai/gpt-oss-20b",
+      provider: "deepseek",
+      model: "deepseek-chat",
       isConfigured: true,
     });
   });

@@ -1,8 +1,20 @@
 "use client";
 
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { Mail, ShieldCheck, UserRoundPlus } from "lucide-react";
 import { useState, useTransition } from "react";
-import type { SupabaseClient, User } from "@supabase/supabase-js";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
   GOOGLE_OAUTH_ENABLED,
   anonymousModeCopy,
@@ -10,7 +22,6 @@ import {
 } from "@/lib/auth-flow";
 import { getAuthRedirectTo } from "@/lib/supabase/client";
 import { getOrCreateProfile, type Profile } from "@/lib/user-memory";
-import styles from "@/components/navigation-workspace.module.css";
 
 type AuthPanelProps = {
   supabase: SupabaseClient | null;
@@ -134,95 +145,102 @@ export function AuthPanel({
   }
 
   return (
-    <section className={styles.authPanel} aria-label="Authentication">
-      <div className={styles.authHeader}>
-        <span className={styles.authIcon}>
-          <UserRoundPlus size={18} aria-hidden="true" />
-        </span>
-        <div>
-          <p className={styles.panelKicker}>
-            {isUpgrade ? "Account upgrade" : "Optional login"}
-          </p>
-          <h2>
-            {isUpgrade
-              ? "保存紀錄並建立帳戶 / Save history and create account"
-              : "先用，再決定是否登入 / Use first, log in when ready"}
-          </h2>
+    <Card className="border-border/70 bg-card/95">
+      <CardHeader className="gap-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <UserRoundPlus aria-hidden="true" />
+            </span>
+            <div className="flex flex-col gap-1">
+              <Badge variant="secondary" className="w-fit">
+                {isUpgrade ? "Account upgrade" : "Optional login"}
+              </Badge>
+              <CardTitle className="text-lg">
+                {isUpgrade
+                  ? "保存紀錄並建立帳戶 / Save history and create account"
+                  : "先用，再決定是否登入 / Use first, log in when ready"}
+              </CardTitle>
+            </div>
+          </div>
         </div>
-      </div>
+        <CardDescription className="leading-6">
+          {anonymousModeCopy.zh}
+          <br />
+          {anonymousModeCopy.en}
+        </CardDescription>
+      </CardHeader>
 
-      {!supabase ? (
-        <p className={styles.authNotice}>
-          尚未設定 Supabase public URL / publishable key。你仍可使用導航，但不會保存雲端紀錄。
-          Supabase is not configured, so navigation works without cloud memory.
-        </p>
-      ) : null}
+      <CardContent className="flex flex-col gap-4">
+        {!supabase ? (
+          <Alert>
+            <ShieldCheck data-icon="inline-start" aria-hidden="true" />
+            <AlertTitle>本機雲端記憶未啟用 / Cloud memory unavailable</AlertTitle>
+            <AlertDescription>
+              尚未設定 Supabase public URL / publishable key。你仍可使用導航，但不會保存雲端紀錄。
+            </AlertDescription>
+          </Alert>
+        ) : null}
 
-      {!isUpgrade ? (
-        <button
-          className={styles.primaryAction}
+        {!isUpgrade ? (
+          <Button
+            type="button"
+            disabled={isDisabled || !anonymousStart.canStart}
+            onClick={startAnonymous}
+          >
+            匿名開始 / Start anonymously
+          </Button>
+        ) : null}
+
+        <div className="flex flex-col gap-2 rounded-lg border bg-muted/35 p-3 text-sm leading-6 text-muted-foreground">
+          <p>
+            只會在你同意後保存語言、公私營偏好、保險狀況、家庭背景和已保存建議。不會自動保存未確認診斷、詳細病歷、HKID、完整保單號碼或付款資料。
+          </p>
+          <p>
+            Memory is saved only with consent: language, care preference,
+            insurance context, household context, and saved recommendations.
+          </p>
+        </div>
+
+        <Separator />
+
+        <label className="text-sm font-medium" htmlFor={isUpgrade ? "upgrade-email" : "auth-email"}>
+          電郵 / Email
+        </label>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input
+            id={isUpgrade ? "upgrade-email" : "auth-email"}
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="name@example.com"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isDisabled}
+            onClick={continueWithEmail}
+          >
+            <Mail data-icon="inline-start" aria-hidden="true" />
+            {isUpgrade ? "升級 / Upgrade" : "電郵登入 / Email"}
+          </Button>
+        </div>
+
+        <Button
           type="button"
-          disabled={isDisabled || !anonymousStart.canStart}
-          onClick={startAnonymous}
+          variant="secondary"
+          disabled={isDisabled || !GOOGLE_OAUTH_ENABLED}
+          onClick={continueWithGoogle}
         >
-          匿名開始 / Start anonymously
-        </button>
-      ) : null}
+          <ShieldCheck data-icon="inline-start" aria-hidden="true" />
+          使用 Google 登入 / Continue with Google
+          {!GOOGLE_OAUTH_ENABLED ? "（待啟用 / disabled）" : ""}
+        </Button>
 
-      <div className={styles.authCopy}>
-        <p>{anonymousModeCopy.zh}</p>
-        <p>{anonymousModeCopy.en}</p>
-      </div>
-
-      <div className={styles.authCopy}>
-        <p>
-          只會在你同意後保存語言、公私營偏好、保險狀況、家庭背景和已保存建議。不會自動保存未確認診斷、詳細病歷、HKID、完整保單號碼或付款資料。
-        </p>
-        <p>
-          Memory is saved only with consent: language, care preference, insurance context,
-          household context, and saved recommendations. Unconfirmed diagnoses,
-          detailed medical history, HKID, full policy numbers, and payment details are not
-          saved automatically.
-        </p>
-      </div>
-
-      <label className={styles.authLabel} htmlFor={isUpgrade ? "upgrade-email" : "auth-email"}>
-        電郵 / Email
-      </label>
-      <div className={styles.emailRow}>
-        <input
-          id={isUpgrade ? "upgrade-email" : "auth-email"}
-          className={styles.emailInput}
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="name@example.com"
-        />
-        <button
-          className={styles.secondaryAction}
-          type="button"
-          disabled={isDisabled}
-          onClick={continueWithEmail}
-        >
-          <Mail size={16} aria-hidden="true" />
-          {isUpgrade ? "升級 / Upgrade" : "使用電郵登入 / Continue with email"}
-        </button>
-      </div>
-
-      <button
-        className={styles.googleAction}
-        type="button"
-        disabled={isDisabled || !GOOGLE_OAUTH_ENABLED}
-        onClick={continueWithGoogle}
-      >
-        <ShieldCheck size={16} aria-hidden="true" />
-        使用 Google 登入 / Continue with Google
-        {!GOOGLE_OAUTH_ENABLED ? "（待 Supabase provider 啟用 / disabled）" : ""}
-      </button>
-
-      {status ? <p className={styles.successText}>{status}</p> : null}
-      {error ? <p className={styles.errorText}>{error}</p> : null}
-    </section>
+        {status ? <p className="text-sm text-muted-foreground">{status}</p> : null}
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      </CardContent>
+    </Card>
   );
 }

@@ -61,4 +61,23 @@ describe("auth and memory safety", () => {
     expect(migration).toMatch(/with check\s*\([\s\S]*user_id\s*=\s*\(select auth\.uid\(\)\)/i);
     expect(migration).not.toMatch(/grant\s+select[\s\S]*\s+to\s+anon/i);
   });
+
+  it("adds append-only MVP audit tables with own-row RLS and consented adviser access", () => {
+    const migration = readFileSync(
+      new URL("../../supabase/migrations/002_mvp_audit_tables.sql", import.meta.url),
+      "utf8",
+    );
+
+    expect(migration).toContain("create table if not exists public.triage_assessments");
+    expect(migration).toContain("create table if not exists public.department_recommendations");
+    expect(migration).toContain("create table if not exists public.insurance_profiles");
+    expect(migration).toContain("create table if not exists public.insurance_recommendations");
+    expect(migration).toContain("create table if not exists public.escalation_cases");
+    expect(migration).toContain("create table if not exists public.audit_logs");
+    expect(migration).toContain("alter table public.audit_logs enable row level security");
+    expect(migration).toContain("create policy audit_logs_select_own");
+    expect(migration).toContain("create policy escalation_cases_select_adviser_with_consent");
+    expect(migration).toMatch(/consent_type\s*=\s*'adviser_handoff'/);
+    expect(migration).not.toMatch(/grant\s+select[\s\S]*\s+to\s+anon/i);
+  });
 });

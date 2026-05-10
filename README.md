@@ -9,12 +9,13 @@ not a doctor, insurer, broker, or licensed insurance intermediary.
 ## MVP Surface
 
 - Bilingual Traditional Chinese-first intake for medical routing, insurance planning, and policy explanation.
+- shadcn/ui and Tailwind v4 app shell with tabs, cards, alerts, sheets, dialogs, drawers, and consent-first controls.
 - Safety-first triage with deterministic emergency red-flag handling before any future AI orchestration.
 - Department and first-step routing with safe wording such as "possible department" and "if referred".
 - Insurance guidance at coverage-category level only, with licensed-adviser escalation.
-- Lightweight virtual AI adviser state UI for idle, listening, analyzing, explaining, reassurance, and emergency states.
-- Anonymous-first entry points with account-upgrade and memory-consent copy.
-- Audit trail preview for classification, safety decision, disclaimer, and handoff logic.
+- 3D virtual AI adviser state UI for idle, listening, analyzing, explaining, reassurance, and emergency states.
+- Anonymous-first entry points with account-upgrade and memory-consent copy; no login is required before first use.
+- Consent-based session, recommendation, escalation, and audit route handlers backed by Supabase RLS migrations.
 
 ## Safety Rules
 
@@ -34,11 +35,30 @@ npm run dev
 ```
 
 Open http://localhost:3000.
+If port 3000 is already in use, Next.js will print the alternate local URL.
+
+## Persistence
+
+The MVP uses Supabase Auth and RLS-protected tables for profiles, preferences,
+household members, conversations, saved recommendations, consent events, triage
+assessments, department recommendations, insurance recommendations, escalation
+cases, and audit logs.
+
+Server routes fail closed when Supabase is not configured or when the user has
+not granted explicit save or adviser-handoff consent.
 
 ## AI Provider
 
 The app keeps deterministic safety triage first, then asks the configured model
-for the short guide message. Groq is the default provider:
+for the short guide message. DeepSeek V4 Flash is the default provider:
+
+```bash
+DEEPSEEK_API_KEY=...
+AI_PROVIDER=deepseek
+DEEPSEEK_MODEL=deepseek-v4-flash
+```
+
+To switch to Groq without changing call sites:
 
 ```bash
 GROQ_API_KEY=...
@@ -46,7 +66,7 @@ AI_PROVIDER=groq
 GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
-To switch later without changing call sites:
+To switch to OpenAI without changing call sites:
 
 ```bash
 OPENAI_API_KEY=...
@@ -54,7 +74,7 @@ AI_PROVIDER=openai
 OPENAI_MODEL=gpt-5-mini
 ```
 
-`AI_MODEL` can override the provider-specific model variable for either
+`AI_MODEL` can override the provider-specific model variable for any
 provider. If no key is configured, the UI falls back to the safe rule-based
 recommendation.
 
