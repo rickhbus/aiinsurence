@@ -4,9 +4,9 @@
   --doctor-accent-glow: rgba(25, 199, 216, 0.32);
 
   position: relative;
-  width: min(100%, 680px);
-  height: 660px;
-  min-height: 660px;
+  width: min(100%, 620px);
+  height: 600px;
+  min-height: 600px;
   display: grid;
   place-items: center;
   isolation: isolate;
@@ -21,7 +21,7 @@
 
 .glow {
   position: absolute;
-  inset: 8% 8% 3%;
+  inset: 12% 10% 8%;
   z-index: 1;
   border-radius: 50%;
   background:
@@ -39,7 +39,7 @@
 
 .statusPill {
   position: absolute;
-  top: 18px;
+  top: 20px;
   left: 50%;
   z-index: 5;
   min-height: 36px;
@@ -237,29 +237,29 @@
 
 @media (max-width: 820px) {
   .stage {
-    width: min(100%, 560px);
-    height: 540px;
-    min-height: 540px;
+    width: min(100%, 520px);
+    height: 500px;
+    min-height: 500px;
   }
 
   .statusPill {
-    top: 12px;
+    top: 14px;
   }
 }
 
 @media (max-width: 520px) {
   .stage {
-    width: min(82vw, 420px);
-    height: clamp(330px, 52svh, 400px);
+    width: min(78vw, 380px);
+    height: clamp(300px, 46svh, 360px);
     min-height: 0;
   }
 
   .glow {
-    inset: 10% 4% 4%;
+    inset: 12% 4% 8%;
   }
 
   .statusPill {
-    top: 8px;
+    top: 74px;
   }
 
   .emergencyBadge {

@@ -44,10 +44,13 @@ export type HumanDoctor3DProps = {
 };
 
 const MODEL_PATH = "/models/ai-doctor-guide.glb";
-const TARGET_MODEL_HEIGHT = 3.28;
-const MODEL_Y_OFFSET = -1.54;
-const BASE_MODEL_ROTATION_X = 0;
+const TARGET_MODEL_HEIGHT = 2.86;
+const MODEL_Y_OFFSET = -1.16;
+const BASE_MODEL_ROTATION_X = 0.044;
 const BASE_MODEL_ROTATION_Y = 0;
+const CAMERA_POSITION: [number, number, number] = [0, 0.64, 4.18];
+const CAMERA_LOOK_AT: [number, number, number] = [0, 0.12, 0];
+const CAMERA_FOV = 33;
 
 const stateLabel: Record<HumanDoctor3DState, string> = {
   ready: "Ready",
@@ -188,7 +191,7 @@ function CameraAim() {
   const { camera } = useThree();
 
   useFrame(() => {
-    camera.lookAt(0, -0.42, 0);
+    camera.lookAt(...CAMERA_LOOK_AT);
   });
 
   return null;
@@ -237,9 +240,9 @@ export function HumanDoctor3D({
       <DoctorModelBoundary fallback={<DoctorFallback state={state} />}>
         <div className={styles.canvasWrap}>
           <Canvas
-            camera={{ position: [0, 1.25, 3], fov: 32 }}
+            camera={{ position: CAMERA_POSITION, fov: CAMERA_FOV }}
             dpr={[1, 1.75]}
-            shadows
+            shadows="percentage"
             gl={{
               antialias: true,
               alpha: true,
@@ -247,36 +250,36 @@ export function HumanDoctor3D({
             }}
           >
             <CameraAim />
-            <Suspense fallback={<LoadingDoctor />}>
-              <ambientLight intensity={1.55} />
-              <directionalLight
-                castShadow
-                position={[1.6, 4.2, 3.4]}
-                intensity={2.1}
-                shadow-mapSize={[1024, 1024]}
-              />
-              <pointLight
-                position={[-2.8, 1.7, 1.8]}
-                intensity={1.25}
-                color="#9ee8ff"
-              />
-              <pointLight
-                position={[2.2, 2.2, -1.2]}
-                intensity={0.58}
-                color={getEmotionLightColor(resolvedEmotion)}
-              />
+            <ambientLight intensity={1.38} />
+            <directionalLight
+              castShadow
+              position={[1.7, 2.7, 3.8]}
+              intensity={1.48}
+              shadow-mapSize={[1024, 1024]}
+            />
+            <pointLight
+              position={[-2.5, 1.35, 2.4]}
+              intensity={0.82}
+              color="#fde7c8"
+            />
+            <pointLight
+              position={[2.2, 1.6, -1.4]}
+              intensity={0.36}
+              color={getEmotionLightColor(resolvedEmotion)}
+            />
 
+            <Suspense fallback={<LoadingDoctor />}>
               <DoctorModel state={state} emotion={resolvedEmotion} />
 
               <ContactShadows
-                position={[0, -1.96, 0]}
+                position={[0, -1.82, 0]}
                 opacity={state === "emergency" ? 0.24 : 0.18}
-                scale={3.7}
+                scale={3.3}
                 blur={2.5}
                 far={4}
               />
 
-              <Environment preset="city" environmentIntensity={0.72} />
+              <Environment preset="city" environmentIntensity={0.48} />
             </Suspense>
           </Canvas>
         </div>
@@ -333,53 +336,53 @@ function getMotionForState(
 
   if (state === "emergency" || emotion === "urgent") {
     return {
-      floatY: Math.sin(elapsed * 0.65) * 0.006,
-      rotationX: 0.015,
-      rotationY: Math.sin(elapsed * 0.5) * 0.012,
+      floatY: Math.sin(elapsed * 0.65) * 0.004,
+      rotationX: 0.004,
+      rotationY: Math.sin(elapsed * 0.5) * 0.008,
       rotationZ: 0,
     };
   }
 
   if (state === "listening" || emotion === "listening") {
     return {
-      floatY: breath + Math.sin(elapsed * 1.8) * 0.012,
-      rotationX: -0.045 + Math.sin(elapsed * 1.6) * 0.012,
-      rotationY: Math.sin(elapsed * 0.7) * 0.036,
-      rotationZ: Math.sin(elapsed * 0.9) * 0.008,
+      floatY: breath + Math.sin(elapsed * 1.2) * 0.004,
+      rotationX: Math.sin(elapsed * 1.1) * 0.004,
+      rotationY: Math.sin(elapsed * 0.55) * 0.012,
+      rotationZ: Math.sin(elapsed * 0.7) * 0.003,
     };
   }
 
   if (state === "thinking" || emotion === "focused") {
     return {
-      floatY: Math.sin(elapsed * 0.58) * 0.012,
-      rotationX: -0.012,
-      rotationY: Math.sin(elapsed * 0.34) * 0.024,
+      floatY: Math.sin(elapsed * 0.58) * 0.006,
+      rotationX: 0.002,
+      rotationY: Math.sin(elapsed * 0.34) * 0.012,
       rotationZ: 0,
     };
   }
 
   if (emotion === "concerned") {
     return {
-      floatY: Math.sin(elapsed * 0.62) * 0.01,
-      rotationX: 0.006,
-      rotationY: Math.sin(elapsed * 0.38) * 0.018,
-      rotationZ: -0.006,
+      floatY: Math.sin(elapsed * 0.62) * 0.006,
+      rotationX: 0.003,
+      rotationY: Math.sin(elapsed * 0.38) * 0.01,
+      rotationZ: -0.003,
     };
   }
 
   if (state === "explaining" || emotion === "reassuring") {
     return {
       floatY: breath,
-      rotationX: -0.018 + Math.sin(elapsed * 0.85) * 0.008,
-      rotationY: Math.sin(elapsed * 0.48) * 0.024,
-      rotationZ: Math.sin(elapsed * 0.7) * 0.006,
+      rotationX: Math.sin(elapsed * 0.72) * 0.004,
+      rotationY: Math.sin(elapsed * 0.42) * 0.012,
+      rotationZ: Math.sin(elapsed * 0.58) * 0.003,
     };
   }
 
   return {
     floatY: breath,
     rotationX: 0,
-    rotationY: Math.sin(elapsed * 0.34) * 0.014,
+    rotationY: Math.sin(elapsed * 0.34) * 0.008,
     rotationZ: 0,
   };
 }
@@ -398,16 +401,16 @@ function animateMorphTargets(
   const blink = blinkCycle < 0.12 ? Math.sin((blinkCycle / 0.12) * Math.PI) : 0;
   const speaking =
     state === "explaining" || emotion === "reassuring"
-      ? 0.08 + Math.max(0, Math.sin(elapsed * 6.4)) * 0.18
+      ? 0.04 + Math.max(0, Math.sin(elapsed * 5.2)) * 0.08
       : 0;
   const smile =
     emotion === "warm" || emotion === "reassuring"
-      ? 0.26
+      ? 0.12
       : emotion === "listening"
-        ? 0.16
+        ? 0.08
         : 0;
   const concern =
-    emotion === "concerned" ? 0.22 : emotion === "urgent" ? 0.14 : 0;
+    emotion === "concerned" ? 0.12 : emotion === "urgent" ? 0.08 : 0;
 
   meshes.forEach((mesh) => {
     setOptionalMorph(mesh, ["blink", "eyeclose", "eyesclosed"], blink);
@@ -458,8 +461,11 @@ function applyPremiumMaterial(mesh: Mesh) {
       return;
     }
 
-    material.envMapIntensity = Math.max(material.envMapIntensity ?? 0, 0.72);
-    material.roughness = Math.max(material.roughness, 0.48);
+    material.envMapIntensity = Math.min(
+      Math.max(material.envMapIntensity ?? 0, 0.38),
+      0.58,
+    );
+    material.roughness = Math.max(material.roughness, 0.64);
 
     if (material.color.equals(new Color("#ffffff"))) {
       material.color.lerp(new Color("#f8fbff"), 0.24);
