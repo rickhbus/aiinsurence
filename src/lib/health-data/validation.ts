@@ -112,6 +112,18 @@ export const healthMemoryInputSchema = z.object({
   source: z.string().trim().min(1).max(80).default("user_confirmed"),
 });
 
+export const healthMemoryUpdateSchema = z.object({
+  id: z.string().trim().min(1),
+  memory_type: z
+    .enum(["profile", "fitness", "nutrition", "healthcare", "insurance", "behavior"])
+    .optional(),
+  content: z.string().trim().min(1).max(600).optional(),
+});
+
+export const healthMemoryDeleteSchema = z.object({
+  id: z.string().trim().min(1),
+});
+
 export const memorySuggestInputSchema = z.object({
   message: z.string().trim().min(1).max(2000),
   language: localeSchema,
@@ -161,6 +173,30 @@ export const recalculateSummaryInputSchema = z.object({
   date: z.string().date(),
 });
 
+export const onboardingInputSchema = z.object({
+  language: localeSchema,
+  main_goal: z.enum([
+    "lose_fat",
+    "build_muscle",
+    "run_5k",
+    "sleep_better",
+    "eat_better",
+    "hk_care_navigation",
+  ]),
+  fitness_level: z.enum(["beginner", "returning", "consistent", "advanced"]),
+  nutrition_preference: z.enum([
+    "balanced",
+    "high_protein",
+    "lower_sugar",
+    "vegetarian",
+    "no_preference",
+  ]),
+  hk_care_preference: z.enum(["public", "private", "either", "not_sure"]),
+  memory_consent_granted: z.boolean(),
+  privacy_acknowledged: z.literal(true),
+  first_action: z.enum(["water", "run", "gym", "meal", "goal"]),
+});
+
 export function getValidationError(error: z.ZodError) {
   const first = error.issues[0];
 
@@ -175,3 +211,5 @@ export type SleepInput = z.infer<typeof sleepInputSchema>;
 export type BodyMetricInput = z.infer<typeof bodyMetricInputSchema>;
 export type GoalInput = z.infer<typeof goalInputSchema>;
 export type HealthMemoryInput = z.infer<typeof healthMemoryInputSchema>;
+export type HealthMemoryUpdateInput = z.infer<typeof healthMemoryUpdateSchema>;
+export type OnboardingInput = z.infer<typeof onboardingInputSchema>;

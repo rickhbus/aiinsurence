@@ -154,7 +154,8 @@ export type HealthPage =
   | "profile"
   | "memory"
   | "settings"
-  | "auth";
+  | "auth"
+  | "onboarding";
 
 export type CoachMessage = {
   role: "assistant" | "user";

@@ -2,7 +2,7 @@
 
 import type { User } from "@supabase/supabase-js";
 import { BarChart3, DatabaseZap, Download, LockKeyhole, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AuthPanel } from "@/components/auth/auth-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { demoUser, goals, memoryItems, activityData, gymVolumeData, weeklyNutritionData } from "@/lib/health-app/mock-data";
 import { label, text, ui } from "@/lib/health-app/i18n";
 import type { Locale, LocalizedText, MemoryCategory } from "@/lib/health-app/types";
+import type { HealthMemoryRow } from "@/lib/health-data/types";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/user-memory";
 import { GoalCard, SafetyDisclaimer } from "./dashboard-cards";
@@ -150,15 +151,78 @@ export function ProfilePage({ locale }: { locale: Locale }) {
 }
 
 export function MemoryPage({ locale }: { locale: Locale }) {
+  const [remoteMemory, setRemoteMemory] = useState<HealthMemoryRow[] | null>(null);
+  const [query, setQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<MemoryCategory | "all">("all");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadMemory() {
+      try {
+        const response = await fetch("/api/memory", {
+          headers: { Accept: "application/json" },
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const body = (await response.json()) as { memory: HealthMemoryRow[] };
+
+        if (active) {
+          setRemoteMemory(body.memory);
+        }
+      } catch {
+        // Local/demo mode keeps the mock memory cards visible.
+      }
+    }
+
+    loadMemory();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const grouped = useMemo(() => {
-    return memoryItems.reduce<Record<MemoryCategory, typeof memoryItems>>(
+    const mappedItems = remoteMemory
+      ? remoteMemory.map((item) => ({
+          id: item.id,
+          category: item.memory_type,
+          title: {
+            zh: categoryTitle(item.memory_type, "zh-Hant"),
+            en: categoryTitle(item.memory_type, "en"),
+          },
+          content: { zh: item.content, en: item.content },
+          source: {
+            zh: item.source === "coach_memory_confirmation" ? "AI 建議，使用者確認" : "使用者確認",
+            en: item.source === "coach_memory_confirmation" ? "AI suggested, user confirmed" : "User confirmed",
+          },
+          consentStatus: item.consent_status === "deleted" ? "off" : "saved",
+          updatedAt: item.updated_at.slice(0, 10),
+        }))
+      : memoryItems;
+    const normalizedQuery = query.trim().toLowerCase();
+    const filteredItems = mappedItems.filter((item) => {
+      const matchesCategory =
+        categoryFilter === "all" || item.category === categoryFilter;
+      const content = `${text(item.title, locale)} ${text(item.content, locale)}`.toLowerCase();
+      const matchesQuery = !normalizedQuery || content.includes(normalizedQuery);
+
+      return matchesCategory && matchesQuery;
+    });
+
+    return filteredItems.reduce<Record<MemoryCategory, typeof mappedItems>>(
       (groups, item) => {
         groups[item.category].push(item);
         return groups;
       },
       { profile: [], fitness: [], nutrition: [], healthcare: [], insurance: [], behavior: [] },
     );
-  }, []);
+  }, [categoryFilter, locale, query, remoteMemory]);
 
   const categoryLabels: Record<MemoryCategory, LocalizedText> = {
     profile: { zh: "個人記憶", en: "Profile memory" },
@@ -179,6 +243,34 @@ export function MemoryPage({ locale }: { locale: Locale }) {
         }}
         locale={locale}
       />
+      <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
+        <CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_220px_auto]">
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={locale === "zh-Hant" ? "搜尋健康記憶" : "Search health memory"}
+            aria-label={locale === "zh-Hant" ? "搜尋健康記憶" : "Search health memory"}
+          />
+          <select
+            value={categoryFilter}
+            onChange={(event) => setCategoryFilter(event.target.value as MemoryCategory | "all")}
+            className="min-h-10 rounded-md border border-input bg-background px-3 text-sm"
+            aria-label={locale === "zh-Hant" ? "記憶類別" : "Memory category"}
+          >
+            <option value="all">{locale === "zh-Hant" ? "全部類別" : "All categories"}</option>
+            {(Object.keys(categoryLabels) as MemoryCategory[]).map((category) => (
+              <option key={category} value={category}>
+                {text(categoryLabels[category], locale)}
+              </option>
+            ))}
+          </select>
+          <Badge variant={remoteMemory ? "default" : "secondary"} className="h-10 justify-center">
+            {remoteMemory
+              ? locale === "zh-Hant" ? "真實資料" : "Real data"
+              : locale === "zh-Hant" ? "本機示範" : "Local demo"}
+          </Badge>
+        </CardContent>
+      </Card>
       {(Object.keys(grouped) as MemoryCategory[]).map((category) => (
         <Card key={category} className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
           <CardHeader>
@@ -197,11 +289,45 @@ export function MemoryPage({ locale }: { locale: Locale }) {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm leading-6 text-muted-foreground">{text(item.content, locale)}</p>
+                  {editingId === item.id ? (
+                    <Textarea
+                      value={editingText}
+                      onChange={(event) => setEditingText(event.target.value)}
+                      aria-label={locale === "zh-Hant" ? "編輯健康記憶" : "Edit health memory"}
+                    />
+                  ) : (
+                    <p className="text-sm leading-6 text-muted-foreground">{text(item.content, locale)}</p>
+                  )}
                 </CardContent>
                 <CardFooter className="gap-2">
-                  <Button variant="outline" size="sm">{locale === "zh-Hant" ? "編輯" : "Edit"}</Button>
-                  <Button variant="destructive" size="sm">
+                  {editingId === item.id ? (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      disabled={!remoteMemory}
+                      onClick={() => saveMemoryEdit(item.id)}
+                    >
+                      {locale === "zh-Hant" ? "保存" : "Save"}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!remoteMemory}
+                      onClick={() => {
+                        setEditingId(item.id);
+                        setEditingText(text(item.content, locale));
+                      }}
+                    >
+                      {locale === "zh-Hant" ? "編輯" : "Edit"}
+                    </Button>
+                  )}
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={!remoteMemory}
+                    onClick={() => deleteMemory(item.id)}
+                  >
                     <Trash2 data-icon="inline-start" aria-hidden="true" />
                     {locale === "zh-Hant" ? "刪除" : "Delete"}
                   </Button>
@@ -213,6 +339,58 @@ export function MemoryPage({ locale }: { locale: Locale }) {
       ))}
     </div>
   );
+
+  async function saveMemoryEdit(id: string) {
+    const response = await fetch("/api/memory", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ id, content: editingText }),
+    });
+
+    if (!response.ok) {
+      return;
+    }
+
+    const body = (await response.json()) as { memory: HealthMemoryRow };
+    setRemoteMemory((current) =>
+      current?.map((item) => (item.id === id ? body.memory : item)) ?? current,
+    );
+    setEditingId(null);
+    setEditingText("");
+  }
+
+  async function deleteMemory(id: string) {
+    const response = await fetch("/api/memory", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ id }),
+    });
+
+    if (!response.ok) {
+      return;
+    }
+
+    setRemoteMemory((current) => current?.filter((item) => item.id !== id) ?? current);
+  }
+}
+
+function categoryTitle(category: MemoryCategory, locale: Locale) {
+  const labels: Record<MemoryCategory, LocalizedText> = {
+    profile: { zh: "個人記憶", en: "Profile memory" },
+    fitness: { zh: "健身記憶", en: "Fitness memory" },
+    nutrition: { zh: "營養記憶", en: "Nutrition memory" },
+    healthcare: { zh: "醫療記憶", en: "Healthcare memory" },
+    insurance: { zh: "保險記憶", en: "Insurance memory" },
+    behavior: { zh: "行為記憶", en: "Behavior memory" },
+  };
+
+  return text(labels[category], locale);
 }
 
 export function SettingsPage({ locale }: { locale: Locale }) {

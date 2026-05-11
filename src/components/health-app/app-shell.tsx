@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { HealthPage, Locale } from "@/lib/health-app/types";
 import { cn } from "@/lib/utils";
 import { CoachPage, RightCoachPanel } from "./coach";
@@ -15,6 +15,7 @@ import {
   ProgressPage,
   SettingsPage,
 } from "./profile-progress";
+import { isOnboardingComplete, OnboardingPage } from "./onboarding";
 import {
   GenericTrackerPage,
   GymPage,
@@ -33,7 +34,18 @@ export function HealthAppShell({
   const [locale, setLocale] = useState<Locale>("zh-Hant");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [coachOpen, setCoachOpen] = useState(true);
-  const showRightCoach = currentPage !== "coach" && currentPage !== "auth";
+  const isFocusedPage = currentPage === "auth" || currentPage === "onboarding";
+  const showRightCoach = currentPage !== "coach" && !isFocusedPage;
+
+  useEffect(() => {
+    if (currentPage === "auth" || currentPage === "onboarding") {
+      return;
+    }
+
+    if (!isOnboardingComplete()) {
+      window.location.assign("/onboarding");
+    }
+  }, [currentPage]);
 
   return (
     <div className="min-h-dvh bg-[linear-gradient(160deg,var(--health-bg-start),var(--background)_40%,var(--health-bg-end)_90%,var(--background))]">
@@ -65,8 +77,8 @@ export function HealthAppShell({
           </main>
         </div>
         {showRightCoach && coachOpen ? <RightCoachPanel locale={locale} onClose={() => setCoachOpen(false)} /> : null}
-        <MobileBottomNav currentPage={currentPage} locale={locale} />
-        <QuickAddButton locale={locale} />
+        {!isFocusedPage ? <MobileBottomNav currentPage={currentPage} locale={locale} /> : null}
+        {!isFocusedPage ? <QuickAddButton locale={locale} /> : null}
       </div>
     </div>
   );
@@ -116,6 +128,8 @@ function PageContent({
       return <SettingsPage locale={locale} />;
     case "auth":
       return <AuthLandingPage locale={locale} />;
+    case "onboarding":
+      return <OnboardingPage locale={locale} />;
     case "walking":
     case "sports":
     case "body":

@@ -18,6 +18,10 @@ export type Profile = {
   care_preference: "public" | "private" | "either" | null;
   location_area: string | null;
   is_anonymous: boolean;
+  onboarding_completed_at?: string | null;
+  onboarding_answers?: Json;
+  memory_consent_granted?: boolean;
+  first_action?: string | null;
   created_at: string;
   updated_at: string;
 };

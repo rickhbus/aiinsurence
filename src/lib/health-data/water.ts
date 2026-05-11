@@ -4,7 +4,7 @@ import {
   throwIfSupabaseError,
   type HealthDataClient,
 } from "./common";
-import { upsertDailySummary } from "./summaries";
+import { refreshAfterLogChange } from "./summary-refresh";
 import type { DateRange, WaterLogRow } from "./types";
 import { type WaterInput, waterInputSchema } from "./validation";
 
@@ -54,7 +54,12 @@ export async function createWaterLog(
     .single();
 
   throwIfSupabaseError(error, "create water log");
-  await upsertDailySummary(supabase, userId, new Date(payload.created_at ?? Date.now()));
+  await refreshAfterLogChange(
+    supabase,
+    userId,
+    "water",
+    new Date(payload.created_at ?? Date.now()),
+  );
 
   return data as WaterLogRow;
 }

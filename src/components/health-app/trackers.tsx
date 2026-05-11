@@ -1,7 +1,7 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Activity,
   Apple,
@@ -810,8 +810,14 @@ type LogPayload = Record<string, string | number | null | undefined>;
 
 function useHealthLogSubmit(locale: Locale) {
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   async function submit(endpoint: string, payload: LogPayload, successMessage: string) {
+    if (savingRef.current) {
+      return false;
+    }
+
+    savingRef.current = true;
     setSaving(true);
 
     try {
@@ -837,6 +843,7 @@ function useHealthLogSubmit(locale: Locale) {
       toast.error(locale === "zh-Hant" ? "儲存失敗，請檢查網絡後再試。" : "Save failed. Check your connection and try again.");
       return false;
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }

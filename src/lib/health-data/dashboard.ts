@@ -2,10 +2,10 @@ import {
   getDayBounds,
   getWeekBounds,
   round,
-  throwIfSupabaseError,
   toNumber,
   type HealthDataClient,
 } from "./common";
+import { logWarn } from "@/lib/observability/logger";
 import { calculateDailySummary, calculateWeeklySummary } from "./calculations";
 import type {
   BodyMetricRow,
@@ -118,32 +118,20 @@ export async function getDashboardData(
       .eq("consent_status", "saved"),
   ]);
 
-  [
-    ["load profile", profileResult.error],
-    ["load daily summary", dailySummaryResult.error],
-    ["load weekly summary", weeklySummaryResult.error],
-    ["load dashboard running logs", runningResult.error],
-    ["load dashboard gym logs", gymResult.error],
-    ["load dashboard meals", mealsResult.error],
-    ["load dashboard water logs", waterResult.error],
-    ["load dashboard sleep logs", sleepResult.error],
-    ["load dashboard body metrics", bodyResult.error],
-    ["load dashboard goals", goalsResult.error],
-    ["load memory count", memoryResult.error],
-  ].forEach(([action, error]) => {
-    throwIfSupabaseError(error as { message: string } | null, action as string);
-  });
-
-  const running = (runningResult.data ?? []) as RunningLogRow[];
-  const gym = (gymResult.data ?? []) as GymLogRow[];
-  const meals = (mealsResult.data ?? []) as MealRow[];
-  const water = (waterResult.data ?? []) as WaterLogRow[];
-  const sleep = (sleepResult.data ?? []) as SleepLogRow[];
-  const body = (bodyResult.data ?? []) as BodyMetricRow[];
-  const goals = (goalsResult.data ?? []) as GoalRow[];
+  const running = getDataOrFallback<RunningLogRow[]>(runningResult, [], "load dashboard running logs");
+  const gym = getDataOrFallback<GymLogRow[]>(gymResult, [], "load dashboard gym logs");
+  const meals = getDataOrFallback<MealRow[]>(mealsResult, [], "load dashboard meals");
+  const water = getDataOrFallback<WaterLogRow[]>(waterResult, [], "load dashboard water logs");
+  const sleep = getDataOrFallback<SleepLogRow[]>(sleepResult, [], "load dashboard sleep logs");
+  const body = getDataOrFallback<BodyMetricRow[]>(bodyResult, [], "load dashboard body metrics");
+  const goals = getDataOrFallback<GoalRow[]>(goalsResult, [], "load dashboard goals");
   const todayRaw = filterRowsByDay({ running, gym, meals, water, sleep }, day.date);
   const today =
-    (dailySummaryResult.data as DailyHealthSummary | null) ??
+    getDataOrFallback<DailyHealthSummary | null>(
+      dailySummaryResult,
+      null,
+      "load daily summary",
+    ) ??
     calculateDailySummary({
       userId,
       summaryDate: day.date,
@@ -152,7 +140,11 @@ export async function getDashboardData(
   const dailySummaries =
     today.summary_date === day.date ? [today] : [];
   const weekly =
-    (weeklySummaryResult.data as WeeklyHealthSummary | null) ??
+    getDataOrFallback<WeeklyHealthSummary | null>(
+      weeklySummaryResult,
+      null,
+      "load weekly summary",
+    ) ??
     calculateWeeklySummary({
       userId,
       weekStartDate: week.weekStart,
@@ -160,18 +152,18 @@ export async function getDashboardData(
       runningLogs: running,
       gymLogs: gym,
     });
-  const profile = profileResult.data as {
+  const profile = getDataOrFallback<{
     display_name: string | null;
     preferred_language: string | null;
     location_area: string | null;
-  } | null;
+  } | null>(profileResult, null, "load profile");
   const empty =
     running.length + gym.length + meals.length + water.length + sleep.length + body.length === 0;
   const baseData: Omit<DashboardData, "recommendation"> = {
     profile: {
       displayName: profile?.display_name || "市民健康",
       preferredLanguage: profile?.preferred_language === "en" ? "en" : "zh-Hant",
-      memoryEnabled: (memoryResult.count ?? 0) > 0,
+      memoryEnabled: getCountOrFallback(memoryResult, "load memory count") > 0,
       goal: goals[0]?.title || "減脂並建立肌肉",
       location: profile?.location_area || "香港",
       fitnessLevel: "初級至中級",
@@ -186,7 +178,7 @@ export async function getDashboardData(
       body: body.slice(0, 12),
     },
     goals,
-    memoryCount: memoryResult.count ?? 0,
+    memoryCount: getCountOrFallback(memoryResult, "load memory count"),
     charts: buildDashboardCharts({ running, gym, meals, water }),
     empty,
   };
@@ -195,6 +187,41 @@ export async function getDashboardData(
     ...baseData,
     recommendation: buildTodayRecommendation(baseData as DashboardData),
   };
+}
+
+function getDataOrFallback<T>(
+  result: { data: unknown; error: { message: string } | null },
+  fallback: T,
+  action: string,
+) {
+  if (result.error) {
+    logWarn("Dashboard subsystem failed", {
+      route: "/api/dashboard",
+      status: result.error.message,
+      action,
+    });
+
+    return fallback;
+  }
+
+  return result.data as T;
+}
+
+function getCountOrFallback(
+  result: { count?: number | null; error: { message: string } | null },
+  action: string,
+) {
+  if (result.error) {
+    logWarn("Dashboard subsystem failed", {
+      route: "/api/dashboard",
+      status: result.error.message,
+      action,
+    });
+
+    return 0;
+  }
+
+  return result.count ?? 0;
 }
 
 function filterRowsByDay({

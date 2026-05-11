@@ -8,14 +8,20 @@ import {
   bodyMetricInputSchema,
   mealInputSchema,
   runningLogInputSchema,
+  sleepInputSchema,
   waterInputSchema,
 } from "./validation";
 
 describe("production health safety foundation", () => {
   it("rejects impossible tracking values", () => {
     expect(runningLogInputSchema.safeParse({ distance_km: -1, duration_seconds: 100, rpe: 5 }).success).toBe(false);
+    expect(runningLogInputSchema.safeParse({ distance_km: 1, duration_seconds: 0, rpe: 5 }).success).toBe(false);
     expect(waterInputSchema.safeParse({ amount_ml: 0 }).success).toBe(false);
+    expect(waterInputSchema.safeParse({ amount_ml: 9000 }).success).toBe(false);
     expect(mealInputSchema.safeParse({ meal_type: "lunch", food_name: "", calories: 100 }).success).toBe(false);
+    expect(mealInputSchema.safeParse({ meal_type: "lunch", food_name: "rice", calories: -10 }).success).toBe(false);
+    expect(mealInputSchema.safeParse({ meal_type: "lunch", food_name: "rice", notes: "x".repeat(1200) }).success).toBe(false);
+    expect(sleepInputSchema.safeParse({ sleep_hours: 25 }).success).toBe(false);
     expect(bodyMetricInputSchema.safeParse({}).success).toBe(false);
   });
 

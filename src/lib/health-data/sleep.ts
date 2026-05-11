@@ -4,7 +4,7 @@ import {
   throwIfSupabaseError,
   type HealthDataClient,
 } from "./common";
-import { upsertDailySummary } from "./summaries";
+import { refreshAfterLogChange } from "./summary-refresh";
 import type { DateRange, SleepLogRow } from "./types";
 import { sleepInputSchema, type SleepInput } from "./validation";
 
@@ -54,7 +54,12 @@ export async function createSleepLog(
     .single();
 
   throwIfSupabaseError(error, "create sleep log");
-  await upsertDailySummary(supabase, userId, new Date(payload.created_at ?? Date.now()));
+  await refreshAfterLogChange(
+    supabase,
+    userId,
+    "sleep",
+    new Date(payload.created_at ?? Date.now()),
+  );
 
   return data as SleepLogRow;
 }

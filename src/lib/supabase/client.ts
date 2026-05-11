@@ -1,21 +1,24 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getClientEnv } from "@/lib/env";
 
 let browserClient: SupabaseClient | null = null;
 
 export function hasSupabaseBrowserConfig() {
-  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && getSupabasePublicKey());
+  return getBrowserEnv().isSupabaseConfigured;
 }
 
 export function getSupabaseBrowserClient() {
-  if (!hasSupabaseBrowserConfig()) {
+  const env = getBrowserEnv();
+
+  if (!env.isSupabaseConfigured) {
     return null;
   }
 
   if (!browserClient) {
     browserClient = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      getSupabasePublicKey()!,
+      env.supabaseUrl!,
+      env.supabaseAnonKey!,
     );
   }
 
@@ -30,9 +33,13 @@ export function getAuthRedirectTo(path = "/auth/callback") {
   return `${window.location.origin}${path}`;
 }
 
-function getSupabasePublicKey() {
-  return (
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-  );
+function getBrowserEnv() {
+  return getClientEnv({
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_ANALYTICS_KEY: process.env.NEXT_PUBLIC_ANALYTICS_KEY,
+    NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
+  });
 }

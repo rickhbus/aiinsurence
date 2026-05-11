@@ -23,28 +23,46 @@ export async function POST(request: Request) {
     return auth.response;
   }
 
-  const limit = await checkUserAiRateLimit({
-    supabase: auth.supabase,
-    userId: auth.user.id,
-    route: "/api/weekly-report",
-    dailyLimit: 3,
-  });
-
-  if (!limit.allowed) {
-    return Response.json(
-      { error: limit.message },
-      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
-    );
-  }
-
   try {
     const date = parsed.data.week_start_date
       ? new Date(parsed.data.week_start_date)
       : new Date();
     const summary = await upsertWeeklySummary(auth.supabase, auth.user.id, date);
+
+    if (summary.ai_summary && !parsed.data.force) {
+      await recordAiUsageEvent({
+        supabase: auth.supabase,
+        userId: auth.user.id,
+        route: "/api/weekly-report",
+        status: "cached",
+      });
+
+      return Response.json({ summary, cached: true });
+    }
+
+    const limit = await checkUserAiRateLimit({
+      supabase: auth.supabase,
+      userId: auth.user.id,
+      route: "/api/weekly-report",
+      dailyLimit: 3,
+    });
+
+    if (!limit.allowed) {
+      return Response.json(
+        { error: limit.message },
+        { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+      );
+    }
+
     const aiSummary =
       summary.ai_summary ||
       `本週跑步 ${summary.running_distance_km}km，健身 ${summary.gym_sessions} 次，平均睡眠 ${summary.avg_sleep_hours} 小時。下週先守住睡眠、蛋白質和飲水，再小幅調整跑量。`;
+
+    await auth.supabase
+      .from("weekly_health_summaries")
+      .update({ ai_summary: aiSummary })
+      .eq("user_id", auth.user.id)
+      .eq("week_start_date", summary.week_start_date);
 
     await recordAiUsageEvent({
       supabase: auth.supabase,
@@ -61,7 +79,7 @@ export async function POST(request: Request) {
       metadata: { healthScoreAvg: summary.health_score_avg },
     });
 
-    return Response.json({ summary: { ...summary, ai_summary: aiSummary } });
+    return Response.json({ summary: { ...summary, ai_summary: aiSummary }, cached: false });
   } catch {
     await recordAiUsageEvent({
       supabase: auth.supabase,

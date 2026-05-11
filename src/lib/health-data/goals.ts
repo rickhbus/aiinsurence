@@ -4,6 +4,7 @@ import {
   throwIfSupabaseError,
   type HealthDataClient,
 } from "./common";
+import { refreshGoalProgress } from "./summary-refresh";
 import type { DateRange, GoalRow } from "./types";
 import { goalInputSchema, type GoalInput } from "./validation";
 
@@ -44,6 +45,7 @@ export async function createGoal(
     .single();
 
   throwIfSupabaseError(error, "create goal");
+  await refreshGoalProgress(supabase, userId);
 
   return data as GoalRow;
 }
@@ -65,6 +67,7 @@ export async function updateGoal(
     .single();
 
   throwIfSupabaseError(error, "update goal");
+  await refreshGoalProgress(supabase, userId);
 
   return data as GoalRow;
 }

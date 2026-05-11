@@ -23,6 +23,7 @@ import { WelcomeStrip } from "./navigation";
 
 export function DashboardPage({ locale }: { locale: Locale }) {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [dashboardMode, setDashboardMode] = useState<"loading" | "real" | "demo">("loading");
 
   useEffect(() => {
     let active = true;
@@ -34,6 +35,9 @@ export function DashboardPage({ locale }: { locale: Locale }) {
         });
 
         if (!response.ok) {
+          if (active) {
+            setDashboardMode("demo");
+          }
           return;
         }
 
@@ -41,8 +45,12 @@ export function DashboardPage({ locale }: { locale: Locale }) {
 
         if (active) {
           setDashboardData(data);
+          setDashboardMode("real");
         }
       } catch {
+        if (active) {
+          setDashboardMode("demo");
+        }
         // Local development without Supabase keeps the mock dashboard visible.
       }
     }
@@ -70,6 +78,14 @@ export function DashboardPage({ locale }: { locale: Locale }) {
           {locale === "zh-Hant"
             ? "開始記錄你的第一個健康行動，建立個人化建議。"
             : "Start logging your first health action to build personalized recommendations."}
+        </div>
+      ) : null}
+
+      {dashboardMode === "demo" ? (
+        <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-sm leading-6 text-muted-foreground">
+          {locale === "zh-Hant"
+            ? "目前顯示本機示範資料。設定 Supabase 後，儀表板會載入你的真實紀錄。"
+            : "Showing local demo data. Configure Supabase to load your real dashboard records."}
         </div>
       ) : null}
 

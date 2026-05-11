@@ -1,20 +1,28 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import {
+  assertProductionEnvIfNeeded,
+  getClientEnv,
+} from "@/lib/env";
 
 export function hasSupabaseServerConfig() {
-  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && getSupabasePublicKey());
+  assertProductionEnvIfNeeded();
+
+  return getClientEnv().isSupabaseConfigured;
 }
 
 export async function createClient() {
-  if (!hasSupabaseServerConfig()) {
+  const env = assertProductionEnvIfNeeded();
+
+  if (!env.isSupabaseConfigured) {
     return null;
   }
 
   const cookieStore = await cookies();
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    getSupabasePublicKey()!,
+    env.supabaseUrl!,
+    env.supabaseAnonKey!,
     {
       cookies: {
         getAll() {
@@ -32,12 +40,5 @@ export async function createClient() {
         },
       },
     },
-  );
-}
-
-function getSupabasePublicKey() {
-  return (
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
   );
 }

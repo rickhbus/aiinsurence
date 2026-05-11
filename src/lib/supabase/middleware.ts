@@ -1,21 +1,20 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { assertProductionEnvIfNeeded } from "@/lib/env";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({
     request,
   });
+  const env = assertProductionEnvIfNeeded();
 
-  if (
-    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-  ) {
+  if (!env.isSupabaseConfigured) {
     return response;
   }
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    env.supabaseUrl!,
+    env.supabaseAnonKey!,
     {
       cookies: {
         getAll() {

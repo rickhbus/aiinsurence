@@ -4,7 +4,7 @@ import {
   throwIfSupabaseError,
   type HealthDataClient,
 } from "./common";
-import { upsertDailySummary } from "./summaries";
+import { refreshAfterLogChange } from "./summary-refresh";
 import type { DateRange, RunningLogRow } from "./types";
 import { type RunningLogInput, runningLogInputSchema } from "./validation";
 
@@ -54,7 +54,12 @@ export async function createRunningLog(
     .single();
 
   throwIfSupabaseError(error, "create running log");
-  await upsertDailySummary(supabase, userId, new Date(payload.created_at ?? Date.now()));
+  await refreshAfterLogChange(
+    supabase,
+    userId,
+    "run",
+    new Date(payload.created_at ?? Date.now()),
+  );
 
   return data as RunningLogRow;
 }

@@ -4,7 +4,7 @@ import {
   throwIfSupabaseError,
   type HealthDataClient,
 } from "./common";
-import { upsertDailySummary } from "./summaries";
+import { refreshAfterLogChange } from "./summary-refresh";
 import type { DateRange, GymLogRow } from "./types";
 import { type GymLogInput, gymLogInputSchema } from "./validation";
 
@@ -54,7 +54,12 @@ export async function createGymLog(
     .single();
 
   throwIfSupabaseError(error, "create gym log");
-  await upsertDailySummary(supabase, userId, new Date(payload.created_at ?? Date.now()));
+  await refreshAfterLogChange(
+    supabase,
+    userId,
+    "gym",
+    new Date(payload.created_at ?? Date.now()),
+  );
 
   return data as GymLogRow;
 }

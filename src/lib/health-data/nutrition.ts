@@ -4,7 +4,7 @@ import {
   throwIfSupabaseError,
   type HealthDataClient,
 } from "./common";
-import { upsertDailySummary } from "./summaries";
+import { refreshAfterLogChange } from "./summary-refresh";
 import type { DateRange, MealRow } from "./types";
 import { mealInputSchema, type MealInput } from "./validation";
 
@@ -62,7 +62,12 @@ export async function createMeal(
     .single();
 
   throwIfSupabaseError(error, "create meal");
-  await upsertDailySummary(supabase, userId, new Date(payload.created_at ?? Date.now()));
+  await refreshAfterLogChange(
+    supabase,
+    userId,
+    "meal",
+    new Date(payload.created_at ?? Date.now()),
+  );
 
   return data as MealRow;
 }

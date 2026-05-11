@@ -3,6 +3,8 @@ import { logWarn } from "@/lib/observability/logger";
 
 export type AnalyticsEventName =
   | "dashboard_viewed"
+  | "onboarding_started"
+  | "onboarding_completed"
   | "quick_add_opened"
   | "run_logged"
   | "gym_logged"
@@ -26,6 +28,9 @@ export type AnalyticsEventName =
 
 type AnalyticsMetadata = Record<string, string | number | boolean | null>;
 
+const SENSITIVE_ANALYTICS_KEY_PATTERN =
+  /(symptom|diagnosis|medical|note|notes|message|content|prompt|meal|food|policy|claim|hkid|email|phone|name|text|input)/iu;
+
 export async function trackServerEvent({
   supabase,
   userId,
@@ -40,7 +45,7 @@ export async function trackServerEvent({
   const { error } = await supabase.from("analytics_events").insert({
     user_id: userId,
     event_name: event,
-    event_payload: metadata,
+    event_payload: scrubAnalyticsMetadata(metadata),
   });
 
   if (error) {
@@ -50,4 +55,31 @@ export async function trackServerEvent({
       status: error.message,
     });
   }
+}
+
+export function scrubAnalyticsMetadata(metadata: AnalyticsMetadata) {
+  return Object.fromEntries(
+    Object.entries(metadata).map(([key, value]) => [
+      key,
+      SENSITIVE_ANALYTICS_KEY_PATTERN.test(key)
+        ? scrubSensitiveAnalyticsValue(value)
+        : normalizeAnalyticsValue(value),
+    ]),
+  );
+}
+
+function scrubSensitiveAnalyticsValue(value: AnalyticsMetadata[string]) {
+  if (typeof value === "string") {
+    return "[redacted]";
+  }
+
+  return normalizeAnalyticsValue(value);
+}
+
+function normalizeAnalyticsValue(value: AnalyticsMetadata[string]) {
+  if (typeof value === "string") {
+    return value.slice(0, 120);
+  }
+
+  return value;
 }

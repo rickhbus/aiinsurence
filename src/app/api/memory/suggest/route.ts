@@ -1,11 +1,26 @@
 import { memorySuggestInputSchema } from "@/lib/health-data/validation";
 import { readValidatedJson } from "@/lib/server/persistence-auth";
+import { checkIpRateLimit, getRequestIp } from "@/lib/server/rate-limit";
 
 export async function POST(request: Request) {
   const parsed = await readValidatedJson(request, memorySuggestInputSchema);
 
   if (!parsed.ok) {
     return parsed.response;
+  }
+
+  const limit = checkIpRateLimit({
+    ip: getRequestIp(request),
+    route: "/api/memory/suggest",
+    limit: 60,
+    windowMs: 24 * 60 * 60 * 1000,
+  });
+
+  if (!limit.allowed) {
+    return Response.json(
+      { error: limit.message },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
   }
 
   const suggestion = suggestMemory(parsed.data.message);

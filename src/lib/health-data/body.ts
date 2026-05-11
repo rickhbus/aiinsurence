@@ -4,6 +4,7 @@ import {
   throwIfSupabaseError,
   type HealthDataClient,
 } from "./common";
+import { refreshAfterLogChange } from "./summary-refresh";
 import type { BodyMetricRow, DateRange } from "./types";
 import { bodyMetricInputSchema, type BodyMetricInput } from "./validation";
 
@@ -53,6 +54,12 @@ export async function createBodyMetric(
     .single();
 
   throwIfSupabaseError(error, "create body metric");
+  await refreshAfterLogChange(
+    supabase,
+    userId,
+    "body_metric",
+    new Date(payload.created_at ?? Date.now()),
+  );
 
   return data as BodyMetricRow;
 }
