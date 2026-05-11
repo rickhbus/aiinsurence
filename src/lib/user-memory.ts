@@ -37,6 +37,10 @@ export type RecommendationType = "department" | "insurance" | "emergency" | "fol
 export type ConsentType =
   | "save_memory"
   | "health_data"
+  | "health_logs"
+  | "ai_history"
+  | "mobile_health_sync"
+  | "analytics"
   | "marketing"
   | "adviser_handoff";
 

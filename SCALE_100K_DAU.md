@@ -11,7 +11,8 @@ This repository is structured for a realistic path toward 100,000 daily active u
 - AI.GBL for normalized case context.
 - Emotion Engine for tone guidance only, not decisioning.
 - Privacy-safe analytics and AI usage event tables.
-- In-process anonymous IP rate limiting for MVP plus database-backed per-user AI limits.
+- Shared rate-limit adapter with Redis/Upstash support for production plus database-backed per-user AI limits.
+- Backend-first mobile health sync with idempotent batches and bounded normalized records.
 
 ## Scaling Assumptions
 
@@ -36,7 +37,7 @@ This repository is structured for a realistic path toward 100,000 daily active u
 - Auth-required routes use Supabase sessions.
 - AI.GBL and Emotion Engine validate input length and include request IDs.
 - AI routes record privacy-safe usage events.
-- Anonymous AI use is restricted by in-memory IP limit for MVP; production should move this to Redis, Vercel Firewall/rate limits, or another shared edge/store solution.
+- Anonymous AI use and mobile sync bursts use privacy-minimized hashed rate-limit keys. Production should configure Redis/Upstash, Vercel Firewall/rate limits, or another shared edge/store solution.
 - Auth abuse should rely on Supabase Auth controls plus Vercel/WAF rules.
 
 ## Observability Targets

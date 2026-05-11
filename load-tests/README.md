@@ -18,10 +18,15 @@ Do not run uncontrolled stress tests against production. Real 100k DAU validatio
 ## Scripts
 
 ```bash
-k6 run -e BASE_URL="$BASE_URL" load-tests/k6-public-routes.js
-k6 run -e BASE_URL="$BASE_URL" load-tests/k6-ai-routes.js
-k6 run -e BASE_URL="$BASE_URL" -e AUTH_TOKEN="$AUTH_TOKEN" load-tests/k6-authenticated-api.js
+k6 run -e BASE_URL="$BASE_URL" load-tests/k6-public-pages.js
+k6 run -e BASE_URL="$BASE_URL" -e AUTH_TOKEN="$AUTH_TOKEN" load-tests/k6-auth-dashboard.js
+k6 run -e BASE_URL="$BASE_URL" load-tests/k6-ai-apis.js
+k6 run -e BASE_URL="$BASE_URL" -e AUTH_TOKEN="$AUTH_TOKEN" load-tests/k6-mobile-health-sync.js
 ```
+
+The older `k6-public-routes.js`, `k6-ai-routes.js`, and
+`k6-authenticated-api.js` scripts remain as low-rate smoke aliases; use the
+four scripts above for the current 100k DAU evidence package.
 
 ## What To Capture
 
@@ -31,5 +36,7 @@ k6 run -e BASE_URL="$BASE_URL" -e AUTH_TOKEN="$AUTH_TOKEN" load-tests/k6-authent
 - Vercel function errors and cold-start symptoms.
 - Supabase CPU, connection pool saturation, slow queries, and row-read volume.
 - AI provider errors, fallback rate, token spend, and timeout rate.
+- Mobile health sync accepted/rejected/duplicate counts.
+- Cost estimate per 1k users and per 100k DAU.
 
 Passing these scripts is only a smoke baseline. It is not proof that the app is ready for 100k DAU.

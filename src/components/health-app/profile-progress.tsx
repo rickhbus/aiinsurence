@@ -1,7 +1,15 @@
 "use client";
 
 import type { User } from "@supabase/supabase-js";
-import { BarChart3, DatabaseZap, LockKeyhole, LogOut, Trash2, UserRound } from "lucide-react";
+import {
+  BarChart3,
+  DatabaseZap,
+  LockKeyhole,
+  LogOut,
+  Smartphone,
+  Trash2,
+  UserRound,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AuthPanel } from "@/components/auth/auth-panel";
 import { Badge } from "@/components/ui/badge";
@@ -408,6 +416,7 @@ export function SettingsPage({ locale }: { locale: Locale }) {
         <PrivacySettingsPanel locale={locale} />
         <div className="grid gap-5">
           <AccountSessionPanel locale={locale} />
+          <MobileHealthSettingsPanel locale={locale} />
           <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
             <CardHeader>
               <CardTitle>{locale === "zh-Hant" ? "同意紀錄" : "Consent history"}</CardTitle>
@@ -508,6 +517,106 @@ export function PrivacySettingsPanel({ locale }: { locale: Locale }) {
             ? "完整資料匯出和帳戶刪除需要正式私隱流程、身份確認和恢復期，未在此 MVP 中提供一鍵操作。"
             : "Full data export and account deletion require a formal privacy workflow, identity confirmation, and recovery window; this MVP does not provide one-click account deletion."}
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function MobileHealthSettingsPanel({ locale }: { locale: Locale }) {
+  const [status, setStatus] = useState<"loading" | "connected" | "not-connected" | "unavailable">("loading");
+  const [platforms, setPlatforms] = useState<string[]>([]);
+  const [lastSync, setLastSync] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadStatus() {
+      try {
+        const response = await fetch("/api/mobile-health/status", {
+          headers: { Accept: "application/json" },
+        });
+
+        if (!response.ok) {
+          if (active) {
+            setStatus("unavailable");
+          }
+          return;
+        }
+
+        const body = (await response.json()) as {
+          connectedPlatforms?: string[];
+          lastSuccessfulSync?: string | null;
+          consent?: { mobileHealthSync?: boolean };
+        };
+
+        if (!active) {
+          return;
+        }
+
+        setPlatforms(body.connectedPlatforms ?? []);
+        setLastSync(body.lastSuccessfulSync ?? null);
+        setStatus(body.consent?.mobileHealthSync ? "connected" : "not-connected");
+      } catch {
+        if (active) {
+          setStatus("unavailable");
+        }
+      }
+    }
+
+    loadStatus();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
+      <CardHeader>
+        <span className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm shadow-primary/20">
+          <Smartphone aria-hidden="true" />
+        </span>
+        <CardTitle>{locale === "zh-Hant" ? "手機健康資料同步" : "Mobile health sync"}</CardTitle>
+        <CardDescription>
+          {locale === "zh-Hant"
+            ? "Apple HealthKit 和 Android Health Connect 只能由原生 App 在裝置上逐項請求授權；網頁不會直接讀取。"
+            : "Apple HealthKit and Android Health Connect require a native app to request per-type permission on device; the web app does not read them directly."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-3">
+        <div className="flex items-center justify-between rounded-xl bg-muted/30 p-3 text-sm ring-1 ring-border/40">
+          <span>{locale === "zh-Hant" ? "同步同意" : "Sync consent"}</span>
+          <Badge variant={status === "connected" ? "default" : "secondary"}>
+            {status === "loading"
+              ? locale === "zh-Hant" ? "檢查中" : "Checking"
+              : status === "connected"
+                ? locale === "zh-Hant" ? "已啟用" : "Enabled"
+                : locale === "zh-Hant" ? "未啟用" : "Not enabled"}
+          </Badge>
+        </div>
+        <div className="rounded-xl bg-muted/30 p-3 text-sm leading-6 text-muted-foreground ring-1 ring-border/40">
+          {locale === "zh-Hant"
+            ? "首版只接受步數、活動熱量、跑步／運動摘要、睡眠、體重和心率摘要；不接收診斷、藥物、臨床紀錄、葡萄糖或高頻心率串流。"
+            : "The first release accepts steps, active energy, workout/run summaries, sleep, body weight, and heart-rate summaries only; it does not ingest diagnoses, medications, clinical records, glucose, or raw high-frequency heart streams."}
+        </div>
+        <div className="grid gap-2 text-sm">
+          <span className="text-muted-foreground">
+            {locale === "zh-Hant" ? "已連接平台" : "Connected platforms"}
+          </span>
+          <span>{platforms.length > 0 ? platforms.join(", ") : locale === "zh-Hant" ? "未連接" : "None"}</span>
+        </div>
+        <div className="grid gap-2 text-sm">
+          <span className="text-muted-foreground">
+            {locale === "zh-Hant" ? "最後成功同步" : "Last successful sync"}
+          </span>
+          <span>{lastSync ?? (locale === "zh-Hant" ? "尚未同步" : "No sync yet")}</span>
+        </div>
+        <Button asChild variant="outline" className="justify-start">
+          <a href="/onboarding">
+            <Smartphone data-icon="inline-start" aria-hidden="true" />
+            {locale === "zh-Hant" ? "更新手機同步偏好" : "Update mobile sync preference"}
+          </a>
+        </Button>
       </CardContent>
     </Card>
   );

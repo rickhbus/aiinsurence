@@ -76,7 +76,7 @@ export function checkIpRateLimit({
   limit: number;
   windowMs: number;
 }): LimitResult {
-  const key = `${route}:${ip}`;
+  const key = buildRateLimitKey(route, ip);
   const now = Date.now();
   const hits = (fallbackHits.get(key) ?? []).filter((hit) => now - hit < windowMs);
 
@@ -107,7 +107,29 @@ export async function checkAnonymousRateLimit({
   windowMs: number;
   store?: RateLimitStore;
 }): Promise<LimitResult> {
-  const key = `rl:${route}:${ip}`;
+  return checkSubjectRateLimit({
+    subject: ip,
+    route,
+    limit,
+    windowMs,
+    store,
+  });
+}
+
+export async function checkSubjectRateLimit({
+  subject,
+  route,
+  limit,
+  windowMs,
+  store = getConfiguredRateLimitStore(),
+}: {
+  subject: string;
+  route: string;
+  limit: number;
+  windowMs: number;
+  store?: RateLimitStore;
+}): Promise<LimitResult> {
+  const key = buildRateLimitKey(route, subject);
   const now = Date.now();
   const result = await store.increment(key, windowMs);
 
@@ -205,4 +227,19 @@ function secondsUntilTomorrow() {
   tomorrow.setHours(0, 0, 0, 0);
 
   return Math.ceil((tomorrow.getTime() - now.getTime()) / 1000);
+}
+
+export function buildRateLimitKey(route: string, subject: string) {
+  return `rl:${route}:${hashRateLimitSubject(subject)}`;
+}
+
+function hashRateLimitSubject(subject: string) {
+  let hash = 0x811c9dc5;
+
+  for (let index = 0; index < subject.length; index += 1) {
+    hash ^= subject.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+
+  return (hash >>> 0).toString(16).padStart(8, "0");
 }

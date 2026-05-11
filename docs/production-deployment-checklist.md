@@ -4,7 +4,7 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 
 ## Data And Auth
 
-- [ ] Supabase migrations `001` to `005` applied in order.
+- [ ] Supabase migrations `001` to `006` applied in order.
 - [ ] RLS enabled on every user-owned table.
 - [ ] Own-row select/insert/update/delete policies verified.
 - [ ] No user-owned table grants public cross-user access.
@@ -59,6 +59,7 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 - [ ] Emotion Engine analysis saves structured outputs only, not raw sensitive text.
 - [ ] Analysis history loads with a bounded `limit`, not full history.
 - [ ] 429 responses include `Retry-After` where appropriate.
+- [ ] Mobile health sync requires auth, explicit consent, idempotency key, bounded batch size, and returns accepted/rejected/duplicate counts.
 
 ## Safety And Privacy
 
@@ -69,12 +70,14 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 - [ ] Analytics payloads contain counts, categories, and booleans only.
 - [ ] Logs do not include symptoms text, policy text, meal text, raw AI prompts, or medical notes.
 - [ ] Logs do not include claim text, HKID, phone numbers, payment data, auth tokens, API keys, or session cookies.
+- [ ] Mobile health data is not used for diagnosis or insurance decisioning and does not ingest clinical records, diagnoses, medications, glucose, or raw high-frequency heart streams.
 - [ ] External monitoring configured or explicitly deferred.
 
 ## Scale Readiness
 
 - [ ] Load-test baseline captured from `load-tests/` against preview or staging.
 - [ ] Supabase query plans reviewed with `supabase/diagnostics/query-plan-validation.sql`.
+- [ ] RLS and indexes reviewed with `supabase/diagnostics/rls-validation.sql` and `supabase/diagnostics/index-validation.sql`.
 - [ ] Backup restore drill completed or scheduled.
 - [ ] Incident response drill completed or scheduled.
 - [ ] AI spend cap and provider quota reviewed.
@@ -93,6 +96,7 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 - [ ] Bottom nav and Quick Add are reachable.
 - [ ] Forms and charts do not overflow.
 - [ ] Tap targets are comfortable.
+- [ ] Mobile health sync settings page works on mobile.
 
 ## Final Smoke Flow
 
@@ -118,4 +122,7 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 - [ ] User runs Emotion Engine and sees optional, non-clinical wording.
 - [ ] User opens analysis history.
 - [ ] User views weekly progress.
+- [ ] User opens mobile health sync settings.
+- [ ] User sees Apple Health / Android Health Connect explanation.
+- [ ] User grants sync consent or chooses not now.
 - [ ] User signs out and signs back in.

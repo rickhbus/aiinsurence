@@ -39,6 +39,8 @@ const REQUIRED_TABLES = [
   { table: "gbl_analysis_results", column: "id", access: "protected" },
   { table: "emotion_engine_results", column: "id", access: "protected" },
   { table: "insurance_analyses", column: "id", access: "protected" },
+  { table: "mobile_health_sync_batches", column: "id", access: "protected" },
+  { table: "mobile_health_records", column: "id", access: "protected" },
 ] as const;
 
 export async function buildReadinessReport({
@@ -212,7 +214,9 @@ function classifyTableProbe({
     return {
       name,
       status: "pass",
-      message: `${table} is queryable with anon credentials.`,
+      message: access === "public"
+        ? `${table} is queryable with anon credentials.`
+        : `${table} responded to anon probe; staging RLS diagnostics must verify no cross-user rows are exposed.`,
       durationMs,
     };
   }

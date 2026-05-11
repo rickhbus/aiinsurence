@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { checkAnonymousRateLimit } from "./rate-limit";
+import { buildRateLimitKey, checkAnonymousRateLimit } from "./rate-limit";
 import {
   MemoryRateLimitStore,
   RedisRateLimitStore,
@@ -79,6 +79,28 @@ describe("shared rate-limit store abstraction", () => {
 
   it("uses memory store when Redis env vars are absent", () => {
     expect(getConfiguredRateLimitStore({}).name).toBe("memory");
+  });
+
+  it("does not include the raw IP address in shared store keys", async () => {
+    const keys: string[] = [];
+    const store = {
+      name: "memory" as const,
+      async increment(key: string, windowMs: number) {
+        keys.push(key);
+        return { count: 1, resetAt: Date.now() + windowMs };
+      },
+    };
+
+    await checkAnonymousRateLimit({
+      ip: "203.0.113.23",
+      route: "/api/test",
+      limit: 2,
+      windowMs: 60_000,
+      store,
+    });
+
+    expect(keys[0]).not.toContain("203.0.113.23");
+    expect(buildRateLimitKey("/api/test", "203.0.113.23")).toBe(keys[0]);
   });
 
   it("falls back to memory when Redis is configured but unreachable", async () => {

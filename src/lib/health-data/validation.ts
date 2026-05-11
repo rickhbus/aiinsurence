@@ -174,7 +174,8 @@ export const recalculateSummaryInputSchema = z.object({
 });
 
 export const onboardingInputSchema = z.object({
-  language: localeSchema,
+  language: z.enum(["zh-Hant", "en", "bilingual"]).default("zh-Hant"),
+  user_type: z.enum(["patient_member", "provider_admin", "broker_benefits_adviser", "employer_hr"]),
   main_goal: z.enum([
     "lose_fat",
     "build_muscle",
@@ -192,6 +193,32 @@ export const onboardingInputSchema = z.object({
     "no_preference",
   ]),
   hk_care_preference: z.enum(["public", "private", "either", "not_sure"]),
+  insurance_interests: z.array(z.enum([
+    "inpatient_vhis",
+    "outpatient",
+    "dental",
+    "maternity",
+    "travel",
+    "critical_illness",
+    "life_income_protection",
+    "claims_explanation",
+  ])).max(8).default([]),
+  health_tracking_interests: z.array(z.enum([
+    "running",
+    "gym",
+    "meals",
+    "water",
+    "sleep",
+    "body_metrics",
+  ])).max(6).default([]),
+  mobile_health_sync_interest: z
+    .enum(["apple_health", "android_health_connect", "not_now"])
+    .default("not_now"),
+  save_profile_preferences: z.boolean().default(false),
+  save_health_logs: z.boolean().default(false),
+  save_ai_history: z.boolean().default(false),
+  adviser_handoff_consent: z.boolean().default(false),
+  analytics_consent: z.boolean().default(false),
   memory_consent_granted: z.boolean(),
   privacy_acknowledged: z.literal(true),
   first_action: z.enum(["water", "run", "gym", "meal", "goal"]),

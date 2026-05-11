@@ -1,7 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Activity, Apple, Check, Dumbbell, Droplets, Flag, ShieldCheck } from "lucide-react";
+import {
+  Activity,
+  Apple,
+  Check,
+  Dumbbell,
+  Droplets,
+  Flag,
+  HeartPulse,
+  ShieldCheck,
+  Smartphone,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,11 +37,20 @@ import { text, ui } from "@/lib/health-app/i18n";
 const ONBOARDING_STORAGE_KEY = "health:onboarding-completed:v1";
 
 type OnboardingState = {
-  language: Locale;
+  language: Locale | "bilingual";
+  user_type: string;
   main_goal: string;
   fitness_level: string;
   nutrition_preference: string;
   hk_care_preference: string;
+  insurance_interests: string[];
+  health_tracking_interests: string[];
+  mobile_health_sync_interest: string;
+  save_profile_preferences: boolean;
+  save_health_logs: boolean;
+  save_ai_history: boolean;
+  adviser_handoff_consent: boolean;
+  analytics_consent: boolean;
   memory_consent_granted: boolean;
   privacy_acknowledged: boolean;
   first_action: string;
@@ -45,15 +64,44 @@ const firstActions = [
   { value: "goal", label: { zh: "設定第一個目標", en: "Set first goal" }, href: "/goals", icon: Flag },
 ];
 
+const insuranceInterestOptions = [
+  ["inpatient_vhis", "住院／VHIS 類別", "Inpatient / VHIS-style"],
+  ["outpatient", "門診", "Outpatient"],
+  ["dental", "牙科", "Dental"],
+  ["maternity", "產科", "Maternity"],
+  ["travel", "旅遊", "Travel"],
+  ["critical_illness", "危疾", "Critical illness"],
+  ["life_income_protection", "人壽／收入保障", "Life / income protection"],
+  ["claims_explanation", "索償文件解釋", "Claims explanation"],
+];
+
+const healthTrackingOptions = [
+  ["running", "跑步", "Running"],
+  ["gym", "健身", "Gym"],
+  ["meals", "飲食", "Meals"],
+  ["water", "飲水", "Water"],
+  ["sleep", "睡眠", "Sleep"],
+  ["body_metrics", "身體指標", "Body metrics"],
+];
+
 export function OnboardingPage({ locale }: { locale: Locale }) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [state, setState] = useState<OnboardingState>({
     language: locale,
+    user_type: "patient_member",
     main_goal: "build_muscle",
     fitness_level: "returning",
     nutrition_preference: "balanced",
     hk_care_preference: "either",
+    insurance_interests: ["inpatient_vhis"],
+    health_tracking_interests: ["water", "sleep"],
+    mobile_health_sync_interest: "not_now",
+    save_profile_preferences: true,
+    save_health_logs: false,
+    save_ai_history: false,
+    adviser_handoff_consent: false,
+    analytics_consent: false,
     memory_consent_granted: false,
     privacy_acknowledged: false,
     first_action: "water",
@@ -62,8 +110,8 @@ export function OnboardingPage({ locale }: { locale: Locale }) {
     () => firstActions.find((action) => action.value === state.first_action) ?? firstActions[0],
     [state.first_action],
   );
-  const stepCount = 8;
-  const canContinue = step !== 6 || state.privacy_acknowledged;
+  const stepCount = 11;
+  const canContinue = step !== 9 || state.privacy_acknowledged;
 
   async function complete() {
     if (!state.privacy_acknowledged) {
@@ -124,15 +172,34 @@ export function OnboardingPage({ locale }: { locale: Locale }) {
           {step === 0 ? (
             <ChoiceGrid
               value={state.language}
-              onChange={(language) => setState((current) => ({ ...current, language: language as Locale }))}
+              onChange={(language) =>
+                setState((current) => ({
+                  ...current,
+                  language: language as OnboardingState["language"],
+                }))
+              }
               options={[
                 ["zh-Hant", "繁體中文"],
                 ["en", "English"],
+                ["bilingual", locale === "zh-Hant" ? "雙語" : "Bilingual"],
               ]}
             />
           ) : null}
 
           {step === 1 ? (
+            <SelectField
+              value={state.user_type}
+              onChange={(user_type) => setState((current) => ({ ...current, user_type }))}
+              options={[
+                ["patient_member", locale === "zh-Hant" ? "病人／會員" : "Patient / member"],
+                ["provider_admin", locale === "zh-Hant" ? "醫療提供者／管理員" : "Provider / admin"],
+                ["broker_benefits_adviser", locale === "zh-Hant" ? "保險中介／福利顧問" : "Broker / benefits adviser"],
+                ["employer_hr", locale === "zh-Hant" ? "僱主／HR 福利" : "Employer / HR benefits"],
+              ]}
+            />
+          ) : null}
+
+          {step === 2 ? (
             <SelectField
               value={state.main_goal}
               onChange={(main_goal) => setState((current) => ({ ...current, main_goal }))}
@@ -147,7 +214,7 @@ export function OnboardingPage({ locale }: { locale: Locale }) {
             />
           ) : null}
 
-          {step === 2 ? (
+          {step === 3 ? (
             <SelectField
               value={state.fitness_level}
               onChange={(fitness_level) => setState((current) => ({ ...current, fitness_level }))}
@@ -160,7 +227,7 @@ export function OnboardingPage({ locale }: { locale: Locale }) {
             />
           ) : null}
 
-          {step === 3 ? (
+          {step === 4 ? (
             <SelectField
               value={state.nutrition_preference}
               onChange={(nutrition_preference) => setState((current) => ({ ...current, nutrition_preference }))}
@@ -174,7 +241,7 @@ export function OnboardingPage({ locale }: { locale: Locale }) {
             />
           ) : null}
 
-          {step === 4 ? (
+          {step === 5 ? (
             <SelectField
               value={state.hk_care_preference}
               onChange={(hk_care_preference) => setState((current) => ({ ...current, hk_care_preference }))}
@@ -187,8 +254,88 @@ export function OnboardingPage({ locale }: { locale: Locale }) {
             />
           ) : null}
 
-          {step === 5 ? (
+          {step === 6 ? (
+            <MultiChoiceGrid
+              values={state.insurance_interests}
+              onToggle={(value) =>
+                setState((current) => ({
+                  ...current,
+                  insurance_interests: toggleValue(current.insurance_interests, value),
+                }))
+              }
+              options={insuranceInterestOptions.map(([value, zh, en]) => [
+                value,
+                locale === "zh-Hant" ? zh : en,
+              ])}
+            />
+          ) : null}
+
+          {step === 7 ? (
+            <div className="grid gap-5">
+              <MultiChoiceGrid
+                values={state.health_tracking_interests}
+                onToggle={(value) =>
+                  setState((current) => ({
+                    ...current,
+                    health_tracking_interests: toggleValue(current.health_tracking_interests, value),
+                  }))
+                }
+                options={healthTrackingOptions.map(([value, zh, en]) => [
+                  value,
+                  locale === "zh-Hant" ? zh : en,
+                ])}
+              />
+              <div className="grid gap-3">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Smartphone aria-hidden="true" />
+                  {locale === "zh-Hant" ? "手機健康資料同步" : "Mobile health sync"}
+                </div>
+                <ChoiceGrid
+                  value={state.mobile_health_sync_interest}
+                  onChange={(mobile_health_sync_interest) =>
+                    setState((current) => ({ ...current, mobile_health_sync_interest }))
+                  }
+                  options={[
+                    ["apple_health", locale === "zh-Hant" ? "Apple Health" : "Apple Health"],
+                    ["android_health_connect", locale === "zh-Hant" ? "Android Health Connect" : "Android Health Connect"],
+                    ["not_now", locale === "zh-Hant" ? "暫時不要" : "Not now"],
+                  ]}
+                />
+                <p className="text-sm leading-6 text-muted-foreground">
+                  {locale === "zh-Hant"
+                    ? "瀏覽器不能直接讀取 Apple Health 或 Health Connect；日後原生 App 會逐項請求授權，只同步摘要。"
+                    : "Browsers cannot directly read Apple Health or Health Connect; a future native app will request per-type permission and sync summaries only."}
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+          {step === 8 ? (
             <div className="grid gap-3">
+              <ConsentToggle
+                locale={locale}
+                checked={state.save_profile_preferences}
+                onChange={(save_profile_preferences) =>
+                  setState((current) => ({ ...current, save_profile_preferences }))
+                }
+                label={locale === "zh-Hant" ? "保存個人偏好" : "Save profile preferences"}
+              />
+              <ConsentToggle
+                locale={locale}
+                checked={state.save_health_logs}
+                onChange={(save_health_logs) =>
+                  setState((current) => ({ ...current, save_health_logs }))
+                }
+                label={locale === "zh-Hant" ? "保存健康紀錄" : "Save health logs"}
+              />
+              <ConsentToggle
+                locale={locale}
+                checked={state.save_ai_history}
+                onChange={(save_ai_history) =>
+                  setState((current) => ({ ...current, save_ai_history }))
+                }
+                label={locale === "zh-Hant" ? "保存 AI 建議／歷史" : "Save AI recommendations/history"}
+              />
               <Button
                 type="button"
                 variant={state.memory_consent_granted ? "default" : "outline"}
@@ -204,10 +351,26 @@ export function OnboardingPage({ locale }: { locale: Locale }) {
               >
                 {locale === "zh-Hant" ? "暫時不要保存記憶" : "Not now"}
               </Button>
+              <ConsentToggle
+                locale={locale}
+                checked={state.adviser_handoff_consent}
+                onChange={(adviser_handoff_consent) =>
+                  setState((current) => ({ ...current, adviser_handoff_consent }))
+                }
+                label={locale === "zh-Hant" ? "允許顧問交接同意" : "Adviser handoff consent"}
+              />
+              <ConsentToggle
+                locale={locale}
+                checked={state.analytics_consent}
+                onChange={(analytics_consent) =>
+                  setState((current) => ({ ...current, analytics_consent }))
+                }
+                label={locale === "zh-Hant" ? "允許私隱安全分析" : "Privacy-safe analytics consent"}
+              />
             </div>
           ) : null}
 
-          {step === 6 ? (
+          {step === 9 ? (
             <label className="flex items-start gap-3 rounded-xl border border-border/50 bg-muted/30 p-4 text-sm leading-6">
               <input
                 className="mt-1"
@@ -225,7 +388,7 @@ export function OnboardingPage({ locale }: { locale: Locale }) {
             </label>
           ) : null}
 
-          {step === 7 ? (
+          {step === 10 ? (
             <div className="grid gap-3 sm:grid-cols-2">
               {firstActions.map((action) => (
                 <button
@@ -334,14 +497,85 @@ function ChoiceGrid({
   );
 }
 
+function MultiChoiceGrid({
+  values,
+  onToggle,
+  options,
+}: {
+  values: string[];
+  onToggle: (value: string) => void;
+  options: Array<[string, string]>;
+}) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {options.map(([optionValue, optionLabel]) => {
+        const active = values.includes(optionValue);
+
+        return (
+          <Button
+            key={optionValue}
+            type="button"
+            variant={active ? "default" : "outline"}
+            onClick={() => onToggle(optionValue)}
+            className="min-h-12 justify-start text-left"
+          >
+            {active ? <Check data-icon="inline-start" aria-hidden="true" /> : null}
+            {optionLabel}
+          </Button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ConsentToggle({
+  locale,
+  checked,
+  onChange,
+  label,
+}: {
+  locale: Locale;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      className="flex min-h-12 items-center justify-between rounded-xl border border-border/50 bg-background/50 px-3 text-left text-sm transition hover:border-border"
+      onClick={() => onChange(!checked)}
+      aria-pressed={checked}
+    >
+      <span className="flex items-center gap-2">
+        <HeartPulse aria-hidden="true" />
+        {label}
+      </span>
+      <Badge variant={checked ? "default" : "secondary"}>
+        {checked
+          ? locale === "zh-Hant" ? "開啟" : "On"
+          : locale === "zh-Hant" ? "關閉" : "Off"}
+      </Badge>
+    </button>
+  );
+}
+
+function toggleValue(values: string[], value: string) {
+  return values.includes(value)
+    ? values.filter((item) => item !== value)
+    : [...values, value];
+}
+
 function getStepTitle(step: number, locale: Locale) {
   const titles = [
     ["語言", "Language"],
+    ["使用者類型", "User type"],
     ["主要目標", "Main goal"],
     ["健身程度", "Fitness level"],
     ["營養偏好", "Nutrition preference"],
     ["香港醫療偏好", "Hong Kong care preference"],
-    ["健康記憶", "Health memory"],
+    ["保險興趣", "Insurance interests"],
+    ["健康追蹤", "Health tracking"],
+    ["同意設定", "Consent settings"],
     ["私隱與安全", "Privacy and safety"],
     ["第一個行動", "First action"],
   ];
@@ -352,11 +586,14 @@ function getStepTitle(step: number, locale: Locale) {
 function getStepDescription(step: number, locale: Locale) {
   const descriptions = [
     ["繁體中文優先，英文可隨時切換。", "Traditional Chinese first; English remains available."],
+    ["只用作調整介面和免責提示。", "Used only to tune interface copy and disclaimers."],
     ["用於安排空狀態和今日建議。", "Used for empty states and today’s suggestions."],
     ["讓建議保守地配合恢復能力。", "Keeps suggestions conservative for your current capacity."],
     ["只保存類別，不保存敏感餐點全文。", "Stores categories, not sensitive meal text."],
     ["香港照護導航會保留安全提示。", "Hong Kong care navigation keeps safety notices visible."],
-    ["AI 只可建議，必須由你確認才保存。", "AI may suggest memory, but only you can save it."],
+    ["只比較保障類別，不推薦特定產品。", "Coverage categories only; no specific product recommendations."],
+    ["手機同步只會在原生 App 明確授權後啟用。", "Mobile sync starts only after native-app permission and explicit consent."],
+    ["所有保存行為都可選擇，不影響急症安全提示。", "Saving is optional and does not affect emergency safety guidance."],
     ["這一步不可跳過。", "This step is required."],
     ["完成後直接進入第一個價值動作。", "After this, go straight to the first value action."],
   ];

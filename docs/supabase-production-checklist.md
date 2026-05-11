@@ -26,8 +26,10 @@ Apply in numeric order:
 3. `supabase/migrations/003_health_os_data_foundation.sql`
 4. `supabase/migrations/004_production_readiness.sql`
 5. `supabase/migrations/005_gbl_emotion_engine.sql`
+6. `supabase/migrations/006_mobile_health_sync.sql`
 
 `004_production_readiness.sql` adds onboarding profile fields, normalizes explicit own-row RLS policies, preserves stricter linked-row checks, and adds dashboard-scale indexes.
+`006_mobile_health_sync.sql` adds mobile sync consent, idempotent sync batches, normalized mobile health records, RLS, and mobile-health indexes.
 
 `005_gbl_emotion_engine.sql` adds AI.GBL cases, AI.GBL analysis results, Emotion Engine results, insurance analyses, and a simple analysis job table for future async work.
 

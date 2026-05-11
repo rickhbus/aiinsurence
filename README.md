@@ -19,6 +19,7 @@ not a doctor, insurer, broker, or licensed insurance intermediary.
 - AI.GBL global intelligence layer at `/gbl` for normalized healthcare, insurance, emotion, and safety case context.
 - Emotion Engine at `/emotion` for optional tone and distress signals that are not clinical assessments and are not insurance decision inputs.
 - Saved analysis history at `/history` with bounded recent-item loading.
+- Backend-first mobile health sync contract for native Apple HealthKit and Android Health Connect integrations.
 
 ## Product Contract
 
@@ -100,6 +101,7 @@ Apply migrations in order:
 3. `supabase/migrations/003_health_os_data_foundation.sql`
 4. `supabase/migrations/004_production_readiness.sql`
 5. `supabase/migrations/005_gbl_emotion_engine.sql`
+6. `supabase/migrations/006_mobile_health_sync.sql`
 
 ## AI Provider
 
@@ -148,8 +150,13 @@ Target hosting is Vercel. Required setup:
 - Configure Supabase Auth callback URLs for local, preview, and production domains.
 - Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 - Keep `SUPABASE_SERVICE_ROLE_KEY`, `DEEPSEEK_API_KEY`, `GROQ_API_KEY`, and `OPENAI_API_KEY` server-only.
+- Configure `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` or compatible Redis REST vars before production-scale rate limiting; readiness is degraded without a shared store in production.
 - Set `APP_ENV=production` only after env validation, migrations, RLS, and build checks are green.
 - Use `docs/production-deployment-checklist.md` and `docs/supabase-production-checklist.md` before promotion.
+
+## Mobile Health
+
+The web app cannot read Apple Health or Android Health Connect directly. Native iOS/Android clients must request per-data-type permission on device, normalize summaries, and call `/api/mobile-health/sync` with explicit user consent and an idempotency key. See `docs/mobile-health-integration.md`.
 
 ## Security And Scale
 

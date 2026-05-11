@@ -21,7 +21,10 @@ with expected_indexes(indexname) as (
     ('emotion_engine_results_user_created_idx'),
     ('emotion_engine_results_user_urgency_idx'),
     ('insurance_analyses_user_created_idx'),
-    ('insurance_analyses_user_status_idx')
+    ('insurance_analyses_user_status_idx'),
+    ('mobile_health_sync_batches_user_status_idx'),
+    ('mobile_health_records_user_type_start_idx'),
+    ('mobile_health_records_user_platform_start_idx')
 )
 select
   e.indexname,
@@ -146,3 +149,28 @@ where w.user_id = p.user_id
   and w.week_start_date >= p.from_week
 order by w.week_start_date desc
 limit 12;
+
+-- Mobile health sync dedupe and status paths.
+explain analyze
+with params as (
+  select
+    '00000000-0000-0000-0000-000000000000'::uuid as user_id,
+    'apple_healthkit'::text as source_platform,
+    array['00000000']::text[] as source_hashes
+)
+select source_record_hash, start_time, data_type
+from public.mobile_health_records r, params p
+where r.user_id = p.user_id
+  and r.source_platform = p.source_platform
+  and r.source_record_hash = any(p.source_hashes);
+
+explain analyze
+with params as (
+  select '00000000-0000-0000-0000-000000000000'::uuid as user_id
+)
+select source_platform, completed_at, status
+from public.mobile_health_sync_batches b, params p
+where b.user_id = p.user_id
+  and b.status = 'completed'
+order by b.completed_at desc
+limit 20;
