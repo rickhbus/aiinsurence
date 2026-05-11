@@ -12,6 +12,7 @@ const allMigrations = [
   "002_mvp_audit_tables.sql",
   "003_health_os_data_foundation.sql",
   "004_production_readiness.sql",
+  "005_gbl_emotion_engine.sql",
 ]
   .map((migration) => readFileSync(join(migrationDir, migration), "utf8"))
   .join("\n");
@@ -56,6 +57,7 @@ describe("Supabase production readiness migration", () => {
       "002_mvp_audit_tables.sql",
       "003_health_os_data_foundation.sql",
       "004_production_readiness.sql",
+      "005_gbl_emotion_engine.sql",
     ];
 
     for (const migration of migrations) {
@@ -95,5 +97,18 @@ describe("Supabase production readiness migration", () => {
     expect(allMigrations).toContain("running_logs_user_created_idx");
     expect(allMigrations).toContain("goals_user_status_created_idx");
     expect(allMigrations).toContain("health_memory_user_category_idx");
+  });
+
+  it("adds AI.GBL and Emotion Engine tables with RLS, owner policies, and bounded indexes", () => {
+    expect(allMigrations).toContain("create table if not exists public.gbl_cases");
+    expect(allMigrations).toContain("create table if not exists public.gbl_analysis_results");
+    expect(allMigrations).toContain("create table if not exists public.emotion_engine_results");
+    expect(allMigrations).toContain("create table if not exists public.insurance_analyses");
+    expect(allMigrations).toContain("create table if not exists public.analysis_jobs");
+    expect(allMigrations).toContain("gbl_analysis_results_user_created_idx");
+    expect(allMigrations).toContain("emotion_engine_results_user_urgency_idx");
+    expect(allMigrations).toContain("gbl_cases_select_own");
+    expect(allMigrations).toContain("emotion_engine_results_insert_own");
+    expect(allMigrations).toContain("Do not use for diagnosis or insurance eligibility");
   });
 });

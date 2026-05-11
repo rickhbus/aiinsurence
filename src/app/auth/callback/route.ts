@@ -5,7 +5,7 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const next = requestUrl.searchParams.get("next") ?? "/";
-  const redirectTo = new URL(next, requestUrl.origin);
+  const redirectTo = createSafeRedirectUrl(next, requestUrl.origin);
 
   if (code) {
     const supabase = await createClient();
@@ -19,4 +19,16 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.redirect(redirectTo);
+}
+
+function createSafeRedirectUrl(next: string, origin: string) {
+  if (!next.startsWith("/")) {
+    return new URL("/", origin);
+  }
+
+  if (next.startsWith("//")) {
+    return new URL("/", origin);
+  }
+
+  return new URL(next, origin);
 }

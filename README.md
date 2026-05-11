@@ -16,6 +16,51 @@ not a doctor, insurer, broker, or licensed insurance intermediary.
 - 3D virtual AI adviser state UI for idle, listening, analyzing, explaining, reassurance, and emergency states.
 - Anonymous-first entry points with account-upgrade and memory-consent copy; no login is required before first use.
 - Consent-based session, recommendation, escalation, and audit route handlers backed by Supabase RLS migrations.
+- AI.GBL global intelligence layer at `/gbl` for normalized healthcare, insurance, emotion, and safety case context.
+- Emotion Engine at `/emotion` for optional tone and distress signals that are not clinical assessments and are not insurance decision inputs.
+- Saved analysis history at `/history` with bounded recent-item loading.
+
+## Product Contract
+
+The app helps users organize healthcare and insurance context, understand possible next questions, and prepare safer conversations with clinicians, insurers, employer benefits administrators, or qualified professionals.
+
+It does not provide medical advice, legal advice, insurance advice, guaranteed eligibility, guaranteed reimbursement, guaranteed coverage, or guaranteed claim approval.
+
+Primary user types supported by the AI.GBL contract:
+
+- Patient/member.
+- Provider/admin.
+- Broker/benefits adviser.
+- Employer/HR benefits user.
+- Internal admin only where a future admin surface explicitly implements role checks.
+
+## AI.GBL
+
+AI.GBL is implemented as a server-side intelligence layer under `src/lib/gbl/` with:
+
+- Typed case context, safety flags, recommendations, audit events, and disclaimers.
+- Zod validation in `src/lib/gbl/validators.ts`.
+- Emergency, self-harm, diagnosis, treatment, insurance-guarantee, and legal/compliance safety detection.
+- Deterministic fallback output when provider keys are missing.
+- Optional provider enrichment through the existing AI provider abstraction.
+- API route: `src/app/api/gbl/analyze/route.ts`.
+- UI route: `/gbl`.
+- Supabase persistence: `gbl_cases`, `gbl_analysis_results`, and `insurance_analyses`.
+
+Provider calls never happen from client components, and model/provider internals are not exposed to the browser.
+
+## Emotion Engine
+
+Emotion Engine is implemented under `src/lib/emotion-engine/` with:
+
+- Labels such as neutral, confused, anxious, frustrated, angry, overwhelmed, sad, hopeful, relieved, urgent, and unknown.
+- Safety escalation for emergency, self-harm/crisis, abuse/violence, high distress, and sensitive insurance decisioning language.
+- User-facing phrasing like "your message sounds..." rather than harsh labels.
+- API route: `src/app/api/emotion/analyze/route.ts`.
+- UI route: `/emotion`.
+- Supabase persistence: `emotion_engine_results`.
+
+Emotion output is only an empathy and clarity signal. It must not diagnose mental health conditions or affect insurance eligibility, pricing, coverage, care access, or claim outcomes.
 
 ## Safety Rules
 
@@ -42,10 +87,19 @@ If port 3000 is already in use, Next.js will print the alternate local URL.
 The MVP uses Supabase Auth and RLS-protected tables for profiles, preferences,
 household members, conversations, saved recommendations, consent events, triage
 assessments, department recommendations, insurance recommendations, escalation
-cases, and audit logs.
+cases, audit logs, health tracking, AI.GBL cases, Emotion Engine results,
+insurance analyses, AI usage events, and privacy-safe analytics.
 
 Server routes fail closed when Supabase is not configured or when the user has
 not granted explicit save or adviser-handoff consent.
+
+Apply migrations in order:
+
+1. `supabase/migrations/001_auth_memory.sql`
+2. `supabase/migrations/002_mvp_audit_tables.sql`
+3. `supabase/migrations/003_health_os_data_foundation.sql`
+4. `supabase/migrations/004_production_readiness.sql`
+5. `supabase/migrations/005_gbl_emotion_engine.sql`
 
 ## AI Provider
 
@@ -83,8 +137,25 @@ recommendation.
 ```bash
 npm run lint
 npm run test
+npm run typecheck
 npm run build
 ```
+
+## Deployment
+
+Target hosting is Vercel. Required setup:
+
+- Configure Supabase Auth callback URLs for local, preview, and production domains.
+- Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- Keep `SUPABASE_SERVICE_ROLE_KEY`, `DEEPSEEK_API_KEY`, `GROQ_API_KEY`, and `OPENAI_API_KEY` server-only.
+- Set `APP_ENV=production` only after env validation, migrations, RLS, and build checks are green.
+- Use `docs/production-deployment-checklist.md` and `docs/supabase-production-checklist.md` before promotion.
+
+## Security And Scale
+
+- See `SECURITY_NOTES.md` for privacy/security rules and remaining production validation.
+- See `SCALE_100K_DAU.md` for the architecture path toward 100k DAU.
+- The app is not proven for 100k DAU until load testing, query-plan validation, production monitoring, and incident drills are completed.
 
 ## Source Notes
 

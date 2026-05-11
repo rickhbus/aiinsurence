@@ -6,7 +6,9 @@ import { label, ui } from "@/lib/health-app/i18n";
 import type { Locale } from "@/lib/health-app/types";
 import {
   ActivitySummaryCard,
+  AIGblCard,
   AIRecommendationCard,
+  EmotionEngineCard,
   GymProgressCard,
   HealthcareReminderCard,
   HealthScoreCard,
@@ -106,6 +108,8 @@ export function DashboardPage({ locale }: { locale: Locale }) {
 
         <HealthcareReminderCard locale={locale} className="xl:col-span-6" />
         <WeeklyProgressCard locale={locale} data={dashboardData} className="xl:col-span-6" />
+        <AIGblCard locale={locale} className="xl:col-span-6" />
+        <EmotionEngineCard locale={locale} className="xl:col-span-6" />
       </section>
 
       <SafetyDisclaimer locale={locale} />

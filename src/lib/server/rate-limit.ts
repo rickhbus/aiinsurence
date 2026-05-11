@@ -93,6 +93,9 @@ export async function recordAiUsageEvent({
   supabase,
   userId,
   route,
+  feature,
+  provider,
+  model,
   status,
   inputTokensEstimate,
   outputTokensEstimate,
@@ -101,6 +104,9 @@ export async function recordAiUsageEvent({
   supabase: HealthDataClient;
   userId: string;
   route: string;
+  feature?: string;
+  provider?: string;
+  model?: string;
   status: "cached" | "generated" | "fallback" | "failed" | "rate_limited";
   inputTokensEstimate?: number;
   outputTokensEstimate?: number;
@@ -109,6 +115,9 @@ export async function recordAiUsageEvent({
   const { error } = await supabase.from("ai_usage_events").insert({
     user_id: userId,
     route,
+    feature: feature ?? route,
+    provider: provider ?? null,
+    model: model ?? null,
     status,
     input_tokens_estimate: inputTokensEstimate ?? null,
     output_tokens_estimate: outputTokensEstimate ?? null,

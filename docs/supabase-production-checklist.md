@@ -25,14 +25,17 @@ Apply in numeric order:
 2. `supabase/migrations/002_mvp_audit_tables.sql`
 3. `supabase/migrations/003_health_os_data_foundation.sql`
 4. `supabase/migrations/004_production_readiness.sql`
+5. `supabase/migrations/005_gbl_emotion_engine.sql`
 
 `004_production_readiness.sql` adds onboarding profile fields, normalizes explicit own-row RLS policies, preserves stricter linked-row checks, and adds dashboard-scale indexes.
+
+`005_gbl_emotion_engine.sql` adds AI.GBL cases, AI.GBL analysis results, Emotion Engine results, insurance analyses, and a simple analysis job table for future async work.
 
 ## Tables Covered
 
 User-owned RLS tables:
 
-`profiles`, `user_preferences`, `household_members`, `conversation_sessions`, `conversation_messages`, `saved_recommendations`, `consent_events`, `triage_assessments`, `department_recommendations`, `insurance_profiles`, `insurance_recommendations`, `escalation_cases`, `audit_logs`, `health_memory`, `running_logs`, `gym_logs`, `meals`, `water_logs`, `sleep_logs`, `body_metrics`, `goals`, `daily_health_summaries`, `weekly_health_summaries`, `user_streaks`, `user_goal_progress`, `ai_daily_recommendations`, `ai_usage_events`, `symptom_checks`, `insurance_notes`, `analytics_events`.
+`profiles`, `user_preferences`, `household_members`, `conversation_sessions`, `conversation_messages`, `saved_recommendations`, `consent_events`, `triage_assessments`, `department_recommendations`, `insurance_profiles`, `insurance_recommendations`, `escalation_cases`, `audit_logs`, `health_memory`, `running_logs`, `gym_logs`, `meals`, `water_logs`, `sleep_logs`, `body_metrics`, `goals`, `daily_health_summaries`, `weekly_health_summaries`, `user_streaks`, `user_goal_progress`, `ai_daily_recommendations`, `ai_usage_events`, `symptom_checks`, `insurance_notes`, `analytics_events`, `gbl_cases`, `gbl_analysis_results`, `emotion_engine_results`, `insurance_analyses`, `analysis_jobs`.
 
 Public read-only content:
 
@@ -94,6 +97,9 @@ Confirm indexes exist for dashboard-scale access patterns:
 - `user_id, status`
 - `user_id, goal_type`
 - `user_id, event_name`
+- `user_id, analysis_type`
+- `user_id, urgency_level`
+- `user_id, feature`
 
 Required summary indexes:
 
@@ -112,3 +118,5 @@ In local development, `/api/dashboard` returns `503` when Supabase env vars are 
 - Set `APP_ENV=production` only after required env vars are configured; the app will fail fast when production-required env is missing.
 - Verify red-flag symptom routing still escalates to `999` / A&E after deployment.
 - Verify insurance helper responses always include the non-advice disclaimer.
+- Verify `/gbl`, `/emotion`, and `/history` work for an authenticated test user.
+- Verify Emotion Engine outputs are not used for eligibility, pricing, coverage, claims, or care-access decisions.

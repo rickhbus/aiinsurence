@@ -61,12 +61,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { MacroChart, MuscleGroupChart, ProgressChart, ProgressRing } from "./charts";
 
-const cardMotion = {
-  initial: { opacity: 0, y: 18 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1] },
-};
-
 type CardProps = {
   locale: Locale;
   className?: string;
@@ -374,6 +368,55 @@ export function AIRecommendationCard({ locale, className, data }: CardProps) {
           <Link href="/coach">
             <ArrowUpRight data-icon="inline-start" aria-hidden="true" />
             {locale === "zh-Hant" ? "查看詳情" : "View details"}
+          </Link>
+        </Button>
+      </div>
+    </DashboardCard>
+  );
+}
+
+export function AIGblCard({ locale, className }: CardProps) {
+  return (
+    <DashboardCard className={className} icon={Brain} title={{ zh: "AI.GBL 個案智能", en: "AI.GBL case intelligence" }} locale={locale} href="/gbl" index={12}>
+      <div className="flex flex-col gap-3">
+        <p className="text-sm leading-6 text-muted-foreground">
+          {locale === "zh-Hant"
+            ? "整理醫療、保險、情緒和歷史背景，產生可審核的摘要、風險標記和下一步。"
+            : "Normalize healthcare, insurance, emotion, and history context into auditable summaries, risk flags, and next steps."}
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <MiniStat value="server" label={locale === "zh-Hant" ? "供應商隔離" : "Provider isolation"} />
+          <MiniStat value="RLS" label={locale === "zh-Hant" ? "用戶資料" : "User data"} />
+        </div>
+        <Button asChild variant="outline" className="w-fit">
+          <Link href="/gbl">
+            <ArrowUpRight data-icon="inline-start" aria-hidden="true" />
+            {locale === "zh-Hant" ? "建立個案" : "Create case"}
+          </Link>
+        </Button>
+      </div>
+    </DashboardCard>
+  );
+}
+
+export function EmotionEngineCard({ locale, className }: CardProps) {
+  return (
+    <DashboardCard className={className} icon={HeartPulse} title={{ zh: "Emotion Engine", en: "Emotion Engine" }} locale={locale} href="/emotion" index={13}>
+      <div className="flex flex-col gap-3">
+        <p className="text-sm leading-6 text-muted-foreground">
+          {locale === "zh-Hant"
+            ? "只把情緒作為語氣和清晰度訊號，不作臨床評估，也不影響保險資格、定價或索償判斷。"
+            : "Uses emotion only as a tone and clarity signal, not a clinical assessment or input to insurance eligibility, pricing, or claims."}
+        </p>
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm leading-6 text-muted-foreground">
+          {locale === "zh-Hant"
+            ? "使用「你的訊息聽起來...」而不是替使用者貼標籤。"
+            : "Uses “your message sounds...” rather than labeling the user."}
+        </div>
+        <Button asChild variant="outline" className="w-fit">
+          <Link href="/emotion">
+            <ArrowUpRight data-icon="inline-start" aria-hidden="true" />
+            {locale === "zh-Hant" ? "分析訊號" : "Analyze signal"}
           </Link>
         </Button>
       </div>

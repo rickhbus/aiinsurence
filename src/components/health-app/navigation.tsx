@@ -125,6 +125,17 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
+    id: "intelligence",
+    label: ui.intelligence,
+    icon: Brain,
+    badge: { zh: "GBL", en: "GBL" },
+    children: [
+      { label: ui.gbl, href: "/gbl", page: "gbl", icon: Brain },
+      { label: ui.emotionEngine, href: "/emotion", page: "emotion", icon: HeartPulse },
+      { label: ui.history, href: "/history", page: "history", icon: BarChart3 },
+    ],
+  },
+  {
     id: "healthcare",
     label: ui.healthcare,
     icon: Stethoscope,

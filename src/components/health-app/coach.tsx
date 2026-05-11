@@ -3,7 +3,6 @@
 import {
   Brain,
   DatabaseZap,
-  Mic,
   Send,
   ShieldAlert,
   Sparkles,
@@ -238,9 +237,6 @@ export function CoachSurface({
           <Button type="button" className="flex-1 rounded-xl" disabled={sending} onClick={() => sendMessage()}>
             <Send data-icon="inline-start" aria-hidden="true" />
             {sending ? (locale === "zh-Hant" ? "回應中" : "Sending") : locale === "zh-Hant" ? "傳送" : "Send"}
-          </Button>
-          <Button type="button" variant="outline" size="icon" aria-label={locale === "zh-Hant" ? "語音輸入佔位" : "Voice input placeholder"}>
-            <Mic aria-hidden="true" />
           </Button>
         </div>
       </div>

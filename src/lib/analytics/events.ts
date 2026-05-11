@@ -23,6 +23,8 @@ export type AnalyticsEventName =
   | "symptom_routing_started"
   | "symptom_routing_completed"
   | "insurance_helper_used"
+  | "gbl_analysis_created"
+  | "emotion_analysis_created"
   | "goal_created"
   | "weekly_report_viewed";
 

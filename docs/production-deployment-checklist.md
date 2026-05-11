@@ -4,7 +4,7 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 
 ## Data And Auth
 
-- [ ] Supabase migrations `001` to `004` applied in order.
+- [ ] Supabase migrations `001` to `005` applied in order.
 - [ ] RLS enabled on every user-owned table.
 - [ ] Own-row select/insert/update/delete policies verified.
 - [ ] No user-owned table grants public cross-user access.
@@ -42,6 +42,9 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 - [ ] AI routes are rate-limited.
 - [ ] AI routes record privacy-safe usage events.
 - [ ] AI context uses summaries, not full raw history.
+- [ ] AI.GBL analysis runs in mock/fallback mode when provider keys are absent.
+- [ ] Emotion Engine analysis saves structured outputs only, not raw sensitive text.
+- [ ] Analysis history loads with a bounded `limit`, not full history.
 
 ## Safety And Privacy
 
@@ -85,5 +88,8 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 - [ ] Red flag route escalates to `999` / A&E.
 - [ ] User uses insurance helper.
 - [ ] Insurance disclaimer appears.
+- [ ] User creates an AI.GBL case.
+- [ ] User runs Emotion Engine and sees optional, non-clinical wording.
+- [ ] User opens analysis history.
 - [ ] User views weekly progress.
 - [ ] User signs out and signs back in.

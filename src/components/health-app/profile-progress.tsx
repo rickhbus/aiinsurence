@@ -1,7 +1,7 @@
 "use client";
 
 import type { User } from "@supabase/supabase-js";
-import { BarChart3, DatabaseZap, Download, LockKeyhole, Trash2 } from "lucide-react";
+import { BarChart3, DatabaseZap, LockKeyhole, LogOut, Trash2, UserRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AuthPanel } from "@/components/auth/auth-panel";
 import { Badge } from "@/components/ui/badge";
@@ -399,30 +399,33 @@ export function SettingsPage({ locale }: { locale: Locale }) {
       <PageHeader
         title={ui.settings}
         description={{
-          zh: "控制健康記憶、資料匯出、刪除記憶、帳戶刪除佔位和同意紀錄。",
-          en: "Control health memory, data export, memory deletion, account deletion placeholder, and consent history.",
+          zh: "控制健康記憶、帳戶登入狀態、刪除記憶和同意紀錄。",
+          en: "Control health memory, account session state, memory deletion, and consent history.",
         }}
         locale={locale}
       />
       <div className="grid gap-5 xl:grid-cols-[380px_1fr]">
         <PrivacySettingsPanel locale={locale} />
-        <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
-          <CardHeader>
-            <CardTitle>{locale === "zh-Hant" ? "同意紀錄" : "Consent history"}</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-3">
-            {[
-              { zh: "健康記憶：已開啟", en: "Health memory: on" },
-              { zh: "行銷訊息：關閉", en: "Marketing: off" },
-              { zh: "顧問交接：未啟用", en: "Adviser handoff: not enabled" },
-            ].map((item) => (
-              <div key={item.en} className="flex items-center justify-between rounded-xl bg-muted/30 p-3 text-sm ring-1 ring-border/40">
-                <span>{text(item, locale)}</span>
-                <Badge variant="secondary">2026-05-11</Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <div className="grid gap-5">
+          <AccountSessionPanel locale={locale} />
+          <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
+            <CardHeader>
+              <CardTitle>{locale === "zh-Hant" ? "同意紀錄" : "Consent history"}</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              {[
+                { zh: "健康記憶：已開啟", en: "Health memory: on" },
+                { zh: "行銷訊息：關閉", en: "Marketing: off" },
+                { zh: "顧問交接：未啟用", en: "Adviser handoff: not enabled" },
+              ].map((item) => (
+                <div key={item.en} className="flex items-center justify-between rounded-xl bg-muted/30 p-3 text-sm ring-1 ring-border/40">
+                  <span>{text(item, locale)}</span>
+                  <Badge variant="secondary">2026-05-11</Badge>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
       </div>
       <SafetyDisclaimer locale={locale} />
     </div>
@@ -488,18 +491,103 @@ export function PrivacySettingsPanel({ locale }: { locale: Locale }) {
             {memoryOn ? (locale === "zh-Hant" ? "開啟" : "On") : (locale === "zh-Hant" ? "關閉" : "Off")}
           </Badge>
         </button>
-        <Button variant="outline" className="justify-start">
-          <Download data-icon="inline-start" aria-hidden="true" />
-          {locale === "zh-Hant" ? "匯出資料" : "Export data"}
+        <Button asChild variant="outline" className="justify-start">
+          <a href="/profile/memory">
+            <DatabaseZap data-icon="inline-start" aria-hidden="true" />
+            {locale === "zh-Hant" ? "管理已保存健康記憶" : "Manage saved health memory"}
+          </a>
         </Button>
-        <Button variant="outline" className="justify-start">
-          <Trash2 data-icon="inline-start" aria-hidden="true" />
-          {locale === "zh-Hant" ? "刪除健康記憶" : "Delete memory"}
+        <Button asChild variant="outline" className="justify-start">
+          <a href="/profile/memory">
+            <Trash2 data-icon="inline-start" aria-hidden="true" />
+            {locale === "zh-Hant" ? "前往刪除健康記憶" : "Go delete health memory"}
+          </a>
         </Button>
-        <Button variant="destructive" className="justify-start">
-          <Trash2 data-icon="inline-start" aria-hidden="true" />
-          {locale === "zh-Hant" ? "刪除帳戶（佔位）" : "Delete account placeholder"}
+        <div className="rounded-xl bg-muted/30 p-3 text-sm leading-6 text-muted-foreground ring-1 ring-border/40">
+          {locale === "zh-Hant"
+            ? "完整資料匯出和帳戶刪除需要正式私隱流程、身份確認和恢復期，未在此 MVP 中提供一鍵操作。"
+            : "Full data export and account deletion require a formal privacy workflow, identity confirmation, and recovery window; this MVP does not provide one-click account deletion."}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AccountSessionPanel({ locale }: { locale: Locale }) {
+  const [supabase] = useState(() => getSupabaseBrowserClient());
+  const [status, setStatus] = useState<"loading" | "signed-out" | "signed-in">("loading");
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadUser() {
+      if (!supabase) {
+        setStatus("signed-out");
+        return;
+      }
+
+      const { data } = await supabase.auth.getUser();
+
+      if (active) {
+        setStatus(data.user ? "signed-in" : "signed-out");
+      }
+    }
+
+    loadUser();
+
+    return () => {
+      active = false;
+    };
+  }, [supabase]);
+
+  async function signOut() {
+    if (!supabase) {
+      setMessage(locale === "zh-Hant" ? "Supabase 尚未設定。" : "Supabase is not configured.");
+      return;
+    }
+
+    setMessage(locale === "zh-Hant" ? "正在登出..." : "Signing out...");
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setStatus("signed-out");
+    setMessage(locale === "zh-Hant" ? "已登出。" : "Signed out.");
+  }
+
+  return (
+    <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
+      <CardHeader>
+        <span className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm shadow-primary/20">
+          <UserRound aria-hidden="true" />
+        </span>
+        <CardTitle>{locale === "zh-Hant" ? "帳戶狀態" : "Account status"}</CardTitle>
+        <CardDescription>
+          {locale === "zh-Hant"
+            ? "登入狀態只會由 Supabase Auth 管理。登出後，匿名帳戶可能無法在其他裝置取回。"
+            : "Session state is managed by Supabase Auth. After sign-out, anonymous accounts may not be recoverable on another device."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-3">
+        <div className="flex items-center justify-between rounded-xl bg-muted/30 p-3 text-sm ring-1 ring-border/40">
+          <span>{locale === "zh-Hant" ? "目前狀態" : "Current state"}</span>
+          <Badge variant={status === "signed-in" ? "default" : "secondary"}>
+            {status === "loading"
+              ? locale === "zh-Hant" ? "檢查中" : "Checking"
+              : status === "signed-in"
+                ? locale === "zh-Hant" ? "已登入" : "Signed in"
+                : locale === "zh-Hant" ? "未登入" : "Signed out"}
+          </Badge>
+        </div>
+        <Button variant="outline" className="justify-start" disabled={status !== "signed-in"} onClick={signOut}>
+          <LogOut data-icon="inline-start" aria-hidden="true" />
+          {locale === "zh-Hant" ? "登出" : "Sign out"}
         </Button>
+        {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
       </CardContent>
     </Card>
   );

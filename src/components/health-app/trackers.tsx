@@ -694,8 +694,8 @@ function FoodLogForm({ locale }: { locale: Locale }) {
                 <FormInput name="sodium_mg" type="number" label={{ zh: "鈉 mg", en: "Sodium mg" }} locale={locale} placeholder="760" />
               </div>
               <label className="grid gap-2 text-sm font-medium">
-                {locale === "zh-Hant" ? "相片上載（佔位）與備註" : "Photo upload placeholder and notes"}
-                <Textarea name="notes" placeholder={locale === "zh-Hant" ? "相片功能接駁儲存後啟用。" : "Photo support can be wired to storage later."} />
+                {locale === "zh-Hant" ? "備註" : "Notes"}
+                <Textarea name="notes" placeholder={locale === "zh-Hant" ? "例如：份量、餐廳、飽足感或不適反應。" : "Example: portion, restaurant, fullness, or any discomfort."} />
               </label>
             </TabsContent>
             <TabsContent value="water" className="mt-4 grid gap-3">

@@ -5,6 +5,7 @@ import type { HealthPage, Locale } from "@/lib/health-app/types";
 import { cn } from "@/lib/utils";
 import { CoachPage, RightCoachPanel } from "./coach";
 import { DashboardPage } from "./dashboard";
+import { EmotionEnginePage, GblPage, HistoryPage } from "./intelligence";
 import { HealthcarePage, InsurancePage, LearnPage, LessonPage } from "./knowledge-healthcare";
 import { MobileBottomNav, QuickAddButton, Sidebar, TopHeader } from "./navigation";
 import {
@@ -111,6 +112,12 @@ function PageContent({
       return <LearnPage locale={locale} />;
     case "lesson":
       return <LessonPage locale={locale} slug={lessonSlug} />;
+    case "gbl":
+      return <GblPage locale={locale} />;
+    case "emotion":
+      return <EmotionEnginePage locale={locale} />;
+    case "history":
+      return <HistoryPage locale={locale} />;
     case "healthcare":
     case "symptom-routing":
       return <HealthcarePage locale={locale} />;
