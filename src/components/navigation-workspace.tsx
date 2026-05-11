@@ -419,7 +419,7 @@ export function NavigationWorkspace() {
               </Badge>
             </div>
             <div className="flex flex-col gap-2">
-              <h1 className="text-3xl font-semibold tracking-normal sm:text-4xl">
+              <h1 className="text-gradient-health text-3xl font-bold tracking-tight sm:text-4xl">
                 AI 醫療及保險導航
               </h1>
               <p className="max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">

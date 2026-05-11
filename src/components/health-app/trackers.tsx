@@ -69,7 +69,7 @@ export function TrackOverviewPage({ locale }: { locale: Locale }) {
   ];
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title={ui.track}
         description={{
@@ -78,9 +78,9 @@ export function TrackOverviewPage({ locale }: { locale: Locale }) {
         }}
         locale={locale}
       />
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {cards.map((card) => (
-          <Card key={card.href} className="bg-card/80 shadow-sm">
+          <Card key={card.href} className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
             <CardHeader>
               <span className="grid size-10 place-items-center rounded-lg bg-primary text-primary-foreground">
                 <card.icon aria-hidden="true" />
@@ -102,7 +102,7 @@ export function TrackOverviewPage({ locale }: { locale: Locale }) {
 
 export function RunningPage({ locale }: { locale: Locale }) {
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title={ui.running}
         description={{
@@ -117,7 +117,7 @@ export function RunningPage({ locale }: { locale: Locale }) {
         <div className="grid gap-5 lg:grid-cols-2">
           <RunningProgressCard locale={locale} />
           <RunningStatsCard locale={locale} />
-          <Card className="bg-card/80 shadow-sm lg:col-span-2">
+          <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl lg:col-span-2">
             <CardHeader>
               <CardTitle>{locale === "zh-Hant" ? "配速趨勢" : "Pace trend"}</CardTitle>
               <CardDescription>
@@ -155,7 +155,7 @@ export function RunningPage({ locale }: { locale: Locale }) {
 
 export function GymPage({ locale }: { locale: Locale }) {
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title={ui.gym}
         description={{
@@ -169,7 +169,7 @@ export function GymPage({ locale }: { locale: Locale }) {
         <ExerciseLogForm locale={locale} />
         <div className="grid gap-5 lg:grid-cols-2">
           <GymProgressCard locale={locale} />
-          <Card className="bg-card/80 shadow-sm">
+          <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
             <CardHeader>
               <CardTitle>{locale === "zh-Hant" ? "肌群分佈" : "Muscle group balance"}</CardTitle>
               <CardDescription>
@@ -180,7 +180,7 @@ export function GymPage({ locale }: { locale: Locale }) {
               <MuscleGroupChart data={gymVolumeData} />
             </CardContent>
           </Card>
-          <Card className="bg-card/80 shadow-sm lg:col-span-2">
+          <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl lg:col-span-2">
             <CardHeader>
               <CardTitle>{locale === "zh-Hant" ? "訓練模板" : "Workout templates"}</CardTitle>
             </CardHeader>
@@ -217,7 +217,7 @@ export function GymPage({ locale }: { locale: Locale }) {
 
 export function NutritionPage({ locale }: { locale: Locale }) {
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title={ui.nutrition}
         description={{
@@ -232,7 +232,7 @@ export function NutritionPage({ locale }: { locale: Locale }) {
         <div className="grid gap-5 lg:grid-cols-2">
           <NutritionCard locale={locale} />
           <WaterCard locale={locale} />
-          <Card className="bg-card/80 shadow-sm lg:col-span-2">
+          <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl lg:col-span-2">
             <CardHeader>
               <CardTitle>{locale === "zh-Hant" ? "每週營養趨勢" : "Weekly nutrition trend"}</CardTitle>
               <CardDescription>
@@ -246,7 +246,7 @@ export function NutritionPage({ locale }: { locale: Locale }) {
         </div>
       </div>
 
-      <Card className="bg-card/80 shadow-sm">
+      <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
         <CardHeader>
           <CardTitle>{locale === "zh-Hant" ? "食物建議" : "Food recommendations"}</CardTitle>
           <CardDescription>
@@ -280,9 +280,9 @@ export function GenericTrackerPage({ page, locale }: { page: HealthPage; locale:
   const selected = copy[page] ?? copy.body;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <PageHeader title={selected.title} description={selected.description} locale={locale} />
-      <Card className="bg-card/80 shadow-sm">
+      <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
         <CardHeader>
           <span className="grid size-11 place-items-center rounded-lg bg-primary text-primary-foreground">
             <selected.icon aria-hidden="true" />
@@ -332,7 +332,7 @@ function SpecificTrackerPanel({ page, locale }: { page: HealthPage; locale: Loca
     }
 
     return (
-      <Card className="bg-card/80 shadow-sm">
+      <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
         <form onSubmit={onSubmit}>
           <CardHeader>
             <CardTitle>{locale === "zh-Hant" ? "睡眠詳情" : "Sleep details"}</CardTitle>
@@ -347,7 +347,7 @@ function SpecificTrackerPanel({ page, locale }: { page: HealthPage; locale: Loca
               {locale === "zh-Hant" ? "備註" : "Notes"}
               <Textarea name="notes" placeholder={locale === "zh-Hant" ? "例如：睡前用了手機，半夜醒了一次。" : "Example: used phone late, woke once."} />
             </label>
-            <div className="rounded-lg bg-muted/45 p-3 text-sm leading-6 text-muted-foreground">
+            <div className="rounded-xl bg-muted/30 p-3 text-sm leading-6 text-muted-foreground ring-1 ring-border/40">
               {locale === "zh-Hant"
                 ? "AI 睡眠建議：今晚先把睡前手機時間縮短 15 分鐘。"
                 : "AI sleep suggestion: reduce late phone time by 15 minutes tonight."}
@@ -390,7 +390,7 @@ function SpecificTrackerPanel({ page, locale }: { page: HealthPage; locale: Loca
     }
 
     return (
-      <Card className="bg-card/80 shadow-sm">
+      <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
         <CardHeader>
           <CardTitle>{locale === "zh-Hant" ? "飲水目標" : "Hydration goal"}</CardTitle>
           <CardDescription>{locale === "zh-Hant" ? "快速新增 250ml、500ml 或自訂飲水量。" : "Quick add 250ml, 500ml, or a custom amount."}</CardDescription>
@@ -400,7 +400,7 @@ function SpecificTrackerPanel({ page, locale }: { page: HealthPage; locale: Loca
             <Button type="button" variant="outline" disabled={saving} onClick={() => saveWater(250)}>250ml</Button>
             <Button type="button" variant="outline" disabled={saving} onClick={() => saveWater(500)}>500ml</Button>
             <Input name="amount_ml" type="number" placeholder={locale === "zh-Hant" ? "自訂 ml" : "Custom ml"} aria-label={locale === "zh-Hant" ? "自訂飲水量" : "Custom water amount"} />
-            <div className="rounded-lg bg-muted/45 p-3 text-sm leading-6 text-muted-foreground">
+            <div className="rounded-xl bg-muted/30 p-3 text-sm leading-6 text-muted-foreground ring-1 ring-border/40">
               {locale === "zh-Hant" ? "今日目標 3.0L，連續紀錄會由摘要表計算。" : "Daily goal 3.0L; streaks are calculated from summaries."}
             </div>
           </CardContent>
@@ -437,7 +437,7 @@ function SpecificTrackerPanel({ page, locale }: { page: HealthPage; locale: Loca
     }
 
     return (
-      <Card className="bg-card/80 shadow-sm">
+      <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
         <form onSubmit={onSubmit}>
           <CardHeader>
             <CardTitle>{locale === "zh-Hant" ? "身體指標趨勢" : "Body metrics trend"}</CardTitle>
@@ -505,7 +505,7 @@ function QuickAddRunForm({ locale }: { locale: Locale }) {
   }
 
   return (
-    <Card className="bg-card/80 shadow-sm">
+    <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
       <form onSubmit={onSubmit}>
         <CardHeader>
           <CardTitle>{locale === "zh-Hant" ? "快速新增跑步" : "Quick add run"}</CardTitle>
@@ -565,7 +565,7 @@ function ExerciseLogForm({ locale }: { locale: Locale }) {
   }
 
   return (
-    <Card className="bg-card/80 shadow-sm">
+    <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
       <form onSubmit={onSubmit}>
         <CardHeader>
           <CardTitle>{locale === "zh-Hant" ? "動作記錄" : "Exercise log"}</CardTitle>
@@ -650,7 +650,7 @@ function FoodLogForm({ locale }: { locale: Locale }) {
   }
 
   return (
-    <Card className="bg-card/80 shadow-sm">
+    <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
       <form onSubmit={onSubmit}>
         <CardHeader>
           <CardTitle>{locale === "zh-Hant" ? "飲食記錄" : "Food log"}</CardTitle>
@@ -716,7 +716,7 @@ function FoodLogForm({ locale }: { locale: Locale }) {
 
 function RunningStatsCard({ locale }: { locale: Locale }) {
   return (
-    <Card className="bg-card/80 shadow-sm">
+    <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
       <CardHeader>
         <CardTitle>{locale === "zh-Hant" ? "跑步紀錄" : "Running stats"}</CardTitle>
       </CardHeader>
@@ -740,7 +740,7 @@ function AITrainingLogicCard({
   points: LocalizedText[];
 }) {
   return (
-    <Card className="bg-card/80 shadow-sm">
+    <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
       <CardHeader>
         <CardTitle>{text(title, locale)}</CardTitle>
         <CardDescription>
@@ -749,7 +749,7 @@ function AITrainingLogicCard({
       </CardHeader>
       <CardContent className="grid gap-3 md:grid-cols-3">
         {points.map((point) => (
-          <div key={point.en} className="rounded-lg bg-muted/45 p-3 text-sm leading-6 text-muted-foreground">
+          <div key={point.en} className="rounded-xl bg-muted/30 p-3 text-sm leading-6 text-muted-foreground ring-1 ring-border/40">
             {text(point, locale)}
           </div>
         ))}
@@ -786,8 +786,8 @@ function FormInput({
 
 function Stat({ value, label: statLabel }: { value: string; label: string }) {
   return (
-    <div className="rounded-lg bg-muted/45 p-3">
-      <p className="flex items-center gap-2 text-lg font-semibold tracking-normal">
+    <div className="rounded-xl bg-muted/30 p-3 ring-1 ring-border/40">
+      <p className="flex items-center gap-2 text-lg font-bold tracking-tight">
         <Timer aria-hidden="true" />
         {value}
       </p>
@@ -798,9 +798,9 @@ function Stat({ value, label: statLabel }: { value: string; label: string }) {
 
 function PageHeader({ title, description, locale }: { title: LocalizedText; description: LocalizedText; locale: Locale }) {
   return (
-    <section className="rounded-xl border bg-card/70 p-5 shadow-sm backdrop-blur-md">
+    <section className="welcome-gradient rounded-2xl border border-border/50 bg-card/60 p-5 shadow-sm backdrop-blur-xl">
       <p className="text-sm text-muted-foreground">{text(ui.appNameFull, locale)}</p>
-      <h2 className="mt-2 text-3xl font-semibold tracking-normal">{text(title, locale)}</h2>
+      <h2 className="mt-2 text-gradient-health text-3xl font-bold tracking-tight">{text(title, locale)}</h2>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{text(description, locale)}</p>
     </section>
   );

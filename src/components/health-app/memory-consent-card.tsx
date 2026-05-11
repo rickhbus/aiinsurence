@@ -87,7 +87,7 @@ export function MemoryConsentCard({
         {status === "editing" ? (
           <Textarea value={value} onChange={(event) => setValue(event.target.value)} aria-label="Memory text" />
         ) : (
-          <p className="rounded-lg bg-muted/45 p-3 text-sm leading-6 text-muted-foreground">{value}</p>
+          <p className="rounded-xl bg-muted/30 p-3 text-sm leading-6 text-muted-foreground ring-1 ring-border/40">{value}</p>
         )}
         {status === "saved" ? (
           <p className="text-sm text-muted-foreground">

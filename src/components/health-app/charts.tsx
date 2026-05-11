@@ -179,20 +179,33 @@ export function ProgressRing({
   label,
   size = 132,
   tone = "primary",
+  animated = false,
 }: {
   value: number;
   label: string;
   size?: number;
   tone?: "primary" | "secondary";
+  animated?: boolean;
 }) {
-  const stroke = 11;
+  const stroke = 12;
   const radius = (size - stroke) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (Math.min(value, 100) / 100) * circumference;
+  const strokeColor = tone === "primary" ? "var(--chart-1)" : "var(--chart-2)";
+  const glowId = `ring-glow-${tone}-${size}`;
 
   return (
-    <div className="relative grid place-items-center" style={{ width: size, height: size }}>
-      <svg className="-rotate-90" width={size} height={size} aria-hidden="true">
+    <div className={cn("relative grid place-items-center", animated && "score-glow")} style={{ width: size, height: size }}>
+      <svg className={cn("-rotate-90", animated && "progress-ring-animated")} width={size} height={size} aria-hidden="true">
+        <defs>
+          <filter id={glowId}>
+            <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -200,22 +213,24 @@ export function ProgressRing({
           fill="none"
           stroke="var(--muted)"
           strokeWidth={stroke}
+          opacity={0.5}
         />
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={tone === "primary" ? "var(--chart-1)" : "var(--chart-2)"}
+          stroke={strokeColor}
           strokeLinecap="round"
           strokeWidth={stroke}
           strokeDasharray={circumference}
           strokeDashoffset={offset}
+          filter={animated ? `url(#${glowId})` : undefined}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <strong className="text-3xl font-semibold tracking-normal">{value}</strong>
-        <span className="text-xs text-muted-foreground">{label}</span>
+        <strong className="text-3xl font-bold tracking-tight">{value}</strong>
+        <span className="mt-0.5 text-xs font-medium text-muted-foreground">{label}</span>
       </div>
     </div>
   );

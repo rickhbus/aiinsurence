@@ -62,9 +62,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { MacroChart, MuscleGroupChart, ProgressChart, ProgressRing } from "./charts";
 
 const cardMotion = {
-  initial: false,
+  initial: { opacity: 0, y: 18 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.32 },
+  transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1] },
 };
 
 type CardProps = {
@@ -81,9 +81,9 @@ export function HealthScoreCard({ locale, className, data }: CardProps) {
   const hydrationScore = data?.today.hydration_score ?? 76;
 
   return (
-    <DashboardCard className={cn("bg-card/88", className)} icon={HeartPulse} title={{ zh: "健康分數", en: "Health Score" }} locale={locale}>
+    <DashboardCard className={cn("health-card-glow", className)} icon={HeartPulse} title={{ zh: "健康分數", en: "Health Score" }} locale={locale} index={0}>
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-        <ProgressRing value={score} label="Health score" />
+        <ProgressRing value={score} label="Health score" animated />
         <div className="flex min-w-0 flex-1 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="w-fit">
@@ -170,11 +170,11 @@ export function TodayPlanCard({ locale, className, data }: CardProps) {
   ];
 
   return (
-    <DashboardCard className={className} icon={Sparkles} title={ui.todayPlan} locale={locale}>
+    <DashboardCard className={className} icon={Sparkles} title={ui.todayPlan} locale={locale} index={1}>
       <div className="flex flex-col gap-3">
         {items.map((item) => (
-          <div key={item.title.en} className="flex items-start gap-3 rounded-lg bg-muted/45 p-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-background text-foreground ring-1 ring-border">
+          <div key={item.title.en} className="group/plan flex items-start gap-3 rounded-xl bg-muted/35 p-3 transition-all duration-200 hover:bg-muted/55 hover:shadow-sm">
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 transition-colors group-hover/plan:bg-primary/15">
               <item.icon aria-hidden="true" />
             </span>
             <div className="min-w-0">
@@ -195,7 +195,7 @@ export function ActivitySummaryCard({ locale, className, data }: CardProps) {
   const streak = data?.weekly.workout_days ?? 5;
 
   return (
-    <DashboardCard className={className} icon={Activity} title={{ zh: "活動摘要", en: "Activity summary" }} locale={locale}>
+    <DashboardCard className={className} icon={Activity} title={{ zh: "活動摘要", en: "Activity summary" }} locale={locale} index={3}>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <MetricPill icon={Footprints} value="9,143" label={{ zh: "步數", en: "Steps" }} locale={locale} />
         <MetricPill icon={Flame} value={String(calories)} label={{ zh: "卡路里", en: "Calories" }} locale={locale} />
@@ -214,7 +214,7 @@ export function RunningProgressCard({ locale, className, data }: CardProps) {
   const averagePace = getAveragePace(data?.recent.running);
 
   return (
-    <DashboardCard className={className} icon={Footprints} title={ui.running} locale={locale} href="/track/running">
+    <DashboardCard className={className} icon={Footprints} title={ui.running} locale={locale} href="/track/running" index={4}>
       <div className="grid grid-cols-2 gap-3">
         <MiniStat value={`${weeklyDistance} km`} label={locale === "zh-Hant" ? "本週距離" : "Weekly distance"} />
         <MiniStat value={lastRun ? `${lastRun.distance_km} km` : "5.0 km"} label={locale === "zh-Hant" ? "上次跑步" : "Last run"} />
@@ -237,7 +237,7 @@ export function GymProgressCard({ locale, className, data }: CardProps) {
   const chartData = dataOrFallback(data?.charts.gymVolume, gymVolumeData);
 
   return (
-    <DashboardCard className={className} icon={Dumbbell} title={ui.gym} locale={locale} href="/track/gym">
+    <DashboardCard className={className} icon={Dumbbell} title={ui.gym} locale={locale} href="/track/gym" index={5}>
       <div className="grid grid-cols-2 gap-3">
         <MiniStat value={lastWorkout?.workout_title || "Pull + core"} label={locale === "zh-Hant" ? "上次訓練" : "Last workout"} />
         <MiniStat value={lastWorkout?.muscle_group || "Back, Core"} label={locale === "zh-Hant" ? "肌群" : "Muscles"} />
@@ -270,7 +270,7 @@ export function NutritionCard({ locale, className, data }: CardProps) {
     : macroData;
 
   return (
-    <DashboardCard className={className} icon={Apple} title={ui.nutrition} locale={locale} href="/nutrition">
+    <DashboardCard className={className} icon={Apple} title={ui.nutrition} locale={locale} href="/nutrition" index={6}>
       <div className="grid grid-cols-2 gap-3">
         <MiniStat value={calories.toLocaleString()} label={locale === "zh-Hant" ? "卡路里" : "Calories"} />
         <MiniStat value={`${protein}g`} label={locale === "zh-Hant" ? "蛋白質" : "Protein"} />
@@ -295,7 +295,7 @@ export function WaterCard({ locale, className, data }: CardProps) {
   const chartData = dataOrFallback(data?.charts.water, waterData);
 
   return (
-    <DashboardCard className={className} icon={Droplets} title={ui.water} locale={locale}>
+    <DashboardCard className={className} icon={Droplets} title={ui.water} locale={locale} index={8}>
       <div className="flex items-center justify-between gap-4">
         <ProgressRing value={progress} label={locale === "zh-Hant" ? "今日目標" : "today"} size={108} tone="secondary" />
         <div className="flex flex-1 flex-col gap-3">
@@ -314,7 +314,7 @@ export function SleepCard({ locale, className, data }: CardProps) {
   const sleepScore = data?.today.sleep_score ?? 72;
 
   return (
-    <DashboardCard className={className} icon={BedDouble} title={ui.sleep} locale={locale}>
+    <DashboardCard className={className} icon={BedDouble} title={ui.sleep} locale={locale} index={7}>
       <div className="grid grid-cols-[1fr_auto] gap-4">
         <div className="flex flex-col gap-3">
           <MiniStat value={`${average}h`} label={locale === "zh-Hant" ? "平均睡眠" : "Average sleep"} />
@@ -334,7 +334,7 @@ export function AIRecommendationCard({ locale, className, data }: CardProps) {
   const recommendation = data?.recommendation;
 
   return (
-    <DashboardCard className={className} icon={Brain} title={{ zh: "今日 AI 建議", en: "Today’s AI recommendation" }} locale={locale} href="/coach">
+    <DashboardCard className={cn("health-card-glow", className)} icon={Brain} title={{ zh: "今日 AI 建議", en: "Today’s AI recommendation" }} locale={locale} href="/coach" index={2}>
       <div className="flex flex-col gap-3">
         <h3 className="text-xl font-semibold tracking-normal">
           {recommendation
@@ -348,7 +348,7 @@ export function AIRecommendationCard({ locale, className, data }: CardProps) {
             ? "今天先維持活動節奏，不急於加跑量。"
             : "Keep your activity rhythm today without rushing to add run volume."}
         </p>
-        <div className="rounded-lg bg-muted/45 p-3">
+        <div className="rounded-xl bg-muted/35 p-3 ring-1 ring-border/50">
           <p className="text-sm font-medium">{label(ui.why, locale)}</p>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
             {locale === "zh-Hant"
@@ -356,7 +356,7 @@ export function AIRecommendationCard({ locale, className, data }: CardProps) {
               : "Yesterday’s run was RPE 7, so more run volume may not be useful today; lunch protein can improve."}
           </p>
         </div>
-        <div className="rounded-lg bg-muted/45 p-3">
+        <div className="rounded-xl bg-muted/35 p-3 ring-1 ring-border/50">
           <p className="text-sm font-medium">{label(ui.action, locale)}</p>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
             {locale === "zh-Hant"
@@ -364,7 +364,7 @@ export function AIRecommendationCard({ locale, className, data }: CardProps) {
             : "Do 30 minutes of upper-body strength and add tofu, fish, eggs, or chicken at lunch."}
           </p>
         </div>
-        <div className="rounded-lg border border-primary/20 bg-secondary/45 p-3 text-sm leading-6 text-muted-foreground">
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm leading-6 text-muted-foreground">
           <strong className="text-foreground">{locale === "zh-Hant" ? "安全提示: " : "Safety note: "}</strong>
           {locale === "zh-Hant"
             ? recommendation?.safetyNote ?? "如膝痛加劇、胸痛或嚴重氣促，停止運動並尋求醫療協助。"
@@ -383,7 +383,7 @@ export function AIRecommendationCard({ locale, className, data }: CardProps) {
 
 export function LearnCard({ locale, lesson = lessons[0], className }: CardProps & { lesson?: Lesson }) {
   return (
-    <DashboardCard className={className} icon={BookOpenCheck} title={{ zh: "每日健康知識", en: "Health lesson of the day" }} locale={locale}>
+    <DashboardCard className={className} icon={BookOpenCheck} title={{ zh: "每日健康知識", en: "Health lesson of the day" }} locale={locale} index={9}>
       <div className="flex flex-col gap-3">
         <Badge variant="secondary" className="w-fit">
           {text(lesson.category, locale)}
@@ -392,7 +392,7 @@ export function LearnCard({ locale, lesson = lessons[0], className }: CardProps 
         <p className="text-sm leading-6 text-muted-foreground">
           {text(lesson.explanation, locale)} {text(lesson.example, locale)}
         </p>
-        <p className="rounded-lg bg-muted/45 p-3 text-sm leading-6 text-muted-foreground">
+        <p className="rounded-xl bg-muted/35 p-3 text-sm leading-6 text-muted-foreground ring-1 ring-border/50">
           <strong className="text-foreground">{label(ui.action, locale)}: </strong>
           {text(lesson.actionStep, locale)}
         </p>
@@ -409,10 +409,10 @@ export function LearnCard({ locale, lesson = lessons[0], className }: CardProps 
 
 export function HealthcareReminderCard({ locale, className }: CardProps) {
   return (
-    <DashboardCard className={className} icon={Stethoscope} title={{ zh: "醫療導航提醒", en: "Healthcare reminder" }} locale={locale} href="/healthcare/symptom-routing">
+    <DashboardCard className={className} icon={Stethoscope} title={{ zh: "醫療導航提醒", en: "Healthcare reminder" }} locale={locale} href="/healthcare/symptom-routing" index={10}>
       <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
         <div className="flex flex-col gap-3">
-          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm leading-6 text-muted-foreground">
+          <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm leading-6 text-muted-foreground">
             <AlertTriangle aria-hidden="true" className="mb-2 text-destructive" />
             {locale === "zh-Hant"
               ? "胸痛、嚴重呼吸困難、中風徵兆、嚴重過敏、大量出血或失去知覺，請立即致電 999 或前往急症室。"
@@ -440,7 +440,7 @@ export function WeeklyProgressCard({ locale, className, data }: CardProps) {
   const chartData = dataOrFallback(data?.charts.activity, activityData);
 
   return (
-    <DashboardCard className={className} icon={TrendingUp} title={{ zh: "每週進度", en: "Weekly Progress" }} locale={locale} href="/progress">
+    <DashboardCard className={className} icon={TrendingUp} title={{ zh: "每週進度", en: "Weekly Progress" }} locale={locale} href="/progress" index={11}>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <MiniStat value={`${data?.weekly.running_distance_km ?? 12.3} km`} label={locale === "zh-Hant" ? "跑步趨勢" : "Running"} />
         <MiniStat value={`${gymVolume.toLocaleString()} kg`} label={locale === "zh-Hant" ? "健身容量" : "Gym volume"} />
@@ -448,7 +448,7 @@ export function WeeklyProgressCard({ locale, className, data }: CardProps) {
         <MiniStat value={`${data?.weekly.water_goal_days ?? 5}d`} label={locale === "zh-Hant" ? "飲水連續" : "Water streak"} />
       </div>
       <ProgressChart data={chartData} height={150} />
-      <div className="rounded-lg bg-muted/45 p-3 text-sm leading-6 text-muted-foreground">
+      <div className="rounded-xl bg-muted/35 p-3 text-sm leading-6 text-muted-foreground ring-1 ring-border/50">
         <Target aria-hidden="true" className="mb-2 text-primary" />
         {locale === "zh-Hant"
           ? "AI 週報重點：先守住睡眠和蛋白質，再小幅增加跑量。"
@@ -460,7 +460,7 @@ export function WeeklyProgressCard({ locale, className, data }: CardProps) {
 
 export function GoalCard({ goal, locale }: { goal: Goal; locale: Locale }) {
   return (
-    <Card className="bg-card/80 shadow-sm">
+    <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
       <CardHeader>
         <CardTitle className="flex items-center justify-between gap-3">
           <span>{text(goal.type, locale)}</span>
@@ -469,8 +469,8 @@ export function GoalCard({ goal, locale }: { goal: Goal; locale: Locale }) {
         <CardDescription>{goal.target}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <div className="h-2 overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-primary" style={{ width: `${goal.progress}%` }} />
+        <div className="h-2.5 overflow-hidden rounded-full bg-muted/50">
+          <div className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500" style={{ width: `${goal.progress}%` }} />
         </div>
         <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
           {goal.weeklyActions.map((action) => (
@@ -480,7 +480,7 @@ export function GoalCard({ goal, locale }: { goal: Goal; locale: Locale }) {
             </li>
           ))}
         </ul>
-        <p className="rounded-lg bg-muted/45 p-3 text-sm leading-6 text-muted-foreground">
+        <p className="rounded-xl bg-muted/30 p-3 text-sm leading-6 text-muted-foreground ring-1 ring-border/40">
           {text(goal.suggestion, locale)}
         </p>
       </CardContent>
@@ -490,7 +490,7 @@ export function GoalCard({ goal, locale }: { goal: Goal; locale: Locale }) {
 
 export function WorkoutTemplateCard({ template, locale }: { template: string; locale: Locale }) {
   return (
-    <Card className="bg-card/80 shadow-sm">
+    <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
       <CardHeader>
         <CardTitle>{template}</CardTitle>
         <CardDescription>
@@ -518,7 +518,7 @@ export function FoodRecommendationCard({
   locale: Locale;
 }) {
   return (
-    <Card className="bg-card/80 shadow-sm">
+    <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
       <CardHeader>
         <CardTitle>{text(item.title, locale)}</CardTitle>
       </CardHeader>
@@ -531,7 +531,7 @@ export function FoodRecommendationCard({
 
 export function SafetyDisclaimer({ locale, compact = false }: { locale: Locale; compact?: boolean }) {
   return (
-    <div className={cn("rounded-lg border bg-muted/35 p-4 text-sm leading-6 text-muted-foreground", compact && "p-3 text-xs")}>
+    <div className={cn("rounded-2xl border bg-muted/25 p-4 text-sm leading-6 text-muted-foreground backdrop-blur-sm", compact && "p-3 text-xs")}>
       <strong className="text-foreground">{label(ui.safety, locale)}: </strong>
       {locale === "zh-Hant" ? safetyCopy.zh : safetyCopy.en}
     </div>
@@ -561,6 +561,7 @@ export function DashboardCard({
   children,
   href,
   className,
+  index = 0,
 }: {
   icon: LucideIcon;
   title: LocalizedText;
@@ -568,20 +569,31 @@ export function DashboardCard({
   children: ReactNode;
   href?: string;
   className?: string;
+  index?: number;
 }) {
   return (
-    <motion.div {...cardMotion} className={className}>
-      <Card className="relative h-full bg-card/82 shadow-sm backdrop-blur-md transition-all hover:-translate-y-0.5 hover:shadow-md">
+    <motion.div
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.42,
+        delay: Math.min(index * 0.06, 0.48),
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      className={className}
+    >
+      <Card className="group/card relative h-full overflow-hidden border-border/60 bg-card/78 shadow-sm backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-border hover:shadow-lg">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/[0.03] via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover/card:opacity-100" />
         <CardHeader className="gap-2">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground">
+              <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm shadow-primary/20">
                 <Icon aria-hidden="true" />
               </span>
-              <CardTitle>{text(title, locale)}</CardTitle>
+              <CardTitle className="text-base font-semibold tracking-tight">{text(title, locale)}</CardTitle>
             </div>
             {href ? (
-              <Button asChild variant="ghost" size="icon-sm" aria-label={locale === "zh-Hant" ? "開啟" : "Open"}>
+              <Button asChild variant="ghost" size="icon-sm" className="text-muted-foreground transition-colors hover:text-primary" aria-label={locale === "zh-Hant" ? "開啟" : "Open"}>
                 <Link href={href}>
                   <ArrowUpRight aria-hidden="true" />
                 </Link>
@@ -597,8 +609,8 @@ export function DashboardCard({
 
 function MiniStat({ value, label }: { value: string; label: string }) {
   return (
-    <div className="rounded-lg bg-muted/45 p-3">
-      <p className="truncate text-base font-semibold tracking-normal">{value}</p>
+    <div className="rounded-xl bg-muted/30 p-3 ring-1 ring-border/40 transition-all duration-200 hover:bg-muted/50 hover:ring-border/60">
+      <p className="truncate text-base font-semibold tracking-tight">{value}</p>
       <p className="mt-1 text-xs text-muted-foreground">{label}</p>
     </div>
   );
@@ -616,12 +628,12 @@ function MetricPill({
   locale: Locale;
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-3 rounded-lg bg-muted/45 p-3">
-      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-background ring-1 ring-border">
+    <div className="metric-hover flex min-w-0 items-center gap-3 rounded-xl bg-muted/30 p-3 ring-1 ring-border/40">
+      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/8 text-primary ring-1 ring-primary/15">
         <Icon aria-hidden="true" />
       </span>
       <div className="min-w-0">
-        <p className="truncate font-semibold tracking-normal">{value}</p>
+        <p className="truncate font-semibold tracking-tight">{value}</p>
         <p className="truncate text-xs text-muted-foreground">{text(itemLabel, locale)}</p>
       </div>
     </div>

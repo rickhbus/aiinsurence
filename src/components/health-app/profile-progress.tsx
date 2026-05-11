@@ -26,7 +26,7 @@ import { ProgressChart } from "./charts";
 
 export function ProgressPage({ locale }: { locale: Locale }) {
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title={ui.progress}
         description={{
@@ -36,7 +36,7 @@ export function ProgressPage({ locale }: { locale: Locale }) {
         locale={locale}
       />
 
-      <Card className="bg-card/80 shadow-sm">
+      <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
         <CardHeader>
           <CardTitle>{label(ui.weeklyReport, locale)}</CardTitle>
           <CardDescription>
@@ -52,11 +52,11 @@ export function ProgressPage({ locale }: { locale: Locale }) {
         </CardContent>
       </Card>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <ChartPanel title={{ zh: "活動趨勢", en: "Activity trend" }} data={activityData} locale={locale} />
         <ChartPanel title={{ zh: "健身容量", en: "Gym volume" }} data={gymVolumeData} locale={locale} variant="bar" />
         <ChartPanel title={{ zh: "營養趨勢", en: "Nutrition trend" }} data={weeklyNutritionData} locale={locale} variant="bar" />
-        <Card className="bg-card/80 shadow-sm">
+        <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
           <CardHeader>
             <CardTitle>{locale === "zh-Hant" ? "AI 總結" : "AI summary"}</CardTitle>
             <CardDescription>
@@ -71,7 +71,7 @@ export function ProgressPage({ locale }: { locale: Locale }) {
               { zh: "主要風險：連續高強度日可能增加膝部不適。", en: "Main risk: repeated hard days may increase knee discomfort." },
               { zh: "下一步：一個恢復日、一個全身力量日、一個輕鬆跑。", en: "Next: one recovery day, one full-body strength day, one easy run." },
             ].map((item) => (
-              <div key={item.en} className="rounded-lg bg-muted/45 p-3 text-sm text-muted-foreground">
+              <div key={item.en} className="rounded-xl bg-muted/30 p-3 text-sm text-muted-foreground ring-1 ring-border/40">
                 {text(item, locale)}
               </div>
             ))}
@@ -84,7 +84,7 @@ export function ProgressPage({ locale }: { locale: Locale }) {
 
 export function GoalsPage({ locale }: { locale: Locale }) {
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title={ui.goals}
         description={{
@@ -93,12 +93,12 @@ export function GoalsPage({ locale }: { locale: Locale }) {
         }}
         locale={locale}
       />
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {goals.map((goal) => (
           <GoalCard key={goal.id} goal={goal} locale={locale} />
         ))}
       </div>
-      <Card className="bg-card/80 shadow-sm">
+      <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
         <CardHeader>
           <CardTitle>{locale === "zh-Hant" ? "新增目標" : "New goal"}</CardTitle>
         </CardHeader>
@@ -115,7 +115,7 @@ export function GoalsPage({ locale }: { locale: Locale }) {
 
 export function ProfilePage({ locale }: { locale: Locale }) {
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title={ui.profile}
         description={{
@@ -125,7 +125,7 @@ export function ProfilePage({ locale }: { locale: Locale }) {
         locale={locale}
       />
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <Card className="bg-card/80 shadow-sm">
+        <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
           <CardHeader>
             <CardTitle>{locale === "zh-Hant" ? "個人設定" : "Profile settings"}</CardTitle>
             <CardDescription>{locale === "zh-Hant" ? "示範資料可接駁 Supabase profiles。" : "Demo data can be wired to Supabase profiles."}</CardDescription>
@@ -170,7 +170,7 @@ export function MemoryPage({ locale }: { locale: Locale }) {
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title={ui.memory}
         description={{
@@ -180,13 +180,13 @@ export function MemoryPage({ locale }: { locale: Locale }) {
         locale={locale}
       />
       {(Object.keys(grouped) as MemoryCategory[]).map((category) => (
-        <Card key={category} className="bg-card/80 shadow-sm">
+        <Card key={category} className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
           <CardHeader>
             <CardTitle>{text(categoryLabels[category], locale)}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-2">
             {grouped[category].map((item) => (
-              <Card key={item.id} className="bg-background/60">
+              <Card key={item.id} className="border-border/40 bg-background/50 backdrop-blur-sm transition-all duration-200 hover:border-border/60 hover:shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between gap-3">
                     <span>{text(item.title, locale)}</span>
@@ -217,7 +217,7 @@ export function MemoryPage({ locale }: { locale: Locale }) {
 
 export function SettingsPage({ locale }: { locale: Locale }) {
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title={ui.settings}
         description={{
@@ -228,7 +228,7 @@ export function SettingsPage({ locale }: { locale: Locale }) {
       />
       <div className="grid gap-5 xl:grid-cols-[380px_1fr]">
         <PrivacySettingsPanel locale={locale} />
-        <Card className="bg-card/80 shadow-sm">
+        <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
           <CardHeader>
             <CardTitle>{locale === "zh-Hant" ? "同意紀錄" : "Consent history"}</CardTitle>
           </CardHeader>
@@ -238,7 +238,7 @@ export function SettingsPage({ locale }: { locale: Locale }) {
               { zh: "行銷訊息：關閉", en: "Marketing: off" },
               { zh: "顧問交接：未啟用", en: "Adviser handoff: not enabled" },
             ].map((item) => (
-              <div key={item.en} className="flex items-center justify-between rounded-lg bg-muted/45 p-3 text-sm">
+              <div key={item.en} className="flex items-center justify-between rounded-xl bg-muted/30 p-3 text-sm ring-1 ring-border/40">
                 <span>{text(item, locale)}</span>
                 <Badge variant="secondary">2026-05-11</Badge>
               </div>
@@ -283,9 +283,9 @@ export function PrivacySettingsPanel({ locale }: { locale: Locale }) {
   const [memoryOn, setMemoryOn] = useState(true);
 
   return (
-    <Card className="bg-card/80 shadow-sm">
+    <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
       <CardHeader>
-        <span className="grid size-10 place-items-center rounded-lg bg-primary text-primary-foreground">
+        <span className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm shadow-primary/20">
           <LockKeyhole aria-hidden="true" />
         </span>
         <CardTitle>{label(ui.privacyConsent, locale)}</CardTitle>
@@ -298,7 +298,7 @@ export function PrivacySettingsPanel({ locale }: { locale: Locale }) {
       <CardContent className="grid gap-3">
         <button
           type="button"
-          className="flex min-h-12 items-center justify-between rounded-lg border bg-background px-3 text-left"
+          className="flex min-h-12 items-center justify-between rounded-xl border border-border/40 bg-background/50 px-3 text-left transition-all duration-200 hover:border-border/60 hover:shadow-sm"
           onClick={() => setMemoryOn((current) => !current)}
           aria-pressed={memoryOn}
         >
@@ -339,7 +339,7 @@ function ChartPanel({
   variant?: "area" | "bar" | "line";
 }) {
   return (
-    <Card className="bg-card/80 shadow-sm">
+    <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
       <CardHeader>
         <CardTitle>{text(title, locale)}</CardTitle>
       </CardHeader>
@@ -352,12 +352,12 @@ function ChartPanel({
 
 function TrendCard({ title, value, detail, locale }: { title: LocalizedText; value: string; detail: LocalizedText; locale: Locale }) {
   return (
-    <div className="rounded-lg bg-muted/45 p-4">
+    <div className="metric-hover rounded-xl bg-muted/30 p-4 ring-1 ring-border/40">
       <div className="mb-3 flex items-center gap-2 text-muted-foreground">
         <BarChart3 aria-hidden="true" />
         {text(title, locale)}
       </div>
-      <p className="text-2xl font-semibold tracking-normal">{value}</p>
+      <p className="text-2xl font-bold tracking-tight">{value}</p>
       <p className="mt-1 text-sm text-muted-foreground">{text(detail, locale)}</p>
     </div>
   );
@@ -374,9 +374,9 @@ function ProfileField({ label: fieldLabel, value, locale }: { label: LocalizedTe
 
 function PageHeader({ title, description, locale }: { title: LocalizedText; description: LocalizedText; locale: Locale }) {
   return (
-    <section className="rounded-xl border bg-card/70 p-5 shadow-sm backdrop-blur-md">
+    <section className="welcome-gradient rounded-2xl border border-border/50 bg-card/60 p-5 shadow-sm backdrop-blur-xl">
       <p className="text-sm text-muted-foreground">{text(ui.appNameFull, locale)}</p>
-      <h2 className="mt-2 text-3xl font-semibold tracking-normal">{text(title, locale)}</h2>
+      <h2 className="text-gradient-health mt-2 text-3xl font-bold tracking-tight">{text(title, locale)}</h2>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{text(description, locale)}</p>
     </section>
   );

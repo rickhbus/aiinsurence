@@ -62,18 +62,18 @@ export function DashboardPage({ locale }: { locale: Locale }) {
   }, []);
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <WelcomeStrip locale={locale} data={dashboardData} />
 
       {dashboardData?.empty ? (
-        <div className="rounded-2xl border bg-card/80 p-4 text-sm leading-6 text-muted-foreground shadow-sm">
+        <div className="rounded-2xl border border-border/50 bg-card/60 p-5 text-sm leading-6 text-muted-foreground shadow-sm backdrop-blur-sm">
           {locale === "zh-Hant"
             ? "開始記錄你的第一個健康行動，建立個人化建議。"
             : "Start logging your first health action to build personalized recommendations."}
         </div>
       ) : null}
 
-      <section className="grid gap-5 xl:grid-cols-12" aria-label={label(ui.dashboard, locale)}>
+      <section className="grid gap-6 xl:grid-cols-12" aria-label={label(ui.dashboard, locale)}>
         <HealthScoreCard locale={locale} data={dashboardData} className="xl:col-span-5" />
         <TodayPlanCard locale={locale} data={dashboardData} className="xl:col-span-7" />
 

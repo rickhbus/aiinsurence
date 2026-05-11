@@ -37,7 +37,7 @@ export function LearnPage({ locale }: { locale: Locale }) {
   const categories = Array.from(new Set(lessons.map((lesson) => text(lesson.category, locale))));
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title={ui.learn}
         description={{
@@ -55,7 +55,7 @@ export function LearnPage({ locale }: { locale: Locale }) {
         ))}
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {lessons.map((lesson) => (
           <LessonCard key={lesson.slug} lesson={lesson} locale={locale} />
         ))}
@@ -70,7 +70,7 @@ export function LessonPage({ locale, slug }: { locale: Locale; slug?: string }) 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-5">
       <PageHeader title={lesson.title} description={lesson.explanation} locale={locale} />
-      <Card className="bg-card/80 shadow-sm">
+      <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
         <CardHeader>
           <Badge variant="secondary" className="w-fit">
             {text(lesson.category, locale)} · {text(lesson.difficulty, locale)}
@@ -108,14 +108,14 @@ export function HealthcarePage({ locale }: { locale: Locale }) {
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
         <SymptomRoutingForm locale={locale} />
-        <Card className="bg-card/80 shadow-sm">
+        <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
           <CardHeader>
             <CardTitle>{locale === "zh-Hant" ? "緊急警號" : "Urgent signs"}</CardTitle>
             <CardDescription>{locale === "zh-Hant" ? "出現以下情況，不要等待 AI 或保險確認。" : "If these appear, do not wait for AI or insurance confirmation."}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-2">
             {redFlags.map((flag) => (
-              <div key={flag.en} className="flex items-center gap-2 rounded-lg bg-muted/45 p-2 text-sm">
+              <div key={flag.en} className="flex items-center gap-2 rounded-xl bg-muted/30 p-2 text-sm ring-1 ring-border/40">
                 <AlertTriangle aria-hidden="true" className="text-destructive" />
                 {text(flag, locale)}
               </div>
@@ -146,7 +146,7 @@ export function InsurancePage({ locale }: { locale: Locale }) {
       />
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
         <InsuranceHelperForm locale={locale} />
-        <Card className="bg-card/80 shadow-sm">
+        <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
           <CardHeader>
             <CardTitle>{locale === "zh-Hant" ? "可解釋的保障類型" : "Coverage types explained"}</CardTitle>
           </CardHeader>
@@ -159,7 +159,7 @@ export function InsurancePage({ locale }: { locale: Locale }) {
               { zh: "牙科保險", en: "Dental insurance" },
               { zh: "旅遊保險", en: "Travel insurance" },
             ].map((item) => (
-              <div key={item.en} className="rounded-lg bg-muted/45 p-3 text-sm">
+              <div key={item.en} className="rounded-xl bg-muted/30 p-3 text-sm ring-1 ring-border/40">
                 {text(item, locale)}
               </div>
             ))}
@@ -221,7 +221,7 @@ export function SymptomRoutingForm({ locale }: { locale: Locale }) {
   }
 
   return (
-    <Card className="bg-card/80 shadow-sm">
+    <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
       <form onSubmit={onSubmit}>
         <CardHeader>
           <CardTitle>{label(ui.symptomRouting, locale)}</CardTitle>
@@ -359,7 +359,7 @@ export function InsuranceHelperForm({ locale }: { locale: Locale }) {
   }
 
   return (
-    <Card className="bg-card/80 shadow-sm">
+    <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
       <form onSubmit={onSubmit}>
         <CardHeader>
           <CardTitle>{label(ui.insurancePolicyHelper, locale)}</CardTitle>
@@ -393,7 +393,7 @@ export function InsuranceHelperForm({ locale }: { locale: Locale }) {
           {loading ? (locale === "zh-Hant" ? "整理中" : "Preparing") : (locale === "zh-Hant" ? "整理保險問題" : "Prepare insurance questions")}
         </Button>
 
-        <div className="rounded-lg bg-muted/45 p-4">
+        <div className="rounded-xl bg-muted/30 p-4 ring-1 ring-border/40">
           <h3 className="font-medium">{locale === "zh-Hant" ? "回應預覽" : "Response preview"}</h3>
           <div className="mt-3 grid gap-3 text-sm leading-6 text-muted-foreground">
             <p>{result?.summary ?? (hasQuestion ? "重點：先確認保障範圍、等候期、不保事項、網絡限制和自付額。" : "輸入問題後，這裡會整理重點。")}</p>
@@ -410,7 +410,7 @@ export function InsuranceHelperForm({ locale }: { locale: Locale }) {
 
 function LessonCard({ lesson, locale }: { lesson: Lesson; locale: Locale }) {
   return (
-    <Card className="bg-card/80 shadow-sm">
+    <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
       <CardHeader>
         <Badge variant="secondary" className="w-fit">
           {text(lesson.category, locale)}
@@ -419,7 +419,7 @@ function LessonCard({ lesson, locale }: { lesson: Lesson; locale: Locale }) {
         <CardDescription>{text(lesson.explanation, locale)}</CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="rounded-lg bg-muted/45 p-3 text-sm leading-6 text-muted-foreground">
+        <p className="rounded-xl bg-muted/30 p-3 text-sm ring-1 ring-border/40 leading-6 text-muted-foreground">
           {text(lesson.actionStep, locale)}
         </p>
       </CardContent>
@@ -437,7 +437,7 @@ function LessonCard({ lesson, locale }: { lesson: Lesson; locale: Locale }) {
 
 function LessonBlock({ title, body, locale }: { title: LocalizedText; body: LocalizedText; locale: Locale }) {
   return (
-    <section className="rounded-lg bg-muted/45 p-4">
+    <section className="rounded-xl bg-muted/30 p-4 ring-1 ring-border/40">
       <h3 className="font-medium">{text(title, locale)}</h3>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">{text(body, locale)}</p>
     </section>
@@ -446,9 +446,9 @@ function LessonBlock({ title, body, locale }: { title: LocalizedText; body: Loca
 
 function CareLevelCard({ title, body, locale }: { title: LocalizedText; body: LocalizedText; locale: Locale }) {
   return (
-    <Card className="bg-card/80 shadow-sm">
+    <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
       <CardHeader>
-        <span className="grid size-10 place-items-center rounded-lg bg-primary text-primary-foreground">
+        <span className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm shadow-primary/20">
           <ShieldCheck aria-hidden="true" />
         </span>
         <CardTitle>{text(title, locale)}</CardTitle>
@@ -460,9 +460,9 @@ function CareLevelCard({ title, body, locale }: { title: LocalizedText; body: Lo
 
 function PageHeader({ title, description, locale }: { title: LocalizedText; description: LocalizedText; locale: Locale }) {
   return (
-    <section className="rounded-xl border bg-card/70 p-5 shadow-sm backdrop-blur-md">
+    <section className="welcome-gradient rounded-2xl border border-border/50 bg-card/60 p-5 shadow-sm backdrop-blur-xl">
       <p className="text-sm text-muted-foreground">{text(ui.appNameFull, locale)}</p>
-      <h2 className="mt-2 text-3xl font-semibold tracking-normal">{text(title, locale)}</h2>
+      <h2 className="mt-2 text-gradient-health text-3xl font-bold tracking-tight">{text(title, locale)}</h2>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{text(description, locale)}</p>
     </section>
   );

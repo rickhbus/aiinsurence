@@ -30,7 +30,7 @@ import { MemoryConsentCard } from "./memory-consent-card";
 
 export function RightCoachPanel({ locale, onClose }: { locale: Locale; onClose?: () => void }) {
   return (
-    <aside className="sticky top-0 hidden h-dvh w-[360px] shrink-0 overflow-y-auto border-l bg-background/82 p-3 backdrop-blur-xl xl:flex xl:flex-col">
+    <aside className="sticky top-0 hidden h-dvh w-[360px] shrink-0 overflow-y-auto border-l border-border/40 bg-background/72 p-3 backdrop-blur-2xl xl:flex xl:flex-col">
       <CoachSurface locale={locale} compact onClose={onClose} />
     </aside>
   );
@@ -164,7 +164,7 @@ export function CoachSurface({
             type="button"
             variant="outline"
             size="sm"
-            className="h-auto min-h-8 whitespace-normal rounded-2xl text-left"
+            className="h-auto min-h-8 whitespace-normal rounded-2xl text-left transition-all duration-200 hover:shadow-sm"
             onClick={() => sendMessage(text(prompt, locale))}
           >
             {text(prompt, locale)}
@@ -172,7 +172,7 @@ export function CoachSurface({
         ))}
       </div>
 
-      <ScrollArea className={cn("min-h-0 rounded-2xl border bg-background/50", compact ? "h-[24dvh]" : "h-[34dvh]")}>
+      <ScrollArea className={cn("min-h-0 rounded-2xl border border-border/40 bg-background/40 backdrop-blur-sm", compact ? "h-[24dvh]" : "h-[34dvh]")}>
         <div className="flex flex-col gap-3 p-3">
           {messages.map((message, index) => (
             <div
@@ -180,8 +180,8 @@ export function CoachSurface({
               className={cn(
                 "max-w-[92%] whitespace-pre-line rounded-2xl p-3 text-sm leading-6",
                 message.role === "user"
-                  ? "ml-auto bg-primary text-primary-foreground"
-                  : "mr-auto bg-muted/65 text-muted-foreground",
+                  ? "ml-auto bg-gradient-to-r from-primary to-primary/85 text-primary-foreground shadow-sm"
+                  : "mr-auto bg-muted/50 text-muted-foreground",
               )}
             >
               {text(message.content, locale)}
@@ -222,7 +222,7 @@ export function CoachSurface({
         {locale === "zh-Hant" ? emergencyCopy.zh : emergencyCopy.en}
       </div>
 
-      <div className="mt-auto flex flex-col gap-3 rounded-2xl border bg-background/65 p-3">
+      <div className="mt-auto flex flex-col gap-3 rounded-2xl border border-border/50 bg-card/60 p-3 backdrop-blur-sm">
         <Textarea
           value={input}
           onChange={(event) => setInput(event.target.value)}
@@ -252,7 +252,7 @@ export function CoachSurface({
   }
 
   return (
-    <Card className="bg-card/86 shadow-sm backdrop-blur-md">
+    <Card className="overflow-hidden border-border/50 bg-card/72 shadow-lg shadow-primary/5 backdrop-blur-xl">
       <CardContent className="pt-0">{surface}</CardContent>
     </Card>
   );
@@ -268,9 +268,9 @@ function CoachHeader({
   onClose?: () => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 rounded-2xl border bg-card/78 p-3 shadow-sm">
+    <div className="flex items-start justify-between gap-3 rounded-2xl border border-border/40 bg-card/60 p-3 shadow-sm backdrop-blur-sm">
       <div className="flex items-start gap-3">
-        <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground">
+        <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm shadow-primary/20">
           <Brain aria-hidden="true" />
         </span>
         <div>
@@ -321,7 +321,7 @@ function SectionFrame({
   children: React.ReactNode;
 }) {
   return (
-    <section className={cn("rounded-2xl border bg-background/62 p-3", tone === "danger" && "border-destructive/20 bg-destructive/5")}>
+    <section className={cn("rounded-2xl border bg-background/50 p-3 backdrop-blur-sm", tone === "danger" && "border-destructive/20 bg-destructive/5")}>
       <div className="mb-2 flex items-center gap-2 text-sm font-medium">
         <Icon aria-hidden="true" className={tone === "danger" ? "text-destructive" : "text-primary"} />
         {title}
@@ -341,7 +341,7 @@ function CoachInfoPanel({
   lines: string[];
 }) {
   return (
-    <div className="rounded-2xl border bg-background/65 p-3">
+    <div className="rounded-2xl border border-border/40 bg-card/50 p-3 backdrop-blur-sm">
       <div className="mb-2 flex items-center gap-2 font-medium">
         <Icon aria-hidden="true" />
         {title}

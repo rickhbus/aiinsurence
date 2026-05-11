@@ -36,7 +36,7 @@ export function HealthAppShell({
   const showRightCoach = currentPage !== "coach" && currentPage !== "auth";
 
   return (
-    <div className="min-h-dvh bg-[linear-gradient(135deg,var(--health-bg-start),var(--background)_46%,var(--health-bg-end))]">
+    <div className="min-h-dvh bg-[linear-gradient(160deg,var(--health-bg-start),var(--background)_40%,var(--health-bg-end)_90%,var(--background))]">
       <div className="flex min-h-dvh">
         <Sidebar
           currentPage={currentPage}
@@ -57,7 +57,7 @@ export function HealthAppShell({
           />
           <main
             className={cn(
-              "mx-auto w-full flex-1 px-4 pb-28 pt-5 lg:px-6 lg:pb-8",
+              "mx-auto w-full flex-1 px-4 pb-28 pt-6 lg:px-8 lg:pb-10",
               showRightCoach && coachOpen ? "xl:max-w-[1180px]" : "xl:max-w-[1360px]",
             )}
           >

@@ -226,14 +226,14 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "sticky top-0 hidden h-dvh shrink-0 flex-col border-r bg-sidebar/90 backdrop-blur-xl transition-[width] duration-200 lg:flex",
+        "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-sidebar-border/60 bg-sidebar/85 backdrop-blur-2xl transition-[width] duration-300 ease-out lg:flex",
         collapsed ? "w-[76px]" : "w-[280px]",
       )}
     >
       <div className="flex min-h-0 flex-1 flex-col px-3 py-4">
         <div className="mb-4 flex items-center gap-2 px-1">
           <Link href="/dashboard" className="flex min-w-0 flex-1 items-center gap-3">
-            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/75 text-primary-foreground shadow-md shadow-primary/25">
               <HeartPulse aria-hidden="true" />
             </span>
             {!collapsed ? (
@@ -307,7 +307,7 @@ export function Sidebar({
           </div>
         </nav>
 
-        <div className={cn("mt-4 rounded-2xl border bg-card/80 shadow-sm", collapsed ? "grid place-items-center p-2" : "p-3")}>
+        <div className={cn("mt-4 rounded-2xl border border-primary/15 bg-primary/5 shadow-sm", collapsed ? "grid place-items-center p-2" : "p-3")}>
           {!collapsed ? (
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between gap-2">
@@ -362,7 +362,7 @@ export function TopHeader({
   const activeLabel = findActiveLabel(currentPage);
 
   return (
-    <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-3 border-b bg-background/82 px-4 backdrop-blur-xl lg:px-6">
+    <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-3 border-b border-border/50 bg-background/75 px-4 backdrop-blur-2xl lg:px-6">
       <div className="flex min-w-0 items-center gap-3">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
@@ -471,7 +471,7 @@ export function TopHeader({
 
 export function MobileBottomNav({ currentPage, locale }: { currentPage: HealthPage; locale: Locale }) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t bg-background/92 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden" aria-label="Mobile bottom navigation">
+    <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border/40 bg-background/85 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-2xl lg:hidden" aria-label="Mobile bottom navigation">
       {bottomNavItems.map((item) => {
         const active = isPageInGroup(currentPage, item.page) || currentPage === item.page;
         return (
@@ -479,8 +479,8 @@ export function MobileBottomNav({ currentPage, locale }: { currentPage: HealthPa
             key={item.href}
             href={item.href}
             className={cn(
-              "flex min-h-12 flex-col items-center justify-center gap-1 rounded-2xl text-[0.68rem] font-medium text-muted-foreground transition-colors",
-              active && "bg-primary text-primary-foreground shadow-sm",
+              "flex min-h-12 flex-col items-center justify-center gap-1 rounded-2xl text-[0.68rem] font-medium text-muted-foreground transition-all duration-200",
+              active && "bg-gradient-to-b from-primary to-primary/85 text-primary-foreground shadow-md shadow-primary/25",
             )}
           >
             <item.icon aria-hidden="true" />
@@ -513,7 +513,7 @@ export function QuickAddButton({ locale }: { locale: Locale }) {
         <TooltipTrigger asChild>
           <Button
             size="icon-lg"
-            className="rounded-full shadow-lg"
+            className="fab-glow rounded-full bg-gradient-to-br from-primary to-primary/80"
             aria-label={label(ui.quickAdd, locale)}
             aria-expanded={open}
             onClick={() => setOpen((current) => !current)}
@@ -529,7 +529,7 @@ export function QuickAddButton({ locale }: { locale: Locale }) {
 
 export function WelcomeStrip({ locale, data }: { locale: Locale; data?: DashboardData | null }) {
   return (
-    <section className="overflow-hidden rounded-3xl border bg-card/82 p-5 shadow-sm backdrop-blur-md sm:p-6">
+    <section className="welcome-gradient overflow-hidden rounded-3xl border border-border/50 bg-card/72 p-5 shadow-lg shadow-primary/5 backdrop-blur-xl sm:p-6">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
           <p className="text-sm font-medium text-muted-foreground">
@@ -537,7 +537,7 @@ export function WelcomeStrip({ locale, data }: { locale: Locale; data?: Dashboar
               ? `早晨，${data?.profile.displayName ?? "市民健康"}`
               : `Good morning, ${data?.profile.displayName ?? "Citizen Health"}`}
           </p>
-          <h2 className="mt-2 text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
+          <h2 className="text-gradient-health mt-2 text-3xl font-bold leading-tight tracking-tight md:text-4xl">
             {locale === "zh-Hant" ? "小習慣，強健康。" : "Small habits, strong health."}
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
@@ -609,13 +609,13 @@ function SidebarGroup({
       <button
         type="button"
         className={cn(
-          "flex min-h-11 w-full items-center gap-3 rounded-2xl px-3 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-          active && "bg-primary/10 text-foreground",
+          "flex min-h-11 w-full items-center gap-3 rounded-2xl px-3 text-left text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-muted/80 hover:text-foreground",
+          active && "bg-primary/8 text-foreground",
         )}
         aria-expanded={open}
         onClick={onToggle}
       >
-        <span className={cn("grid size-8 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground", active && "bg-primary text-primary-foreground")}>
+        <span className={cn("grid size-8 shrink-0 place-items-center rounded-xl bg-muted/60 text-muted-foreground transition-all duration-200", active && "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm shadow-primary/20")}>
           <group.icon aria-hidden="true" />
         </span>
         <span className="min-w-0 flex-1 truncate">{text(group.label, locale)}</span>
@@ -633,8 +633,8 @@ function SidebarGroup({
                 key={child.href + child.label.en}
                 href={child.href}
                 className={cn(
-                  "flex min-h-9 items-center gap-2 rounded-xl px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                  childActive && "bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground",
+                  "flex min-h-9 items-center gap-2 rounded-xl px-3 text-xs font-medium text-muted-foreground transition-all duration-200 hover:bg-muted/70 hover:text-foreground",
+                  childActive && "bg-gradient-to-r from-primary to-primary/85 text-primary-foreground shadow-sm shadow-primary/15 hover:from-primary hover:to-primary/85 hover:text-primary-foreground",
                 )}
               >
                 <span className="min-w-0 flex-1 truncate">{text(child.label, locale)}</span>
