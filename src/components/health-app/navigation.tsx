@@ -35,6 +35,7 @@ import { useMemo, useState } from "react";
 import { demoUser } from "@/lib/health-app/mock-data";
 import { label, locales, text, ui } from "@/lib/health-app/i18n";
 import type { HealthPage, Locale, LocalizedText } from "@/lib/health-app/types";
+import type { DashboardData } from "@/lib/health-data/types";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -178,8 +179,10 @@ const quickAddActions: NavChild[] = [
   { label: { zh: "新增健身", en: "Add gym" }, href: "/track/gym", page: "gym", icon: Dumbbell },
   { label: { zh: "新增飲食", en: "Add food" }, href: "/nutrition/food-log", page: "food-log", icon: Apple },
   { label: { zh: "新增飲水", en: "Add water" }, href: "/track/water", page: "water", icon: Waves },
-  { label: { zh: "新增症狀", en: "Add symptom" }, href: "/healthcare/symptom-routing", page: "symptom-routing", icon: Stethoscope },
+  { label: { zh: "新增睡眠", en: "Add sleep" }, href: "/track/sleep", page: "sleep", icon: BedDouble },
   { label: { zh: "新增體重", en: "Add weight" }, href: "/track/body", page: "body", icon: Scale },
+  { label: { zh: "新增症狀", en: "Add symptom" }, href: "/healthcare/symptom-routing", page: "symptom-routing", icon: Stethoscope },
+  { label: { zh: "新增保險備註", en: "Add insurance note" }, href: "/insurance", page: "insurance", icon: ShieldCheck },
 ];
 
 const bottomNavItems = [
@@ -524,13 +527,15 @@ export function QuickAddButton({ locale }: { locale: Locale }) {
   );
 }
 
-export function WelcomeStrip({ locale }: { locale: Locale }) {
+export function WelcomeStrip({ locale, data }: { locale: Locale; data?: DashboardData | null }) {
   return (
     <section className="overflow-hidden rounded-3xl border bg-card/82 p-5 shadow-sm backdrop-blur-md sm:p-6">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
           <p className="text-sm font-medium text-muted-foreground">
-            {locale === "zh-Hant" ? "早晨，市民健康" : "Good morning, Citizen Health"}
+            {locale === "zh-Hant"
+              ? `早晨，${data?.profile.displayName ?? "市民健康"}`
+              : `Good morning, ${data?.profile.displayName ?? "Citizen Health"}`}
           </p>
           <h2 className="mt-2 text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
             {locale === "zh-Hant" ? "小習慣，強健康。" : "Small habits, strong health."}
@@ -542,10 +547,19 @@ export function WelcomeStrip({ locale }: { locale: Locale }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary">{text(demoUser.goal, locale)}</Badge>
-          <Badge variant="secondary">{text(demoUser.location, locale)}</Badge>
-          <Badge variant="secondary">{text(demoUser.fitnessLevel, locale)}</Badge>
-          <Badge variant="secondary">{locale === "zh-Hant" ? "偏好繁體中文" : "Prefers Traditional Chinese"}</Badge>
+          <Badge variant="secondary">{data?.profile.goal ?? text(demoUser.goal, locale)}</Badge>
+          <Badge variant="secondary">{data?.profile.location ?? text(demoUser.location, locale)}</Badge>
+          <Badge variant="secondary">{data?.profile.fitnessLevel ?? text(demoUser.fitnessLevel, locale)}</Badge>
+          <Badge variant="secondary">
+            {data?.profile.preferredLanguage === "en"
+              ? "Prefers English"
+              : locale === "zh-Hant" ? "偏好繁體中文" : "Prefers Traditional Chinese"}
+          </Badge>
+          <Badge variant="secondary">
+            {data?.profile.memoryEnabled
+              ? locale === "zh-Hant" ? "健康記憶已開啟" : "Memory on"
+              : locale === "zh-Hant" ? "健康記憶未儲存" : "No saved memory"}
+          </Badge>
         </div>
       </div>
     </section>

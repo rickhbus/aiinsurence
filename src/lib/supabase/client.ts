@@ -4,10 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 let browserClient: SupabaseClient | null = null;
 
 export function hasSupabaseBrowserConfig() {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-  );
+  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && getSupabasePublicKey());
 }
 
 export function getSupabaseBrowserClient() {
@@ -18,7 +15,7 @@ export function getSupabaseBrowserClient() {
   if (!browserClient) {
     browserClient = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+      getSupabasePublicKey()!,
     );
   }
 
@@ -31,4 +28,11 @@ export function getAuthRedirectTo(path = "/auth/callback") {
   }
 
   return `${window.location.origin}${path}`;
+}
+
+function getSupabasePublicKey() {
+  return (
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  );
 }

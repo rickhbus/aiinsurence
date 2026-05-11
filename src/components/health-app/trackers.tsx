@@ -1,5 +1,7 @@
 "use client";
 
+import type { FormEvent } from "react";
+import { useState } from "react";
 import {
   Activity,
   Apple,
@@ -13,6 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   foodRecommendations,
   gymVolumeData,
@@ -304,76 +307,168 @@ export function GenericTrackerPage({ page, locale }: { page: HealthPage; locale:
 }
 
 function SpecificTrackerPanel({ page, locale }: { page: HealthPage; locale: Locale }) {
+  const { saving, submit } = useHealthLogSubmit(locale);
+
   if (page === "sleep") {
+    async function onSubmit(event: FormEvent<HTMLFormElement>) {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const formData = new FormData(form);
+      const saved = await submit(
+        "/api/logs/sleep",
+        {
+          sleep_hours: getFormNumber(formData, "sleep_hours"),
+          sleep_quality: getOptionalFormNumber(formData, "sleep_quality"),
+          bedtime: getFormString(formData, "bedtime"),
+          wake_time: getFormString(formData, "wake_time"),
+          notes: getFormString(formData, "notes"),
+        },
+        locale === "zh-Hant" ? "已新增睡眠紀錄。" : "Sleep log added.",
+      );
+
+      if (saved) {
+        form.reset();
+      }
+    }
+
     return (
       <Card className="bg-card/80 shadow-sm">
-        <CardHeader>
-          <CardTitle>{locale === "zh-Hant" ? "睡眠詳情" : "Sleep details"}</CardTitle>
-          <CardDescription>{locale === "zh-Hant" ? "記錄睡眠時間、質素和作息一致性。" : "Track sleep hours, quality, and schedule consistency."}</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-3">
-          <FormInput label={{ zh: "睡眠小時", en: "Sleep hours" }} locale={locale} placeholder="7.2" />
-          <FormInput label={{ zh: "睡眠質素 1-10", en: "Sleep quality 1-10" }} locale={locale} placeholder="8" />
-          <FormInput label={{ zh: "一致性", en: "Consistency" }} locale={locale} placeholder="22:45 - 06:45" />
-          <FormInput label={{ zh: "上床時間", en: "Bedtime" }} locale={locale} placeholder="22:45" />
-          <FormInput label={{ zh: "起床時間", en: "Wake time" }} locale={locale} placeholder="06:45" />
-          <div className="rounded-lg bg-muted/45 p-3 text-sm leading-6 text-muted-foreground">
-            {locale === "zh-Hant"
-              ? "AI 睡眠建議：今晚先把睡前手機時間縮短 15 分鐘。"
-              : "AI sleep suggestion: reduce late phone time by 15 minutes tonight."}
-          </div>
-        </CardContent>
+        <form onSubmit={onSubmit}>
+          <CardHeader>
+            <CardTitle>{locale === "zh-Hant" ? "睡眠詳情" : "Sleep details"}</CardTitle>
+            <CardDescription>{locale === "zh-Hant" ? "記錄睡眠時間、質素和作息一致性。" : "Track sleep hours, quality, and schedule consistency."}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 md:grid-cols-3">
+            <FormInput name="sleep_hours" type="number" label={{ zh: "睡眠小時", en: "Sleep hours" }} locale={locale} placeholder="7.2" />
+            <FormInput name="sleep_quality" type="number" label={{ zh: "睡眠質素 1-10", en: "Sleep quality 1-10" }} locale={locale} placeholder="8" />
+            <FormInput name="bedtime" label={{ zh: "上床時間", en: "Bedtime" }} locale={locale} placeholder="22:45" />
+            <FormInput name="wake_time" label={{ zh: "起床時間", en: "Wake time" }} locale={locale} placeholder="06:45" />
+            <label className="grid gap-2 text-sm font-medium md:col-span-2">
+              {locale === "zh-Hant" ? "備註" : "Notes"}
+              <Textarea name="notes" placeholder={locale === "zh-Hant" ? "例如：睡前用了手機，半夜醒了一次。" : "Example: used phone late, woke once."} />
+            </label>
+            <div className="rounded-lg bg-muted/45 p-3 text-sm leading-6 text-muted-foreground">
+              {locale === "zh-Hant"
+                ? "AI 睡眠建議：今晚先把睡前手機時間縮短 15 分鐘。"
+                : "AI sleep suggestion: reduce late phone time by 15 minutes tonight."}
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button disabled={saving}>
+              <Plus data-icon="inline-start" aria-hidden="true" />
+              {saving ? (locale === "zh-Hant" ? "儲存中" : "Saving") : (locale === "zh-Hant" ? "新增睡眠" : "Add sleep")}
+            </Button>
+          </CardFooter>
+        </form>
       </Card>
     );
   }
 
   if (page === "water") {
+    async function saveWater(amountMl: number) {
+      await submit(
+        "/api/logs/water",
+        { amount_ml: amountMl },
+        locale === "zh-Hant" ? `已新增 ${amountMl}ml 飲水。` : `Added ${amountMl}ml water.`,
+      );
+    }
+
+    async function onSubmit(event: FormEvent<HTMLFormElement>) {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const formData = new FormData(form);
+      const amount = getFormNumber(formData, "amount_ml");
+      const saved = await submit(
+        "/api/logs/water",
+        { amount_ml: amount },
+        locale === "zh-Hant" ? "已新增飲水紀錄。" : "Water log added.",
+      );
+
+      if (saved) {
+        form.reset();
+      }
+    }
+
     return (
       <Card className="bg-card/80 shadow-sm">
         <CardHeader>
           <CardTitle>{locale === "zh-Hant" ? "飲水目標" : "Hydration goal"}</CardTitle>
           <CardDescription>{locale === "zh-Hant" ? "快速新增 250ml、500ml 或自訂飲水量。" : "Quick add 250ml, 500ml, or a custom amount."}</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_2fr]">
-          <Button variant="outline">250ml</Button>
-          <Button variant="outline">500ml</Button>
-          <Input placeholder={locale === "zh-Hant" ? "自訂 ml" : "Custom ml"} aria-label={locale === "zh-Hant" ? "自訂飲水量" : "Custom water amount"} />
-          <div className="rounded-lg bg-muted/45 p-3 text-sm leading-6 text-muted-foreground">
-            {locale === "zh-Hant" ? "今日目標 3.0L，連續 5 日達標。" : "Daily goal 3.0L, 5-day hydration streak."}
-          </div>
-        </CardContent>
+        <form onSubmit={onSubmit}>
+          <CardContent className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_2fr]">
+            <Button type="button" variant="outline" disabled={saving} onClick={() => saveWater(250)}>250ml</Button>
+            <Button type="button" variant="outline" disabled={saving} onClick={() => saveWater(500)}>500ml</Button>
+            <Input name="amount_ml" type="number" placeholder={locale === "zh-Hant" ? "自訂 ml" : "Custom ml"} aria-label={locale === "zh-Hant" ? "自訂飲水量" : "Custom water amount"} />
+            <div className="rounded-lg bg-muted/45 p-3 text-sm leading-6 text-muted-foreground">
+              {locale === "zh-Hant" ? "今日目標 3.0L，連續紀錄會由摘要表計算。" : "Daily goal 3.0L; streaks are calculated from summaries."}
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button disabled={saving}>
+              <Plus data-icon="inline-start" aria-hidden="true" />
+              {saving ? (locale === "zh-Hant" ? "儲存中" : "Saving") : (locale === "zh-Hant" ? "新增自訂飲水" : "Add custom water")}
+            </Button>
+          </CardFooter>
+        </form>
       </Card>
     );
   }
 
   if (page === "body") {
+    async function onSubmit(event: FormEvent<HTMLFormElement>) {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const formData = new FormData(form);
+      const saved = await submit(
+        "/api/logs/body",
+        {
+          weight_kg: getOptionalFormNumber(formData, "weight_kg"),
+          waist_cm: getOptionalFormNumber(formData, "waist_cm"),
+          body_fat_percentage: getOptionalFormNumber(formData, "body_fat_percentage"),
+          notes: getFormString(formData, "notes"),
+        },
+        locale === "zh-Hant" ? "已新增身體指標。" : "Body metric added.",
+      );
+
+      if (saved) {
+        form.reset();
+      }
+    }
+
     return (
       <Card className="bg-card/80 shadow-sm">
-        <CardHeader>
-          <CardTitle>{locale === "zh-Hant" ? "身體指標趨勢" : "Body metrics trend"}</CardTitle>
-          <CardDescription>{locale === "zh-Hant" ? "看長期趨勢，不被單日波動影響。" : "Read long-term trends, not single-day changes."}</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-5 lg:grid-cols-[360px_1fr]">
-          <div className="grid gap-3">
-            <FormInput label={{ zh: "體重 kg", en: "Weight kg" }} locale={locale} placeholder="72.4" />
-            <FormInput label={{ zh: "腰圍 cm", en: "Waist cm" }} locale={locale} placeholder="82" />
-            <FormInput label={{ zh: "體脂（可選）", en: "Body fat optional" }} locale={locale} placeholder="18%" />
-            <label className="grid gap-2 text-sm font-medium">
-              {locale === "zh-Hant" ? "備註" : "Notes"}
-              <Textarea placeholder={locale === "zh-Hant" ? "例如：早上空腹量度。" : "Example: measured fasted in the morning."} />
-            </label>
-          </div>
-          <ProgressChart
-            data={[
-              { label: "W1", value: 73.1 },
-              { label: "W2", value: 72.8 },
-              { label: "W3", value: 72.6 },
-              { label: "W4", value: 72.4 },
-            ]}
-            variant="line"
-            height={220}
-          />
-        </CardContent>
+        <form onSubmit={onSubmit}>
+          <CardHeader>
+            <CardTitle>{locale === "zh-Hant" ? "身體指標趨勢" : "Body metrics trend"}</CardTitle>
+            <CardDescription>{locale === "zh-Hant" ? "看長期趨勢，不被單日波動影響。" : "Read long-term trends, not single-day changes."}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-5 lg:grid-cols-[360px_1fr]">
+            <div className="grid gap-3">
+              <FormInput name="weight_kg" type="number" label={{ zh: "體重 kg", en: "Weight kg" }} locale={locale} placeholder="72.4" />
+              <FormInput name="waist_cm" type="number" label={{ zh: "腰圍 cm", en: "Waist cm" }} locale={locale} placeholder="82" />
+              <FormInput name="body_fat_percentage" type="number" label={{ zh: "體脂（可選）", en: "Body fat optional" }} locale={locale} placeholder="18" />
+              <label className="grid gap-2 text-sm font-medium">
+                {locale === "zh-Hant" ? "備註" : "Notes"}
+                <Textarea name="notes" placeholder={locale === "zh-Hant" ? "例如：早上空腹量度。" : "Example: measured fasted in the morning."} />
+              </label>
+              <Button disabled={saving}>
+                <Plus data-icon="inline-start" aria-hidden="true" />
+                {saving ? (locale === "zh-Hant" ? "儲存中" : "Saving") : (locale === "zh-Hant" ? "新增身體指標" : "Add body metric")}
+              </Button>
+            </div>
+            <ProgressChart
+              data={[
+                { label: "W1", value: 73.1 },
+                { label: "W2", value: 72.8 },
+                { label: "W3", value: 72.6 },
+                { label: "W4", value: 72.4 },
+              ]}
+              variant="line"
+              height={220}
+            />
+          </CardContent>
+        </form>
       </Card>
     );
   }
@@ -382,137 +477,239 @@ function SpecificTrackerPanel({ page, locale }: { page: HealthPage; locale: Loca
 }
 
 function QuickAddRunForm({ locale }: { locale: Locale }) {
+  const { saving, submit } = useHealthLogSubmit(locale);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const saved = await submit(
+      "/api/logs/running",
+      {
+        distance_km: getFormNumber(formData, "distance_km"),
+        duration_seconds: parseDurationToSeconds(getFormString(formData, "duration")),
+        pace: getFormString(formData, "pace"),
+        calories: getOptionalFormNumber(formData, "calories"),
+        heart_rate_avg: getOptionalFormNumber(formData, "heart_rate_avg"),
+        rpe: getFormNumber(formData, "rpe"),
+        weather: getFormString(formData, "weather"),
+        shoe: getFormString(formData, "shoe"),
+        route_notes: getFormString(formData, "route_notes"),
+      },
+      locale === "zh-Hant" ? "已新增跑步紀錄。" : "Run added.",
+    );
+
+    if (saved) {
+      form.reset();
+    }
+  }
+
   return (
     <Card className="bg-card/80 shadow-sm">
-      <CardHeader>
-        <CardTitle>{locale === "zh-Hant" ? "快速新增跑步" : "Quick add run"}</CardTitle>
-        <CardDescription>{locale === "zh-Hant" ? "記錄足夠資料，方便下次安全加量。" : "Log enough detail for safe progression next time."}</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-3">
-        <FormInput label={{ zh: "距離 km", en: "Distance km" }} locale={locale} placeholder="5.0" />
-        <FormInput label={{ zh: "時間", en: "Duration" }} locale={locale} placeholder="00:31:00" />
-        <FormInput label={{ zh: "配速", en: "Pace" }} locale={locale} placeholder="6:12/km" />
-        <FormInput label={{ zh: "卡路里", en: "Calories" }} locale={locale} placeholder="380" />
-        <FormInput label={{ zh: "平均心率", en: "Avg heart rate" }} locale={locale} placeholder="145" />
-        <FormInput label={{ zh: "RPE 難度 1-10", en: "RPE difficulty 1-10" }} locale={locale} placeholder="6" />
-        <FormInput label={{ zh: "天氣", en: "Weather" }} locale={locale} placeholder={locale === "zh-Hant" ? "潮濕" : "Humid"} />
-        <FormInput label={{ zh: "跑鞋", en: "Shoe" }} locale={locale} placeholder="Daily trainer" />
-        <label className="grid gap-2 text-sm font-medium">
-          {locale === "zh-Hant" ? "路線與備註" : "Route notes"}
-          <Textarea placeholder={locale === "zh-Hant" ? "例如：海濱輕鬆跑，右膝無不適。" : "Example: easy harbourfront run, no knee discomfort."} />
-        </label>
-      </CardContent>
-      <CardFooter>
-        <Button>
-          <Plus data-icon="inline-start" aria-hidden="true" />
-          {locale === "zh-Hant" ? "新增跑步" : "Add run"}
-        </Button>
-      </CardFooter>
+      <form onSubmit={onSubmit}>
+        <CardHeader>
+          <CardTitle>{locale === "zh-Hant" ? "快速新增跑步" : "Quick add run"}</CardTitle>
+          <CardDescription>{locale === "zh-Hant" ? "記錄足夠資料，方便下次安全加量。" : "Log enough detail for safe progression next time."}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          <FormInput name="distance_km" type="number" label={{ zh: "距離 km", en: "Distance km" }} locale={locale} placeholder="5.0" />
+          <FormInput name="duration" label={{ zh: "時間", en: "Duration" }} locale={locale} placeholder="00:31:00" />
+          <FormInput name="pace" label={{ zh: "配速", en: "Pace" }} locale={locale} placeholder="6:12/km" />
+          <FormInput name="calories" type="number" label={{ zh: "卡路里", en: "Calories" }} locale={locale} placeholder="380" />
+          <FormInput name="heart_rate_avg" type="number" label={{ zh: "平均心率", en: "Avg heart rate" }} locale={locale} placeholder="145" />
+          <FormInput name="rpe" type="number" label={{ zh: "RPE 難度 1-10", en: "RPE difficulty 1-10" }} locale={locale} placeholder="6" />
+          <FormInput name="weather" label={{ zh: "天氣", en: "Weather" }} locale={locale} placeholder={locale === "zh-Hant" ? "潮濕" : "Humid"} />
+          <FormInput name="shoe" label={{ zh: "跑鞋", en: "Shoe" }} locale={locale} placeholder="Daily trainer" />
+          <label className="grid gap-2 text-sm font-medium">
+            {locale === "zh-Hant" ? "路線與備註" : "Route notes"}
+            <Textarea name="route_notes" placeholder={locale === "zh-Hant" ? "例如：海濱輕鬆跑，右膝無不適。" : "Example: easy harbourfront run, no knee discomfort."} />
+          </label>
+        </CardContent>
+        <CardFooter>
+          <Button disabled={saving}>
+            <Plus data-icon="inline-start" aria-hidden="true" />
+            {saving ? (locale === "zh-Hant" ? "儲存中" : "Saving") : (locale === "zh-Hant" ? "新增跑步" : "Add run")}
+          </Button>
+        </CardFooter>
+      </form>
     </Card>
   );
 }
 
 function ExerciseLogForm({ locale }: { locale: Locale }) {
+  const { saving, submit } = useHealthLogSubmit(locale);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const saved = await submit(
+      "/api/logs/gym",
+      {
+        workout_title: getFormString(formData, "workout_title"),
+        exercise_name: getFormString(formData, "exercise_name"),
+        muscle_group: getFormString(formData, "muscle_group"),
+        sets: getFormNumber(formData, "sets"),
+        reps: getFormNumber(formData, "reps"),
+        weight_kg: getOptionalFormNumber(formData, "weight_kg"),
+        rest_seconds: getOptionalFormNumber(formData, "rest_seconds"),
+        rpe: getOptionalFormNumber(formData, "rpe"),
+        notes: getFormString(formData, "notes"),
+      },
+      locale === "zh-Hant" ? "已新增健身動作。" : "Exercise added.",
+    );
+
+    if (saved) {
+      form.reset();
+    }
+  }
+
   return (
     <Card className="bg-card/80 shadow-sm">
-      <CardHeader>
-        <CardTitle>{locale === "zh-Hant" ? "動作記錄" : "Exercise log"}</CardTitle>
-        <CardDescription>{locale === "zh-Hant" ? "記錄 RPE 讓 AI 避免過度建議。" : "Log RPE so AI avoids overreaching."}</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-3">
-        <FormInput label={{ zh: "動作", en: "Exercise" }} locale={locale} placeholder="Lat pulldown" />
-        <Select>
-          <SelectTrigger className="w-full" aria-label={locale === "zh-Hant" ? "肌群" : "Muscle group"}>
-            <SelectValue placeholder={locale === "zh-Hant" ? "選擇肌群" : "Select muscle group"} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectLabel>{locale === "zh-Hant" ? "肌群" : "Muscle group"}</SelectLabel>
-              {["Chest", "Back", "Legs", "Shoulders", "Arms", "Core", "Mobility"].map((group) => (
-                <SelectItem key={group} value={group}>
-                  {group}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-        <div className="grid grid-cols-2 gap-3">
-          <FormInput label={{ zh: "組數", en: "Sets" }} locale={locale} placeholder="3" />
-          <FormInput label={{ zh: "次數", en: "Reps" }} locale={locale} placeholder="10" />
-          <FormInput label={{ zh: "重量 kg", en: "Weight kg" }} locale={locale} placeholder="40" />
-          <FormInput label={{ zh: "休息秒數", en: "Rest seconds" }} locale={locale} placeholder="90" />
-        </div>
-        <FormInput label={{ zh: "RPE", en: "RPE" }} locale={locale} placeholder="7" />
-        <label className="grid gap-2 text-sm font-medium">
-          {locale === "zh-Hant" ? "備註" : "Notes"}
-          <Textarea placeholder={locale === "zh-Hant" ? "姿勢、痛楚、恢復狀態..." : "Form, pain, recovery status..."} />
-        </label>
-      </CardContent>
-      <CardFooter>
-        <Button>
-          <Plus data-icon="inline-start" aria-hidden="true" />
-          {locale === "zh-Hant" ? "新增動作" : "Add exercise"}
-        </Button>
-      </CardFooter>
+      <form onSubmit={onSubmit}>
+        <CardHeader>
+          <CardTitle>{locale === "zh-Hant" ? "動作記錄" : "Exercise log"}</CardTitle>
+          <CardDescription>{locale === "zh-Hant" ? "記錄 RPE 讓 AI 避免過度建議。" : "Log RPE so AI avoids overreaching."}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          <FormInput name="workout_title" label={{ zh: "訓練名稱", en: "Workout title" }} locale={locale} placeholder="Pull + core" />
+          <FormInput name="exercise_name" label={{ zh: "動作", en: "Exercise" }} locale={locale} placeholder="Lat pulldown" />
+          <Select name="muscle_group">
+            <SelectTrigger className="w-full" aria-label={locale === "zh-Hant" ? "肌群" : "Muscle group"}>
+              <SelectValue placeholder={locale === "zh-Hant" ? "選擇肌群" : "Select muscle group"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>{locale === "zh-Hant" ? "肌群" : "Muscle group"}</SelectLabel>
+                {["Chest", "Back", "Legs", "Shoulders", "Arms", "Core", "Mobility"].map((group) => (
+                  <SelectItem key={group} value={group}>
+                    {group}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <div className="grid grid-cols-2 gap-3">
+            <FormInput name="sets" type="number" label={{ zh: "組數", en: "Sets" }} locale={locale} placeholder="3" />
+            <FormInput name="reps" type="number" label={{ zh: "次數", en: "Reps" }} locale={locale} placeholder="10" />
+            <FormInput name="weight_kg" type="number" label={{ zh: "重量 kg", en: "Weight kg" }} locale={locale} placeholder="40" />
+            <FormInput name="rest_seconds" type="number" label={{ zh: "休息秒數", en: "Rest seconds" }} locale={locale} placeholder="90" />
+          </div>
+          <FormInput name="rpe" type="number" label={{ zh: "RPE", en: "RPE" }} locale={locale} placeholder="7" />
+          <label className="grid gap-2 text-sm font-medium">
+            {locale === "zh-Hant" ? "備註" : "Notes"}
+            <Textarea name="notes" placeholder={locale === "zh-Hant" ? "姿勢、痛楚、恢復狀態..." : "Form, pain, recovery status..."} />
+          </label>
+        </CardContent>
+        <CardFooter>
+          <Button disabled={saving}>
+            <Plus data-icon="inline-start" aria-hidden="true" />
+            {saving ? (locale === "zh-Hant" ? "儲存中" : "Saving") : (locale === "zh-Hant" ? "新增動作" : "Add exercise")}
+          </Button>
+        </CardFooter>
+      </form>
     </Card>
   );
 }
 
 function FoodLogForm({ locale }: { locale: Locale }) {
+  const { saving, submit } = useHealthLogSubmit(locale);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const foodName = getFormString(formData, "food_name");
+    const amountMl = getOptionalFormNumber(formData, "amount_ml");
+    const saved = foodName
+      ? await submit(
+          "/api/logs/meals",
+          {
+            meal_type: getFormString(formData, "meal_type") || "other",
+            food_name: foodName,
+            calories: getOptionalFormNumber(formData, "calories"),
+            protein_g: getOptionalFormNumber(formData, "protein_g"),
+            carbs_g: getOptionalFormNumber(formData, "carbs_g"),
+            fat_g: getOptionalFormNumber(formData, "fat_g"),
+            fiber_g: getOptionalFormNumber(formData, "fiber_g"),
+            sugar_g: getOptionalFormNumber(formData, "sugar_g"),
+            sodium_mg: getOptionalFormNumber(formData, "sodium_mg"),
+            notes: getFormString(formData, "notes"),
+          },
+          locale === "zh-Hant" ? "已新增飲食紀錄。" : "Meal added.",
+        )
+      : await submit(
+          "/api/logs/water",
+          { amount_ml: amountMl },
+          locale === "zh-Hant" ? "已新增飲水紀錄。" : "Water log added.",
+        );
+
+    if (saved) {
+      form.reset();
+    }
+  }
+
   return (
     <Card className="bg-card/80 shadow-sm">
-      <CardHeader>
-        <CardTitle>{locale === "zh-Hant" ? "飲食記錄" : "Food log"}</CardTitle>
-        <CardDescription>{locale === "zh-Hant" ? "不需要完美，先記錄大概即可。" : "It does not need to be perfect; start with useful estimates."}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="meal">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="meal">{locale === "zh-Hant" ? "餐點" : "Meal"}</TabsTrigger>
-            <TabsTrigger value="water">{locale === "zh-Hant" ? "飲水" : "Water"}</TabsTrigger>
-          </TabsList>
-          <TabsContent value="meal" className="mt-4 grid gap-3">
-            <Select>
-              <SelectTrigger className="w-full" aria-label={locale === "zh-Hant" ? "餐類" : "Meal type"}>
-                <SelectValue placeholder={locale === "zh-Hant" ? "選擇餐類" : "Select meal type"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {["Breakfast", "Lunch", "Dinner", "Snack"].map((meal) => (
-                    <SelectItem key={meal} value={meal}>
-                      {meal}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-            <FormInput label={{ zh: "食物名稱", en: "Food name" }} locale={locale} placeholder={locale === "zh-Hant" ? "雞飯少汁加菜" : "Chicken rice, less sauce"} />
-            <div className="grid grid-cols-2 gap-3">
-              <FormInput label={{ zh: "卡路里", en: "Calories" }} locale={locale} placeholder="560" />
-              <FormInput label={{ zh: "蛋白質 g", en: "Protein g" }} locale={locale} placeholder="34" />
-              <FormInput label={{ zh: "碳水 g", en: "Carbs g" }} locale={locale} placeholder="72" />
-              <FormInput label={{ zh: "脂肪 g", en: "Fat g" }} locale={locale} placeholder="14" />
-              <FormInput label={{ zh: "纖維 g", en: "Fiber g" }} locale={locale} placeholder="6" />
-              <FormInput label={{ zh: "糖 g", en: "Sugar g" }} locale={locale} placeholder="5" />
-              <FormInput label={{ zh: "鈉 mg", en: "Sodium mg" }} locale={locale} placeholder="760" />
-              <FormInput label={{ zh: "飲水 ml", en: "Water ml" }} locale={locale} placeholder="500" />
-            </div>
-            <label className="grid gap-2 text-sm font-medium">
-              {locale === "zh-Hant" ? "相片上載（佔位）與備註" : "Photo upload placeholder and notes"}
-              <Textarea placeholder={locale === "zh-Hant" ? "相片功能接駁儲存後啟用。" : "Photo support can be wired to storage later."} />
-            </label>
-          </TabsContent>
-          <TabsContent value="water" className="mt-4 grid gap-3">
-            <FormInput label={{ zh: "飲水 ml", en: "Water ml" }} locale={locale} placeholder="500" />
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-      <CardFooter>
-        <Button>
-          <Plus data-icon="inline-start" aria-hidden="true" />
-          {locale === "zh-Hant" ? "新增飲食" : "Add food"}
-        </Button>
-      </CardFooter>
+      <form onSubmit={onSubmit}>
+        <CardHeader>
+          <CardTitle>{locale === "zh-Hant" ? "飲食記錄" : "Food log"}</CardTitle>
+          <CardDescription>{locale === "zh-Hant" ? "不需要完美，先記錄大概即可。" : "It does not need to be perfect; start with useful estimates."}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="meal">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="meal">{locale === "zh-Hant" ? "餐點" : "Meal"}</TabsTrigger>
+              <TabsTrigger value="water">{locale === "zh-Hant" ? "飲水" : "Water"}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="meal" className="mt-4 grid gap-3">
+              <Select name="meal_type" defaultValue="lunch">
+                <SelectTrigger className="w-full" aria-label={locale === "zh-Hant" ? "餐類" : "Meal type"}>
+                  <SelectValue placeholder={locale === "zh-Hant" ? "選擇餐類" : "Select meal type"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {[
+                      ["breakfast", "Breakfast"],
+                      ["lunch", "Lunch"],
+                      ["dinner", "Dinner"],
+                      ["snack", "Snack"],
+                      ["other", "Other"],
+                    ].map(([value, meal]) => (
+                      <SelectItem key={value} value={value}>
+                        {meal}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <FormInput name="food_name" label={{ zh: "食物名稱", en: "Food name" }} locale={locale} placeholder={locale === "zh-Hant" ? "雞飯少汁加菜" : "Chicken rice, less sauce"} />
+              <div className="grid grid-cols-2 gap-3">
+                <FormInput name="calories" type="number" label={{ zh: "卡路里", en: "Calories" }} locale={locale} placeholder="560" />
+                <FormInput name="protein_g" type="number" label={{ zh: "蛋白質 g", en: "Protein g" }} locale={locale} placeholder="34" />
+                <FormInput name="carbs_g" type="number" label={{ zh: "碳水 g", en: "Carbs g" }} locale={locale} placeholder="72" />
+                <FormInput name="fat_g" type="number" label={{ zh: "脂肪 g", en: "Fat g" }} locale={locale} placeholder="14" />
+                <FormInput name="fiber_g" type="number" label={{ zh: "纖維 g", en: "Fiber g" }} locale={locale} placeholder="6" />
+                <FormInput name="sugar_g" type="number" label={{ zh: "糖 g", en: "Sugar g" }} locale={locale} placeholder="5" />
+                <FormInput name="sodium_mg" type="number" label={{ zh: "鈉 mg", en: "Sodium mg" }} locale={locale} placeholder="760" />
+              </div>
+              <label className="grid gap-2 text-sm font-medium">
+                {locale === "zh-Hant" ? "相片上載（佔位）與備註" : "Photo upload placeholder and notes"}
+                <Textarea name="notes" placeholder={locale === "zh-Hant" ? "相片功能接駁儲存後啟用。" : "Photo support can be wired to storage later."} />
+              </label>
+            </TabsContent>
+            <TabsContent value="water" className="mt-4 grid gap-3">
+              <FormInput name="amount_ml" type="number" label={{ zh: "飲水 ml", en: "Water ml" }} locale={locale} placeholder="500" />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+        <CardFooter>
+          <Button disabled={saving}>
+            <Plus data-icon="inline-start" aria-hidden="true" />
+            {saving ? (locale === "zh-Hant" ? "儲存中" : "Saving") : (locale === "zh-Hant" ? "新增飲食 / 飲水" : "Add food / water")}
+          </Button>
+        </CardFooter>
+      </form>
     </Card>
   );
 }
@@ -561,11 +758,28 @@ function AITrainingLogicCard({
   );
 }
 
-function FormInput({ label: itemLabel, locale, placeholder }: { label: LocalizedText; locale: Locale; placeholder: string }) {
+function FormInput({
+  name,
+  label: itemLabel,
+  locale,
+  placeholder,
+  type = "text",
+}: {
+  name: string;
+  label: LocalizedText;
+  locale: Locale;
+  placeholder: string;
+  type?: "text" | "number";
+}) {
   return (
     <label className="grid gap-2 text-sm font-medium">
       {text(itemLabel, locale)}
-      <Input placeholder={placeholder} />
+      <Input
+        name={name}
+        type={type}
+        inputMode={type === "number" ? "decimal" : undefined}
+        placeholder={placeholder}
+      />
     </label>
   );
 }
@@ -590,4 +804,90 @@ function PageHeader({ title, description, locale }: { title: LocalizedText; desc
       <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{text(description, locale)}</p>
     </section>
   );
+}
+
+type LogPayload = Record<string, string | number | null | undefined>;
+
+function useHealthLogSubmit(locale: Locale) {
+  const [saving, setSaving] = useState(false);
+
+  async function submit(endpoint: string, payload: LogPayload, successMessage: string) {
+    setSaving(true);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(stripEmptyFields(payload)),
+      });
+      const body = (await response.json().catch(() => null)) as { error?: string } | null;
+
+      if (!response.ok) {
+        toast.error(body?.error || (locale === "zh-Hant" ? "儲存失敗，請檢查網絡後再試。" : "Save failed. Check your connection and try again."));
+        return false;
+      }
+
+      toast.success(successMessage);
+      window.dispatchEvent(new Event("health-log-saved"));
+      return true;
+    } catch {
+      toast.error(locale === "zh-Hant" ? "儲存失敗，請檢查網絡後再試。" : "Save failed. Check your connection and try again.");
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return { saving, submit };
+}
+
+function stripEmptyFields(payload: LogPayload) {
+  return Object.fromEntries(
+    Object.entries(payload).filter(([, value]) => value !== "" && value !== null && value !== undefined),
+  );
+}
+
+function getFormString(formData: FormData, key: string) {
+  const value = formData.get(key);
+
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function getFormNumber(formData: FormData, key: string) {
+  const value = Number(getFormString(formData, key));
+
+  return Number.isFinite(value) ? value : 0;
+}
+
+function getOptionalFormNumber(formData: FormData, key: string) {
+  const value = getFormString(formData, key);
+
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Number(value);
+
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseDurationToSeconds(value: string) {
+  if (/^\d+:\d{2}:\d{2}$/.test(value)) {
+    const [hours, minutes, seconds] = value.split(":").map(Number);
+
+    return hours * 3600 + minutes * 60 + seconds;
+  }
+
+  if (/^\d+:\d{2}$/.test(value)) {
+    const [minutes, seconds] = value.split(":").map(Number);
+
+    return minutes * 60 + seconds;
+  }
+
+  const minutes = Number(value);
+
+  return Number.isFinite(minutes) ? Math.round(minutes * 60) : 0;
 }

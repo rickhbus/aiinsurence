@@ -2,6 +2,7 @@
 
 import { Check, DatabaseZap, Edit3, X } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { label, text, ui } from "@/lib/health-app/i18n";
 import type { Locale } from "@/lib/health-app/types";
 import { Button } from "@/components/ui/button";
@@ -17,16 +18,51 @@ import { Textarea } from "@/components/ui/textarea";
 
 export function MemoryConsentCard({
   locale,
+  category = "behavior",
   defaultText = {
     zh: "使用者偏好高蛋白、少糖、香港本地食物，並表示跑步時偶爾膝蓋不適。",
     en: "User prefers high-protein, lower-sugar Hong Kong local food, and reports occasional knee discomfort when running.",
   },
 }: {
   locale: Locale;
+  category?: "profile" | "fitness" | "nutrition" | "healthcare" | "insurance" | "behavior";
   defaultText?: { zh: string; en: string };
 }) {
   const [value, setValue] = useState(text(defaultText, locale));
   const [status, setStatus] = useState<"pending" | "saved" | "declined" | "editing">("pending");
+  const [saving, setSaving] = useState(false);
+
+  async function saveMemory() {
+    setSaving(true);
+
+    try {
+      const response = await fetch("/api/memory/confirm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          memory_type: category,
+          content: value,
+          source: "coach_memory_confirmation",
+        }),
+      });
+      const body = (await response.json().catch(() => null)) as { error?: string } | null;
+
+      if (!response.ok) {
+        toast.error(body?.error || (locale === "zh-Hant" ? "儲存失敗，請檢查網絡後再試。" : "Save failed. Check your connection and try again."));
+        return;
+      }
+
+      setStatus("saved");
+      toast.success(locale === "zh-Hant" ? "已保存到健康記憶。" : "Saved to Health Memory.");
+    } catch {
+      toast.error(locale === "zh-Hant" ? "儲存失敗，請檢查網絡後再試。" : "Save failed. Check your connection and try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <Card className="bg-card/85 shadow-sm">
@@ -65,9 +101,9 @@ export function MemoryConsentCard({
         ) : null}
       </CardContent>
       <CardFooter className="flex flex-wrap gap-2">
-        <Button type="button" disabled={status === "saved"} onClick={() => setStatus("saved")}>
+        <Button type="button" disabled={status === "saved" || saving} onClick={saveMemory}>
           <Check data-icon="inline-start" aria-hidden="true" />
-          {locale === "zh-Hant" ? "儲存" : label(ui.save, locale)}
+          {saving ? (locale === "zh-Hant" ? "儲存中" : "Saving") : locale === "zh-Hant" ? "儲存" : label(ui.save, locale)}
         </Button>
         <Button type="button" variant="outline" onClick={() => setStatus("declined")}>
           <X data-icon="inline-start" aria-hidden="true" />

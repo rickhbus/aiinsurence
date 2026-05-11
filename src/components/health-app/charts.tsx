@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   Area,
   AreaChart,
@@ -12,7 +12,6 @@ import {
   LineChart,
   Pie,
   PieChart,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -38,6 +37,7 @@ export function ProgressChart({
   const gridColor = "var(--border)";
   const primary = "var(--chart-1)";
   const secondary = "var(--chart-2)";
+  const { ref, width } = useChartMeasure();
 
   if (!mounted) {
     return (
@@ -49,42 +49,43 @@ export function ProgressChart({
     );
   }
 
+  const chart =
+    variant === "bar" ? (
+      <BarChart width={width} height={height} data={data} margin={{ top: 8, right: 0, left: -24, bottom: 0 }}>
+        <CartesianGrid stroke={gridColor} strokeDasharray="3 3" vertical={false} />
+        <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: axisColor, fontSize: 12 }} />
+        <YAxis tickLine={false} axisLine={false} tick={{ fill: axisColor, fontSize: 12 }} />
+        <Tooltip content={<HealthTooltip />} cursor={{ fill: "var(--muted)" }} />
+        <Bar dataKey="value" radius={[8, 8, 2, 2]} fill={primary} />
+        <Bar dataKey="secondary" radius={[8, 8, 2, 2]} fill={secondary} />
+      </BarChart>
+    ) : variant === "line" ? (
+      <LineChart width={width} height={height} data={data} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
+        <CartesianGrid stroke={gridColor} strokeDasharray="3 3" vertical={false} />
+        <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: axisColor, fontSize: 12 }} />
+        <YAxis tickLine={false} axisLine={false} tick={{ fill: axisColor, fontSize: 12 }} />
+        <Tooltip content={<HealthTooltip />} />
+        <Line dataKey="value" type="monotone" stroke={primary} strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+      </LineChart>
+    ) : (
+      <AreaChart width={width} height={height} data={data} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
+        <defs>
+          <linearGradient id="healthArea" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="5%" stopColor={primary} stopOpacity={0.42} />
+            <stop offset="95%" stopColor={primary} stopOpacity={0.04} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid stroke={gridColor} strokeDasharray="3 3" vertical={false} />
+        <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: axisColor, fontSize: 12 }} />
+        <YAxis tickLine={false} axisLine={false} tick={{ fill: axisColor, fontSize: 12 }} />
+        <Tooltip content={<HealthTooltip />} />
+        <Area dataKey="value" type="monotone" stroke={primary} strokeWidth={3} fill="url(#healthArea)" />
+      </AreaChart>
+    );
+
   return (
-    <div className={cn("h-40 min-h-40 w-full min-w-0 overflow-hidden", className)} style={{ height }}>
-      <ResponsiveContainer width="100%" height="100%">
-        {variant === "bar" ? (
-          <BarChart data={data} margin={{ top: 8, right: 0, left: -24, bottom: 0 }}>
-            <CartesianGrid stroke={gridColor} strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: axisColor, fontSize: 12 }} />
-            <YAxis tickLine={false} axisLine={false} tick={{ fill: axisColor, fontSize: 12 }} />
-            <Tooltip content={<HealthTooltip />} cursor={{ fill: "var(--muted)" }} />
-            <Bar dataKey="value" radius={[8, 8, 2, 2]} fill={primary} />
-            <Bar dataKey="secondary" radius={[8, 8, 2, 2]} fill={secondary} />
-          </BarChart>
-        ) : variant === "line" ? (
-          <LineChart data={data} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
-            <CartesianGrid stroke={gridColor} strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: axisColor, fontSize: 12 }} />
-            <YAxis tickLine={false} axisLine={false} tick={{ fill: axisColor, fontSize: 12 }} />
-            <Tooltip content={<HealthTooltip />} />
-            <Line dataKey="value" type="monotone" stroke={primary} strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-          </LineChart>
-        ) : (
-          <AreaChart data={data} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
-            <defs>
-              <linearGradient id="healthArea" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="5%" stopColor={primary} stopOpacity={0.42} />
-                <stop offset="95%" stopColor={primary} stopOpacity={0.04} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid stroke={gridColor} strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: axisColor, fontSize: 12 }} />
-            <YAxis tickLine={false} axisLine={false} tick={{ fill: axisColor, fontSize: 12 }} />
-            <Tooltip content={<HealthTooltip />} />
-            <Area dataKey="value" type="monotone" stroke={primary} strokeWidth={3} fill="url(#healthArea)" />
-          </AreaChart>
-        )}
-      </ResponsiveContainer>
+    <div ref={ref} className={cn("h-40 min-h-40 w-full min-w-0 overflow-hidden", className)} style={{ height }}>
+      {width > 0 ? chart : null}
     </div>
   );
 }
@@ -107,17 +108,15 @@ export function MacroChart({ data }: { data: MacroDatum[] }) {
 
   return (
     <div className="grid grid-cols-[112px_1fr] items-center gap-4">
-      <div className="h-28 min-h-28">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie data={data} dataKey="value" nameKey="name" innerRadius={34} outerRadius={54} paddingAngle={3}>
-              {data.map((entry) => (
-                <Cell key={entry.name} fill={entry.fill} />
-              ))}
-            </Pie>
-            <Tooltip content={<HealthTooltip />} />
-          </PieChart>
-        </ResponsiveContainer>
+      <div className="h-28 min-h-28 w-28 min-w-28">
+        <PieChart width={112} height={112}>
+          <Pie data={data} dataKey="value" nameKey="name" innerRadius={34} outerRadius={54} paddingAngle={3}>
+            {data.map((entry) => (
+              <Cell key={entry.name} fill={entry.fill} />
+            ))}
+          </Pie>
+          <Tooltip content={<HealthTooltip />} />
+        </PieChart>
       </div>
       <div className="flex flex-col gap-2">
         {data.map((item) => (
@@ -140,6 +139,35 @@ function useMounted() {
     () => true,
     () => false,
   );
+}
+
+function useChartMeasure() {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const element = ref.current;
+
+    if (!element) {
+      return;
+    }
+
+    function updateWidth() {
+      if (!element) {
+        return;
+      }
+
+      setWidth(Math.max(0, Math.floor(element.getBoundingClientRect().width)));
+    }
+
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
+
+  return { ref, width };
 }
 
 export function MuscleGroupChart({ data }: { data: MetricDatum[] }) {

@@ -93,6 +93,7 @@ function PageContent({
     case "gym":
       return <GymPage locale={locale} />;
     case "nutrition":
+    case "food-log":
       return <NutritionPage locale={locale} />;
     case "learn":
       return <LearnPage locale={locale} />;
@@ -120,7 +121,6 @@ function PageContent({
     case "body":
     case "sleep":
     case "water":
-    case "food-log":
     case "diet-plan":
       return <GenericTrackerPage page={currentPage} locale={locale} />;
     default:

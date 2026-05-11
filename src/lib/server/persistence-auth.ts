@@ -1,4 +1,5 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
+import type { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthenticatedSupabase =
@@ -46,4 +47,38 @@ export async function readJsonBody<T>(request: Request): Promise<T | null> {
   } catch {
     return null;
   }
+}
+
+export async function readValidatedJson<T extends z.ZodType>(
+  request: Request,
+  schema: T,
+): Promise<
+  | { ok: true; data: z.infer<T> }
+  | { ok: false; response: Response }
+> {
+  const body = await readJsonBody<unknown>(request);
+
+  if (!body) {
+    return {
+      ok: false,
+      response: Response.json({ error: "Invalid JSON body." }, { status: 400 }),
+    };
+  }
+
+  const parsed = schema.safeParse(body);
+
+  if (!parsed.success) {
+    return {
+      ok: false,
+      response: Response.json(
+        {
+          error: "請輸入有效數值。",
+          issues: parsed.error.issues.map((issue) => issue.message).slice(0, 3),
+        },
+        { status: 400 },
+      ),
+    };
+  }
+
+  return { ok: true, data: parsed.data };
 }

@@ -2,11 +2,13 @@
 
 import { AlertTriangle, BookOpenCheck, HelpCircle, ShieldCheck, Stethoscope } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { analyzeIntake } from "@/lib/navigation-engine";
+import type { FormEvent } from "react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { emergencyCopy, label, text, ui } from "@/lib/health-app/i18n";
 import { lessons, redFlags } from "@/lib/health-app/mock-data";
 import type { Lesson, Locale, LocalizedText } from "@/lib/health-app/types";
+import type { InsuranceHelperResponse, SymptomRoutingResponse } from "@/lib/health-data/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -175,26 +177,61 @@ export function SymptomRoutingForm({ locale }: { locale: Locale }) {
   const [severity, setSeverity] = useState("moderate");
   const [preference, setPreference] = useState("either");
   const [redFlag, setRedFlag] = useState("none");
-  const result = useMemo(() => {
-    if (!symptoms.trim() && redFlag === "none") {
-      return null;
+  const [result, setResult] = useState<SymptomRoutingResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const input = `${symptoms}. ${redFlag === "none" ? "" : redFlag}`.trim();
+
+    if (!input) {
+      toast.error(locale === "zh-Hant" ? "請輸入症狀。" : "Please enter symptoms.");
+      return;
     }
 
-    const redFlagText = redFlag === "none" ? "" : redFlag;
-    return analyzeIntake("medical", `${symptoms}. Duration: ${duration}. Severity: ${severity}. Preference: ${preference}. Red flags: ${redFlagText}`);
-  }, [duration, preference, redFlag, severity, symptoms]);
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/symptom-routing", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          input,
+          duration,
+          severity,
+          carePreference: preference === "not-sure" ? "not_sure" : preference,
+          language: locale,
+        }),
+      });
+      const body = (await response.json()) as SymptomRoutingResponse | { error: string };
+
+      if (!response.ok || "error" in body) {
+        throw new Error("error" in body ? body.error : "Routing failed");
+      }
+
+      setResult(body as SymptomRoutingResponse);
+    } catch {
+      toast.error(locale === "zh-Hant" ? "儲存失敗，請檢查網絡後再試。" : "Save failed. Check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <Card className="bg-card/80 shadow-sm">
-      <CardHeader>
-        <CardTitle>{label(ui.symptomRouting, locale)}</CardTitle>
-        <CardDescription>
-          {locale === "zh-Hant"
-            ? "請描述症狀、時間、嚴重程度和是否有警號。"
-            : "Describe symptoms, duration, severity, and any red flags."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4">
+      <form onSubmit={onSubmit}>
+        <CardHeader>
+          <CardTitle>{label(ui.symptomRouting, locale)}</CardTitle>
+          <CardDescription>
+            {locale === "zh-Hant"
+              ? "請描述症狀、時間、嚴重程度和是否有警號。"
+              : "Describe symptoms, duration, severity, and any red flags."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
         <label className="grid gap-2 text-sm font-medium">
           {locale === "zh-Hant" ? "症狀" : "Symptoms"}
           <Textarea value={symptoms} onChange={(event) => setSymptoms(event.target.value)} placeholder={locale === "zh-Hant" ? "例如：跑步後膝部痛兩日，沒有腫脹。" : "Example: knee pain for two days after running, no swelling."} />
@@ -244,16 +281,21 @@ export function SymptomRoutingForm({ locale }: { locale: Locale }) {
           </Select>
         </div>
 
-        {result ? (
-          <Alert variant={result.urgency.level === 1 ? "destructive" : "default"}>
+          <Button disabled={loading}>
             <Stethoscope data-icon="inline-start" aria-hidden="true" />
-            <AlertTitle>{result.urgency.level === 1 ? (locale === "zh-Hant" ? "請立即求急症服務" : "Seek emergency care now") : result.classification}</AlertTitle>
+            {loading ? (locale === "zh-Hant" ? "檢查中" : "Checking") : (locale === "zh-Hant" ? "檢查照護方向" : "Check care direction")}
+          </Button>
+
+          {result ? (
+          <Alert variant={result.redFlagDetected ? "destructive" : "default"}>
+            <Stethoscope data-icon="inline-start" aria-hidden="true" />
+            <AlertTitle>{result.redFlagDetected ? (locale === "zh-Hant" ? "請立即求急症服務" : "Seek emergency care now") : result.careLevel}</AlertTitle>
             <AlertDescription className="flex flex-col gap-3 leading-6">
-              <span>{result.urgency.summary}</span>
+              <span>{result.summary}</span>
               <span>
-                {locale === "zh-Hant" ? "根據你分享的資料，合理下一步可能是：" : "Based on what you shared, a reasonable next step may be:"} {result.careRoute}
+                {locale === "zh-Hant" ? "根據你分享的資料，合理下一步可能是：" : "Based on what you shared, a reasonable next step may be:"} {result.nextStep}
               </span>
-              <span>{result.disclaimer}</span>
+              <span>{result.notDiagnosis}</span>
             </AlertDescription>
           </Alert>
         ) : (
@@ -263,7 +305,8 @@ export function SymptomRoutingForm({ locale }: { locale: Locale }) {
             <AlertDescription>{locale === "zh-Hant" ? emergencyCopy.zh : emergencyCopy.en}</AlertDescription>
           </Alert>
         )}
-      </CardContent>
+        </CardContent>
+      </form>
     </Card>
   );
 }
@@ -271,19 +314,62 @@ export function SymptomRoutingForm({ locale }: { locale: Locale }) {
 export function InsuranceHelperForm({ locale }: { locale: Locale }) {
   const [question, setQuestion] = useState("");
   const [type, setType] = useState("hospital");
+  const [policyText, setPolicyText] = useState("");
+  const [claimContext, setClaimContext] = useState("");
+  const [result, setResult] = useState<InsuranceHelperResponse | null>(null);
+  const [loading, setLoading] = useState(false);
   const hasQuestion = question.trim().length > 0;
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!hasQuestion && !policyText.trim()) {
+      toast.error(locale === "zh-Hant" ? "請輸入保險問題或保單文字。" : "Please enter an insurance question or policy text.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/insurance-helper", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          topic: question || "保單理解",
+          text: [question, policyText, claimContext].filter(Boolean).join("\n\n"),
+          insurance_type: type,
+          language: locale,
+        }),
+      });
+      const body = (await response.json()) as InsuranceHelperResponse | { error: string };
+
+      if (!response.ok || "error" in body) {
+        throw new Error("error" in body ? body.error : "Insurance helper failed");
+      }
+
+      setResult(body as InsuranceHelperResponse);
+    } catch {
+      toast.error(locale === "zh-Hant" ? "AI 暫時未能回應，你仍可查看已儲存的紀錄和建議。" : "AI is temporarily unavailable. You can still view saved logs and recommendations.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <Card className="bg-card/80 shadow-sm">
-      <CardHeader>
-        <CardTitle>{label(ui.insurancePolicyHelper, locale)}</CardTitle>
-        <CardDescription>
-          {locale === "zh-Hant"
-            ? "貼上問題或保單文字，系統會整理重點和需要問保險公司的問題。"
-            : "Paste a question or policy text, and the system organizes key points and insurer questions."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4">
+      <form onSubmit={onSubmit}>
+        <CardHeader>
+          <CardTitle>{label(ui.insurancePolicyHelper, locale)}</CardTitle>
+          <CardDescription>
+            {locale === "zh-Hant"
+              ? "貼上問題或保單文字，系統會整理重點和需要問保險公司的問題。"
+              : "Paste a question or policy text, and the system organizes key points and insurer questions."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
         <Select value={type} onValueChange={setType}>
           <SelectTrigger className="w-full" aria-label={locale === "zh-Hant" ? "保險類型" : "Insurance type"}>
             <SelectValue />
@@ -292,7 +378,7 @@ export function InsuranceHelperForm({ locale }: { locale: Locale }) {
             <SelectGroup>
               <SelectItem value="hospital">{locale === "zh-Hant" ? "住院" : "Hospital"}</SelectItem>
               <SelectItem value="outpatient">{locale === "zh-Hant" ? "門診" : "Outpatient"}</SelectItem>
-              <SelectItem value="critical-illness">{locale === "zh-Hant" ? "危疾" : "Critical illness"}</SelectItem>
+              <SelectItem value="critical_illness">{locale === "zh-Hant" ? "危疾" : "Critical illness"}</SelectItem>
               <SelectItem value="accident">{locale === "zh-Hant" ? "意外" : "Accident"}</SelectItem>
               <SelectItem value="dental">{locale === "zh-Hant" ? "牙科" : "Dental"}</SelectItem>
               <SelectItem value="travel">{locale === "zh-Hant" ? "旅遊" : "Travel"}</SelectItem>
@@ -300,39 +386,24 @@ export function InsuranceHelperForm({ locale }: { locale: Locale }) {
           </SelectContent>
         </Select>
         <Textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={locale === "zh-Hant" ? "例如：我想理解住院保單的不保事項、等候期和索償流程。" : "Example: I want to understand exclusions, waiting periods, and claim steps."} />
-        <Textarea placeholder={locale === "zh-Hant" ? "保單文字（可選）" : "Policy text optional"} />
-        <Textarea placeholder={locale === "zh-Hant" ? "索償情況（可選）" : "Claim situation optional"} />
+        <Textarea value={policyText} onChange={(event) => setPolicyText(event.target.value)} placeholder={locale === "zh-Hant" ? "保單文字（可選）" : "Policy text optional"} />
+        <Textarea value={claimContext} onChange={(event) => setClaimContext(event.target.value)} placeholder={locale === "zh-Hant" ? "索償情況（可選）" : "Claim situation optional"} />
+        <Button disabled={loading}>
+          <ShieldCheck data-icon="inline-start" aria-hidden="true" />
+          {loading ? (locale === "zh-Hant" ? "整理中" : "Preparing") : (locale === "zh-Hant" ? "整理保險問題" : "Prepare insurance questions")}
+        </Button>
 
         <div className="rounded-lg bg-muted/45 p-4">
           <h3 className="font-medium">{locale === "zh-Hant" ? "回應預覽" : "Response preview"}</h3>
           <div className="mt-3 grid gap-3 text-sm leading-6 text-muted-foreground">
-            <p>
-              {hasQuestion
-                ? locale === "zh-Hant"
-                  ? "重點：先確認保障範圍、等候期、不保事項、網絡限制和自付額。"
-                  : "Key points: confirm covered scope, waiting periods, exclusions, network limits, and deductible."
-                : locale === "zh-Hant"
-                  ? "輸入問題後，這裡會整理重點。"
-                  : "After you enter a question, key points appear here."}
-            </p>
-            <p>
-              {locale === "zh-Hant"
-                ? "應問保險公司：是否需要預先批核？哪些文件必須正本？是否有指定醫生或醫院網絡？"
-                : "Ask the insurer: is pre-approval needed, which documents must be originals, and is there a doctor or hospital network?"}
-            </p>
-            <p>
-              {locale === "zh-Hant"
-                ? "準備文件：收據、醫療報告、轉介信、出院紙、化驗或影像報告。"
-                : "Prepare: receipts, medical reports, referral letters, discharge summaries, test or imaging reports."}
-            </p>
-            <p>
-              {locale === "zh-Hant"
-                ? "聲明：這不是法律意見、保險銷售或索償保證。"
-                : "Disclaimer: this is not legal advice, insurance sales, or a claim guarantee."}
-            </p>
+            <p>{result?.summary ?? (hasQuestion ? "重點：先確認保障範圍、等候期、不保事項、網絡限制和自付額。" : "輸入問題後，這裡會整理重點。")}</p>
+            <p>{result?.possibleMeaning ?? "應問保險公司：是否需要預先批核？哪些文件必須正本？是否有指定醫生或醫院網絡？"}</p>
+            <p>{result ? `應問問題：${result.questionsToAskInsurer.join("；")}` : "準備文件：收據、醫療報告、轉介信、出院紙、化驗或影像報告。"}</p>
+            <p>{result?.disclaimer ?? "聲明：這不是法律意見、保險銷售或索償保證。"}</p>
           </div>
         </div>
-      </CardContent>
+        </CardContent>
+      </form>
     </Card>
   );
 }

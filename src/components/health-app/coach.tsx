@@ -12,9 +12,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { coachMessages, memoryItems, suggestedPrompts } from "@/lib/health-app/mock-data";
 import { emergencyCopy, label, safetyCopy, text, ui } from "@/lib/health-app/i18n";
 import type { Locale } from "@/lib/health-app/types";
+import type { CoachResponse } from "@/lib/health-data/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,8 +55,10 @@ export function CoachSurface({
 }) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState(coachMessages);
+  const [sending, setSending] = useState(false);
+  const [pendingMemory, setPendingMemory] = useState<CoachResponse["memorySuggestion"]>(null);
 
-  function sendMessage(value = input) {
+  async function sendMessage(value = input) {
     const trimmed = value.trim();
     if (!trimmed) {
       return;
@@ -63,15 +67,52 @@ export function CoachSurface({
     setMessages((current) => [
       ...current,
       { role: "user", content: { zh: trimmed, en: trimmed } },
-      {
-        role: "assistant",
-        content: {
-          zh: "我會先檢查緊急警號，再用你的近期訓練、飲食和偏好，給一個安全、實際的下一步。這不是診斷。",
-          en: "I’ll first check urgent warning signs, then use your recent training, food, and preferences to give one safe practical next step. This is not a diagnosis.",
-        },
-      },
     ]);
     setInput("");
+    setSending(true);
+
+    try {
+      const response = await fetch("/api/coach", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ message: trimmed, language: locale }),
+      });
+      const body = (await response.json()) as CoachResponse | { error: string };
+
+      if (!response.ok || "error" in body) {
+        throw new Error("error" in body ? body.error : "AI failed");
+      }
+      const coachResponse = body as CoachResponse;
+
+      setMessages((current) => [
+        ...current,
+        {
+          role: "assistant",
+          content: {
+            zh: `${coachResponse.answer}\n\n原因：${coachResponse.reason}\n\n下一步：${coachResponse.nextStep}\n\n安全提示：${coachResponse.safetyNote}`,
+            en: `${coachResponse.answer}\n\nReason: ${coachResponse.reason}\n\nNext step: ${coachResponse.nextStep}\n\nSafety note: ${coachResponse.safetyNote}`,
+          },
+        },
+      ]);
+      setPendingMemory(coachResponse.memorySuggestion);
+    } catch {
+      toast.error(locale === "zh-Hant" ? "AI 暫時未能回應，你仍可查看已儲存的紀錄和建議。" : "AI is temporarily unavailable. You can still view saved logs and recommendations.");
+      setMessages((current) => [
+        ...current,
+        {
+          role: "assistant",
+          content: {
+            zh: "我會先檢查緊急警號，再用你的近期訓練、飲食和偏好，給一個安全、實際的下一步。這不是診斷。",
+            en: "I’ll first check urgent warning signs, then use your recent training, food, and preferences to give one safe practical next step. This is not a diagnosis.",
+          },
+        },
+      ]);
+    } finally {
+      setSending(false);
+    }
   }
 
   const surface = (
@@ -137,7 +178,7 @@ export function CoachSurface({
             <div
               key={`${message.role}-${index}`}
               className={cn(
-                "max-w-[92%] rounded-2xl p-3 text-sm leading-6",
+                "max-w-[92%] whitespace-pre-line rounded-2xl p-3 text-sm leading-6",
                 message.role === "user"
                   ? "ml-auto bg-primary text-primary-foreground"
                   : "mr-auto bg-muted/65 text-muted-foreground",
@@ -168,7 +209,13 @@ export function CoachSurface({
         </div>
       ) : null}
 
-      {!compact ? <MemoryConsentCard locale={locale} /> : null}
+      {!compact && pendingMemory?.shouldSuggest ? (
+        <MemoryConsentCard
+          locale={locale}
+          category={pendingMemory.category}
+          defaultText={{ zh: pendingMemory.content, en: pendingMemory.content }}
+        />
+      ) : !compact ? <MemoryConsentCard locale={locale} /> : null}
 
       <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-3 text-xs leading-5 text-muted-foreground">
         <ShieldAlert aria-hidden="true" className="mb-2 text-destructive" />
@@ -188,9 +235,9 @@ export function CoachSurface({
           className="min-h-16 rounded-xl border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
         />
         <div className="flex w-full gap-2">
-          <Button type="button" className="flex-1 rounded-xl" onClick={() => sendMessage()}>
+          <Button type="button" className="flex-1 rounded-xl" disabled={sending} onClick={() => sendMessage()}>
             <Send data-icon="inline-start" aria-hidden="true" />
-            {locale === "zh-Hant" ? "傳送" : "Send"}
+            {sending ? (locale === "zh-Hant" ? "回應中" : "Sending") : locale === "zh-Hant" ? "傳送" : "Send"}
           </Button>
           <Button type="button" variant="outline" size="icon" aria-label={locale === "zh-Hant" ? "語音輸入佔位" : "Voice input placeholder"}>
             <Mic aria-hidden="true" />
