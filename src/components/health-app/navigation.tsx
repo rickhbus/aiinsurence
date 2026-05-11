@@ -482,7 +482,7 @@ export function TopHeader({
 
 export function MobileBottomNav({ currentPage, locale }: { currentPage: HealthPage; locale: Locale }) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border/40 bg-background/85 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-2xl lg:hidden" aria-label="Mobile bottom navigation">
+    <nav className="fixed inset-x-0 bottom-0 z-40 grid min-h-20 grid-cols-5 border-t border-border/40 bg-background/90 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-2xl lg:hidden" aria-label="Mobile bottom navigation">
       {bottomNavItems.map((item) => {
         const active = isPageInGroup(currentPage, item.page) || currentPage === item.page;
         return (
@@ -507,7 +507,7 @@ export function QuickAddButton({ locale }: { locale: Locale }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-20 right-4 z-40 lg:hidden">
+    <div className="fixed right-4 bottom-[calc(5.75rem_+_env(safe-area-inset-bottom))] z-40 lg:hidden">
       {open ? (
         <div className="mb-3 grid w-56 gap-2 rounded-2xl border bg-popover p-2 text-popover-foreground shadow-lg">
           {quickAddActions.map((action) => (
@@ -548,7 +548,7 @@ export function WelcomeStrip({ locale, data }: { locale: Locale; data?: Dashboar
               ? `早晨，${data?.profile.displayName ?? "市民健康"}`
               : `Good morning, ${data?.profile.displayName ?? "Citizen Health"}`}
           </p>
-          <h2 className="text-gradient-health mt-2 text-3xl font-bold leading-tight tracking-tight md:text-4xl">
+          <h2 className="text-gradient-health mt-2 text-[clamp(2rem,9vw,3.25rem)] font-bold leading-tight tracking-tight">
             {locale === "zh-Hant" ? "小習慣，強健康。" : "Small habits, strong health."}
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
@@ -557,7 +557,7 @@ export function WelcomeStrip({ locale, data }: { locale: Locale; data?: Dashboar
               : "Use one small action today to improve your activity, food, sleep, and health knowledge."}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex min-w-0 flex-wrap gap-2 overflow-hidden">
           <Badge variant="secondary">{data?.profile.goal ?? text(demoUser.goal, locale)}</Badge>
           <Badge variant="secondary">{data?.profile.location ?? text(demoUser.location, locale)}</Badge>
           <Badge variant="secondary">{data?.profile.fitnessLevel ?? text(demoUser.fitnessLevel, locale)}</Badge>

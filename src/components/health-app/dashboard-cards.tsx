@@ -76,8 +76,10 @@ export function HealthScoreCard({ locale, className, data }: CardProps) {
 
   return (
     <DashboardCard className={cn("health-card-glow", className)} icon={HeartPulse} title={{ zh: "健康分數", en: "Health Score" }} locale={locale} index={0}>
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-        <ProgressRing value={score} label="Health score" animated />
+      <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="scale-90 sm:scale-100">
+          <ProgressRing value={score} label="Health score" animated />
+        </div>
         <div className="flex min-w-0 flex-1 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="w-fit">
@@ -103,7 +105,7 @@ export function HealthScoreCard({ locale, className, data }: CardProps) {
                 : "Score is calculated from today’s activity, nutrition, sleep, and hydration summaries for lifestyle education only."
               : text(healthScore.explanation, locale)}
           </p>
-          <div className="grid grid-cols-4 gap-2 text-center text-xs">
+          <div className="grid grid-cols-2 gap-2 text-center text-xs sm:grid-cols-4">
             <MiniStat value={String(activityScore)} label={locale === "zh-Hant" ? "活動量" : "Activity"} />
             <MiniStat value={String(nutritionScore)} label={locale === "zh-Hant" ? "飲食" : "Nutrition"} />
             <MiniStat value={String(sleepScore)} label={locale === "zh-Hant" ? "睡眠" : "Sleep"} />
