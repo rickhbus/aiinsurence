@@ -5,17 +5,22 @@ import { saveEmotionAnalysis } from "@/lib/gbl/persistence";
 import { hashUserId, logError } from "@/lib/observability/logger";
 import { readValidatedJson } from "@/lib/server/persistence-auth";
 import {
-  checkIpRateLimit,
+  checkAnonymousRateLimit,
   checkUserAiRateLimit,
   getRequestIp,
   recordAiUsageEvent,
 } from "@/lib/server/rate-limit";
+import {
+  getRequestId,
+  jsonWithRequestId,
+  withRequestIdHeaders,
+} from "@/lib/server/request-context";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const requestId = crypto.randomUUID();
+  const requestId = getRequestId(request);
   const parsed = await readValidatedJson(request, emotionAnalysisInputSchema);
 
   if (!parsed.ok) {
@@ -37,16 +42,17 @@ export async function POST(request: Request) {
     });
 
     if (!limit.allowed) {
-      return Response.json(
+      return jsonWithRequestId(
         { error: limit.message, requestId },
         {
           status: 429,
           headers: { "Retry-After": String(limit.retryAfterSeconds) },
         },
+        requestId,
       );
     }
   } else {
-    const limit = checkIpRateLimit({
+    const limit = await checkAnonymousRateLimit({
       ip: getRequestIp(request),
       route: "/api/emotion/analyze",
       limit: 12,
@@ -54,12 +60,13 @@ export async function POST(request: Request) {
     });
 
     if (!limit.allowed) {
-      return Response.json(
+      return jsonWithRequestId(
         { error: limit.message, requestId },
         {
           status: 429,
           headers: { "Retry-After": String(limit.retryAfterSeconds) },
         },
+        requestId,
       );
     }
   }
@@ -99,7 +106,10 @@ export async function POST(request: Request) {
       });
     }
 
-    return Response.json({ ...result, id, persisted, requestId });
+    return Response.json(
+      { ...result, id, persisted, requestId },
+      withRequestIdHeaders(undefined, requestId),
+    );
   } catch (error) {
     logError("Emotion Engine analysis failed", {
       route: "/api/emotion/analyze",
@@ -109,12 +119,13 @@ export async function POST(request: Request) {
       userHash: hashUserId(user?.id),
     });
 
-    return Response.json(
+    return jsonWithRequestId(
       {
         error: "Emotion Engine is temporarily unavailable. Please try again later.",
         requestId,
       },
       { status: 500 },
+      requestId,
     );
   }
 }

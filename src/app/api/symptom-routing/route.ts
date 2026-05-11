@@ -2,10 +2,12 @@ import { trackServerEvent } from "@/lib/analytics/events";
 import { saveSymptomCheck, routeSymptoms } from "@/lib/health-data/symptoms";
 import { symptomRoutingInputSchema } from "@/lib/health-data/validation";
 import { readValidatedJson } from "@/lib/server/persistence-auth";
-import { checkIpRateLimit, getRequestIp } from "@/lib/server/rate-limit";
+import { checkAnonymousRateLimit, getRequestIp } from "@/lib/server/rate-limit";
+import { getRequestId, jsonWithRequestId } from "@/lib/server/request-context";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
+  const requestId = getRequestId(request);
   const parsed = await readValidatedJson(request, symptomRoutingInputSchema);
 
   if (!parsed.ok) {
@@ -15,7 +17,7 @@ export async function POST(request: Request) {
   const response = routeSymptoms(parsed.data);
 
   if (!response.redFlagDetected) {
-    const limit = checkIpRateLimit({
+    const limit = await checkAnonymousRateLimit({
       ip: getRequestIp(request),
       route: "/api/symptom-routing",
       limit: 30,
@@ -23,9 +25,10 @@ export async function POST(request: Request) {
     });
 
     if (!limit.allowed) {
-      return Response.json(
+      return jsonWithRequestId(
         { error: limit.message },
         { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+        requestId,
       );
     }
   }
@@ -54,5 +57,5 @@ export async function POST(request: Request) {
     }
   }
 
-  return Response.json(response);
+  return jsonWithRequestId(response as unknown as Record<string, unknown>, undefined, requestId);
 }

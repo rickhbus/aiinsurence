@@ -1,9 +1,11 @@
 import { normalizeLimit } from "@/lib/health-data/common";
 import { getAuthenticatedSupabase } from "@/lib/server/persistence-auth";
+import { getRequestId, jsonWithRequestId } from "@/lib/server/request-context";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const requestId = getRequestId(request);
   const auth = await getAuthenticatedSupabase();
 
   if (!auth.ok) {
@@ -37,9 +39,10 @@ export async function GET(request: Request) {
   const firstError = gbl.error || emotion.error || insurance.error;
 
   if (firstError) {
-    return Response.json(
+    return jsonWithRequestId(
       { error: "History is temporarily unavailable." },
       { status: 500 },
+      requestId,
     );
   }
 
@@ -72,5 +75,5 @@ export async function GET(request: Request) {
     .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
     .slice(0, limit);
 
-  return Response.json({ items, limit });
+  return jsonWithRequestId({ items, limit }, undefined, requestId);
 }

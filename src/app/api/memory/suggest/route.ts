@@ -1,15 +1,17 @@
 import { memorySuggestInputSchema } from "@/lib/health-data/validation";
 import { readValidatedJson } from "@/lib/server/persistence-auth";
-import { checkIpRateLimit, getRequestIp } from "@/lib/server/rate-limit";
+import { checkAnonymousRateLimit, getRequestIp } from "@/lib/server/rate-limit";
+import { getRequestId, jsonWithRequestId } from "@/lib/server/request-context";
 
 export async function POST(request: Request) {
+  const requestId = getRequestId(request);
   const parsed = await readValidatedJson(request, memorySuggestInputSchema);
 
   if (!parsed.ok) {
     return parsed.response;
   }
 
-  const limit = checkIpRateLimit({
+  const limit = await checkAnonymousRateLimit({
     ip: getRequestIp(request),
     route: "/api/memory/suggest",
     limit: 60,
@@ -17,18 +19,19 @@ export async function POST(request: Request) {
   });
 
   if (!limit.allowed) {
-    return Response.json(
+    return jsonWithRequestId(
       { error: limit.message },
       { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+      requestId,
     );
   }
 
   const suggestion = suggestMemory(parsed.data.message);
 
-  return Response.json({
+  return jsonWithRequestId({
     shouldSuggest: Boolean(suggestion),
     suggestion,
-  });
+  }, undefined, requestId);
 }
 
 function suggestMemory(message: string) {

@@ -97,7 +97,7 @@ export function getEnvIssues(
 
   if (!client.supabaseAnonKey) {
     issues.push({
-      key: "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      key: "NEXT_PUBLIC_SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
       message: "Supabase anon/publishable key is required for authenticated persistence.",
       severity: mode === "production" ? "error" : "warning",
     });
@@ -106,8 +106,8 @@ export function getEnvIssues(
   if (mode !== "client" && !server.aiApiKey) {
     issues.push({
       key: getAiProviderKeyName(server.aiProvider),
-      message: `AI provider key is required for ${server.aiProvider} in server routes.`,
-      severity: mode === "production" ? "error" : "warning",
+      message: `AI provider key is not configured for ${server.aiProvider}; provider-backed generation will use deterministic fallback where supported.`,
+      severity: "warning",
     });
   }
 
@@ -125,13 +125,17 @@ export function assertServerEnv(env: RawEnv = process.env) {
 }
 
 export function assertProductionEnv(env: RawEnv = process.env) {
-  const issues = getEnvIssues("production", env).filter((issue) => issue.severity === "error");
+  const issues = getRequiredProductionEnvIssues(env);
 
   if (issues.length > 0) {
     throw new EnvValidationError("Production environment is not deployable.", issues);
   }
 
   return getServerEnv(env);
+}
+
+export function getRequiredProductionEnvIssues(env: RawEnv = process.env): EnvIssue[] {
+  return getEnvIssues("production", env).filter((issue) => issue.severity === "error");
 }
 
 export function shouldFailFastForProduction(env: RawEnv = process.env) {

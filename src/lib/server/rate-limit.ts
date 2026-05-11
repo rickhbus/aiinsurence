@@ -1,5 +1,10 @@
 import type { HealthDataClient } from "@/lib/health-data/common";
 import { logWarn } from "@/lib/observability/logger";
+import {
+  getConfiguredRateLimitStore,
+  getMemoryRateLimitStore,
+  type RateLimitStore,
+} from "./rate-limit-store";
 
 type LimitResult =
   | { allowed: true; remaining: number }
@@ -87,6 +92,57 @@ export function checkIpRateLimit({
   fallbackHits.set(key, hits);
 
   return { allowed: true, remaining: limit - hits.length };
+}
+
+export async function checkAnonymousRateLimit({
+  ip,
+  route,
+  limit,
+  windowMs,
+  store = getConfiguredRateLimitStore(),
+}: {
+  ip: string;
+  route: string;
+  limit: number;
+  windowMs: number;
+  store?: RateLimitStore;
+}): Promise<LimitResult> {
+  const key = `rl:${route}:${ip}`;
+  const now = Date.now();
+  const result = await store.increment(key, windowMs);
+
+  if (result.count > limit) {
+    return {
+      allowed: false,
+      retryAfterSeconds: Math.max(1, Math.ceil((result.resetAt - now) / 1000)),
+      message: RATE_LIMIT_COPY_ZH,
+    };
+  }
+
+  return {
+    allowed: true,
+    remaining: Math.max(0, limit - result.count),
+  };
+}
+
+export async function checkInMemoryAnonymousRateLimit({
+  ip,
+  route,
+  limit,
+  windowMs,
+}: {
+  ip: string;
+  route: string;
+  limit: number;
+  windowMs: number;
+}) {
+  return checkAnonymousRateLimit({
+    ip,
+    route,
+    limit,
+    windowMs,
+    store: getMemoryRateLimitStore(),
+  });
 }
 
 export async function recordAiUsageEvent({

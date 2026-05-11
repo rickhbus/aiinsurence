@@ -1,19 +1,26 @@
-import { createHash } from "node:crypto";
-
 type LogMetadata = Record<
   string,
   string | number | boolean | null | undefined | Error | unknown
 >;
 
 const SENSITIVE_KEY_PATTERN =
-  /(content|message|input|symptom|diagnosis|notes|policy|hkid|email|phone|name|food)/iu;
+  /(authorization|cookie|token|secret|api[_-]?key|session|content|message|input|prompt|symptom|diagnosis|notes|policy|claim|hkid|email|phone|payment|name|food)/iu;
+const SENSITIVE_VALUE_PATTERN =
+  /(bearer\s+[a-z0-9._-]+|service[_-]?role|sk-[a-z0-9_-]+|hkid|香港身份證|\+?\d[\d\s().-]{7,}\d)/iu;
 
 export function hashUserId(userId: string | null | undefined) {
   if (!userId) {
     return "anonymous";
   }
 
-  return createHash("sha256").update(userId).digest("hex").slice(0, 12);
+  let hash = 0x811c9dc5;
+
+  for (let index = 0; index < userId.length; index += 1) {
+    hash ^= userId.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+
+  return (hash >>> 0).toString(16).padStart(8, "0");
 }
 
 export function logInfo(message: string, metadata: LogMetadata = {}) {
@@ -45,12 +52,12 @@ export function normalizeError(error: unknown) {
   if (error instanceof Error) {
     return {
       type: error.name || "Error",
-      message: error.message || "Unknown error",
+      message: sanitizeStringValue(error.message || "Unknown error"),
     };
   }
 
   if (typeof error === "string") {
-    return { type: "Error", message: error };
+    return { type: "Error", message: sanitizeStringValue(error) };
   }
 
   return { type: "UnknownError", message: "Unknown error" };
@@ -62,7 +69,14 @@ function safeConsole(
   metadata: LogMetadata,
 ) {
   try {
-    console[level](message, sanitizeLogMetadata(metadata));
+    console[level](
+      JSON.stringify({
+        level,
+        message,
+        timestamp: new Date().toISOString(),
+        ...sanitizeLogMetadata(metadata),
+      }),
+    );
   } catch {
     // Logging must never break a production request.
   }
@@ -74,7 +88,7 @@ function normalizeLogValue(value: LogMetadata[string]) {
   }
 
   if (typeof value === "string") {
-    return value.slice(0, 500);
+    return sanitizeStringValue(value);
   }
 
   if (
@@ -86,4 +100,8 @@ function normalizeLogValue(value: LogMetadata[string]) {
   }
 
   return "[object]";
+}
+
+function sanitizeStringValue(value: string) {
+  return SENSITIVE_VALUE_PATTERN.test(value) ? "[redacted]" : value.slice(0, 500);
 }

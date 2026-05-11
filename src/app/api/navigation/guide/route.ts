@@ -1,14 +1,18 @@
 import { generateGuideMessage } from "@/lib/ai/health-guide";
 import type { NavigationGuideRequest, NavigationGuideResponse } from "@/lib/ai/types";
 import { analyzeIntake, type IntakeMode } from "@/lib/navigation-engine";
+import { getRequestId, jsonWithRequestId } from "@/lib/server/request-context";
 
 const intakeModes = new Set<IntakeMode>(["medical", "insurance", "policy"]);
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
+  const requestId = getRequestId(request);
   const body = await readBody(request);
 
   if (!body) {
-    return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+    return jsonWithRequestId({ error: "Invalid JSON body." }, { status: 400 }, requestId);
   }
 
   const input = typeof body.input === "string" ? body.input.trim() : "";
@@ -17,7 +21,11 @@ export async function POST(request: Request) {
     : null;
 
   if (!input || !mode) {
-    return Response.json({ error: "Input and valid mode are required." }, { status: 400 });
+    return jsonWithRequestId(
+      { error: "Input and valid mode are required." },
+      { status: 400 },
+      requestId,
+    );
   }
 
   const baseRecommendation = analyzeIntake(mode, input);
@@ -41,7 +49,7 @@ export async function POST(request: Request) {
     ai: guide.ai,
   };
 
-  return Response.json(response);
+  return jsonWithRequestId(response, undefined, requestId);
 }
 
 async function readBody(request: Request): Promise<Partial<NavigationGuideRequest> | null> {

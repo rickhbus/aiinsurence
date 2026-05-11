@@ -1,6 +1,7 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { getRequestId, jsonWithRequestId } from "./request-context";
 
 export type AuthenticatedSupabase =
   | {
@@ -14,14 +15,16 @@ export type AuthenticatedSupabase =
     };
 
 export async function getAuthenticatedSupabase(): Promise<AuthenticatedSupabase> {
+  const requestId = crypto.randomUUID();
   const supabase = await createClient();
 
   if (!supabase) {
     return {
       ok: false,
-      response: Response.json(
+      response: jsonWithRequestId(
         { error: "Supabase is not configured." },
         { status: 503 },
+        requestId,
       ),
     };
   }
@@ -31,9 +34,10 @@ export async function getAuthenticatedSupabase(): Promise<AuthenticatedSupabase>
   if (error || !data.user) {
     return {
       ok: false,
-      response: Response.json(
+      response: jsonWithRequestId(
         { error: "Authentication is required to save this data." },
         { status: 401 },
+        requestId,
       ),
     };
   }
@@ -56,12 +60,13 @@ export async function readValidatedJson<T extends z.ZodType>(
   | { ok: true; data: z.infer<T> }
   | { ok: false; response: Response }
 > {
+  const requestId = getRequestId(request);
   const body = await readJsonBody<unknown>(request);
 
   if (!body) {
     return {
       ok: false,
-      response: Response.json({ error: "Invalid JSON body." }, { status: 400 }),
+      response: jsonWithRequestId({ error: "Invalid JSON body." }, { status: 400 }, requestId),
     };
   }
 
@@ -70,12 +75,13 @@ export async function readValidatedJson<T extends z.ZodType>(
   if (!parsed.success) {
     return {
       ok: false,
-      response: Response.json(
+      response: jsonWithRequestId(
         {
           error: "請輸入有效數值。",
           issues: parsed.error.issues.map((issue) => issue.message).slice(0, 3),
         },
         { status: 400 },
+        requestId,
       ),
     };
   }

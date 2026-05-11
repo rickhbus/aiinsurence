@@ -1,18 +1,20 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import {
+  EnvValidationError,
   assertProductionEnvIfNeeded,
   getClientEnv,
 } from "@/lib/env";
+import { logError } from "@/lib/observability/logger";
 
 export function hasSupabaseServerConfig() {
-  assertProductionEnvIfNeeded();
+  readRuntimeEnv();
 
   return getClientEnv().isSupabaseConfigured;
 }
 
 export async function createClient() {
-  const env = assertProductionEnvIfNeeded();
+  const env = readRuntimeEnv();
 
   if (!env.isSupabaseConfigured) {
     return null;
@@ -41,4 +43,21 @@ export async function createClient() {
       },
     },
   );
+}
+
+function readRuntimeEnv() {
+  try {
+    return assertProductionEnvIfNeeded();
+  } catch (error) {
+    const issues = error instanceof EnvValidationError
+      ? error.issues.map((issue) => issue.key).join(",")
+      : "unknown";
+
+    logError("Supabase server runtime configuration failed", {
+      error,
+      issues,
+    });
+
+    throw error;
+  }
 }

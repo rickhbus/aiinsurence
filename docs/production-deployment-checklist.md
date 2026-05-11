@@ -16,19 +16,32 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 ## Environment
 
 - [ ] `NEXT_PUBLIC_SUPABASE_URL` configured.
-- [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` configured.
-- [ ] Server-only AI provider key configured.
+- [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` configured.
+- [ ] Server-only AI provider key configured or deterministic fallback mode explicitly accepted.
+- [ ] Shared Redis/Upstash rate-limit store configured or production deferral explicitly accepted.
 - [ ] Optional analytics key configured only if analytics is enabled.
 - [ ] `APP_ENV=production` set only after env validation is green.
 - [ ] No service-role key is exposed through `NEXT_PUBLIC_*`.
+- [ ] Secrets pasted into chat have been rotated after deployment setup is stable.
+- [ ] Redis/Upstash, AI provider, Supabase, Postgres, and Vercel secrets are server-only unless explicitly public-safe.
 
 ## Build And Tests
 
-- [ ] `npx tsc --noEmit` passes.
+- [ ] `npm run typecheck` passes.
 - [ ] `npm run lint` passes.
 - [ ] `npm run test` passes.
 - [ ] `npm run build` passes.
 - [ ] Main route sweep passes without console errors.
+- [ ] Root route no longer returns a raw 500 in production-like env.
+- [ ] Vercel runtime logs reviewed for boot errors and request ids.
+
+## Health And Readiness
+
+- [ ] `GET /api/health` returns 200.
+- [ ] `GET /api/readiness` returns structured JSON with `status`, `checks`, `requestId`, and `timestamp`.
+- [ ] Readiness is `ready` or any `degraded` checks have named owners and dates.
+- [ ] Missing AI provider keys do not break `/`, `/gbl`, `/emotion`, `/history`, or deterministic AI.GBL/Emotion fallback mode.
+- [ ] Missing required Supabase public env vars fail clearly without logging secrets.
 
 ## Product Flows
 
@@ -45,6 +58,7 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 - [ ] AI.GBL analysis runs in mock/fallback mode when provider keys are absent.
 - [ ] Emotion Engine analysis saves structured outputs only, not raw sensitive text.
 - [ ] Analysis history loads with a bounded `limit`, not full history.
+- [ ] 429 responses include `Retry-After` where appropriate.
 
 ## Safety And Privacy
 
@@ -54,6 +68,18 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 - [ ] User can save, decline, edit, and delete memory.
 - [ ] Analytics payloads contain counts, categories, and booleans only.
 - [ ] Logs do not include symptoms text, policy text, meal text, raw AI prompts, or medical notes.
+- [ ] Logs do not include claim text, HKID, phone numbers, payment data, auth tokens, API keys, or session cookies.
+- [ ] External monitoring configured or explicitly deferred.
+
+## Scale Readiness
+
+- [ ] Load-test baseline captured from `load-tests/` against preview or staging.
+- [ ] Supabase query plans reviewed with `supabase/diagnostics/query-plan-validation.sql`.
+- [ ] Backup restore drill completed or scheduled.
+- [ ] Incident response drill completed or scheduled.
+- [ ] AI spend cap and provider quota reviewed.
+- [ ] Vercel function usage, Supabase pool limits, and Redis/Upstash operation limits reviewed.
+- [ ] Documentation still says the app is not proven for 100k DAU until load tests, query plans, monitoring, quota checks, and incident drills pass.
 
 ## Mobile QA
 

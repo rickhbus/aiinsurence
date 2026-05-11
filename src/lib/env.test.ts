@@ -36,6 +36,33 @@ describe("environment validation", () => {
     ).toThrow(EnvValidationError);
   });
 
+  it("does not require an AI provider key for production boot", () => {
+    expect(() =>
+      assertProductionEnv({
+        APP_ENV: "production",
+        NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "publishable-key",
+        AI_PROVIDER: "deepseek",
+      }),
+    ).not.toThrow();
+
+    expect(
+      getEnvIssues("production", {
+        APP_ENV: "production",
+        NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "publishable-key",
+        AI_PROVIDER: "deepseek",
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: "DEEPSEEK_API_KEY",
+          severity: "warning",
+        }),
+      ]),
+    );
+  });
+
   it("rejects service-role shaped values in public env", () => {
     const issues = getEnvIssues("production", {
       APP_ENV: "production",
@@ -43,6 +70,24 @@ describe("environment validation", () => {
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "service_role.secret",
       DEEPSEEK_API_KEY: "server-key",
       AI_PROVIDER: "deepseek",
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: "NEXT_PUBLIC_*",
+          severity: "error",
+        }),
+      ]),
+    );
+  });
+
+  it("detects public service-role leak attempts outside Supabase naming", () => {
+    const issues = getEnvIssues("production", {
+      APP_ENV: "production",
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key",
+      NEXT_PUBLIC_REDIS_SERVICE_ROLE_KEY: "service_role.redis",
     });
 
     expect(issues).toEqual(

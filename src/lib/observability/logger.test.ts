@@ -22,6 +22,20 @@ describe("privacy-safe logger", () => {
     });
   });
 
+  it("redacts sensitive tokens and phone-like values even under neutral keys", () => {
+    expect(
+      sanitizeLogMetadata({
+        route: "/api/test",
+        status: "Bearer abc.def.ghi",
+        fallback: "+852 9123 4567",
+      }),
+    ).toEqual({
+      route: "/api/test",
+      status: "[redacted]",
+      fallback: "[redacted]",
+    });
+  });
+
   it("normalizes unknown errors safely", () => {
     expect(normalizeError(new Error("boom"))).toEqual({
       type: "Error",

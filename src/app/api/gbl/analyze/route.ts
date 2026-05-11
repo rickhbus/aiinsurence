@@ -5,17 +5,22 @@ import { gblAnalysisInputSchema } from "@/lib/gbl/validators";
 import { hashUserId, logError } from "@/lib/observability/logger";
 import { readValidatedJson } from "@/lib/server/persistence-auth";
 import {
-  checkIpRateLimit,
+  checkAnonymousRateLimit,
   checkUserAiRateLimit,
   getRequestIp,
   recordAiUsageEvent,
 } from "@/lib/server/rate-limit";
+import {
+  getRequestId,
+  jsonWithRequestId,
+  withRequestIdHeaders,
+} from "@/lib/server/request-context";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const requestId = crypto.randomUUID();
+  const requestId = getRequestId(request);
   const parsed = await readValidatedJson(request, gblAnalysisInputSchema);
 
   if (!parsed.ok) {
@@ -37,16 +42,17 @@ export async function POST(request: Request) {
     });
 
     if (!limit.allowed) {
-      return Response.json(
+      return jsonWithRequestId(
         { error: limit.message, requestId },
         {
           status: 429,
           headers: { "Retry-After": String(limit.retryAfterSeconds) },
         },
+        requestId,
       );
     }
   } else {
-    const limit = checkIpRateLimit({
+    const limit = await checkAnonymousRateLimit({
       ip: getRequestIp(request),
       route: "/api/gbl/analyze",
       limit: 8,
@@ -54,12 +60,13 @@ export async function POST(request: Request) {
     });
 
     if (!limit.allowed) {
-      return Response.json(
+      return jsonWithRequestId(
         { error: limit.message, requestId },
         {
           status: 429,
           headers: { "Retry-After": String(limit.retryAfterSeconds) },
         },
+        requestId,
       );
     }
   }
@@ -107,7 +114,7 @@ export async function POST(request: Request) {
       caseId,
       persisted,
       requestId,
-    });
+    }, withRequestIdHeaders(undefined, requestId));
   } catch (error) {
     logError("AI.GBL analysis failed", {
       route: "/api/gbl/analyze",
@@ -117,12 +124,13 @@ export async function POST(request: Request) {
       userHash: hashUserId(user?.id),
     });
 
-    return Response.json(
+    return jsonWithRequestId(
       {
         error: "AI.GBL is temporarily unavailable. Please try again later.",
         requestId,
       },
       { status: 500 },
+      requestId,
     );
   }
 }
