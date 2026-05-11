@@ -3,6 +3,8 @@ import { check, sleep } from "k6";
 
 const BASE_URL = __ENV.BASE_URL || "http://localhost:3000";
 
+http.setResponseCallback(http.expectedStatuses(200, 429));
+
 export const options = {
   stages: [
     { duration: "30s", target: 1 },
@@ -28,7 +30,7 @@ export default function aiApis() {
     JSON.stringify({
       title: "Synthetic non-urgent readiness case",
       analysisType: "healthcare_navigation",
-      userType: "individual",
+      userType: "patient_member",
       language: "zh-Hant",
       primaryConcern: "Synthetic planning question for healthcare navigation testing only.",
       healthcareContext: "Synthetic non-urgent context. No real symptoms or personal data.",

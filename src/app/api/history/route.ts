@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const requestId = getRequestId(request);
-  const auth = await getAuthenticatedSupabase();
+  const auth = await getAuthenticatedSupabase(request);
 
   if (!auth.ok) {
     return auth.response;

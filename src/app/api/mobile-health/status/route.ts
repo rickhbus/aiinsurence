@@ -20,7 +20,7 @@ const supportedDataTypes = [
 
 export async function GET(request: Request) {
   const requestId = getRequestId(request);
-  const auth = await getAuthenticatedSupabase();
+  const auth = await getAuthenticatedSupabase(request);
 
   if (!auth.ok) {
     return auth.response;

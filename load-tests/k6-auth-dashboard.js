@@ -4,6 +4,8 @@ import { check, sleep } from "k6";
 const BASE_URL = __ENV.BASE_URL || "http://localhost:3000";
 const AUTH_TOKEN = __ENV.AUTH_TOKEN || "";
 
+http.setResponseCallback(http.expectedStatuses(200, 429));
+
 export const options = {
   stages: [
     { duration: "30s", target: 2 },
@@ -29,13 +31,13 @@ export default function authDashboard() {
 
   const dashboard = http.get(`${BASE_URL}/api/dashboard`, { headers, tags: { route: "dashboard" } });
   check(dashboard, {
-    "dashboard returns auth-aware status": (res) => [200, 401, 403].includes(res.status),
+    "dashboard accepts bearer token": (res) => res.status === 200,
     "dashboard avoids raw 5xx": (res) => res.status < 500,
   });
 
   const history = http.get(`${BASE_URL}/api/history?limit=10`, { headers, tags: { route: "history" } });
   check(history, {
-    "history returns auth-aware status": (res) => [200, 401, 403].includes(res.status),
+    "history accepts bearer token": (res) => res.status === 200,
     "history avoids raw 5xx": (res) => res.status < 500,
   });
 
@@ -45,7 +47,7 @@ export default function authDashboard() {
     { headers, tags: { route: "quick-add-water" } },
   );
   check(water, {
-    "quick add returns auth-aware status": (res) => [200, 401, 403, 429].includes(res.status),
+    "quick add accepts bearer token": (res) => [200, 429].includes(res.status),
     "quick add avoids raw 5xx": (res) => res.status < 500,
   });
 

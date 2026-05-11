@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import {
   EnvValidationError,
@@ -39,6 +40,31 @@ export async function createClient() {
             // Server Components cannot set cookies. The proxy refresh path writes
             // refreshed session cookies before rendering.
           }
+        },
+      },
+    },
+  );
+}
+
+export function createBearerClient(accessToken: string) {
+  const env = readRuntimeEnv();
+
+  if (!env.isSupabaseConfigured) {
+    return null;
+  }
+
+  return createSupabaseClient(
+    env.supabaseUrl!,
+    env.supabaseAnonKey!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        persistSession: false,
+      },
+      global: {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
         },
       },
     },

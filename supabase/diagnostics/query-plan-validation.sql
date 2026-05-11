@@ -115,7 +115,7 @@ with params as (
     '00000000-0000-0000-0000-000000000000'::uuid as user_id,
     'nutrition'::text as memory_type
 )
-select id, memory_type, content, consent_status, created_at
+select m.id, m.memory_type, m.content, m.consent_status, m.created_at
 from public.health_memory m, params p
 where m.user_id = p.user_id
   and m.memory_type = p.memory_type

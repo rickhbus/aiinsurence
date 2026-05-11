@@ -3,6 +3,8 @@ import { check, sleep } from "k6";
 
 const BASE_URL = __ENV.BASE_URL || "http://localhost:3000";
 
+http.setResponseCallback(http.expectedStatuses(200, 429));
+
 export const options = {
   stages: [
     { duration: "30s", target: 1 },
@@ -28,7 +30,7 @@ export default function aiRoutes() {
     JSON.stringify({
       title: "Synthetic readiness case",
       analysisType: "healthcare_navigation",
-      userType: "individual",
+      userType: "patient_member",
       language: "zh-Hant",
       primaryConcern: "Synthetic non-urgent wellness navigation question for testing only.",
       healthcareContext: "Synthetic context. No real symptoms or personal data.",

@@ -1,6 +1,6 @@
 # Production Live Readiness Report
 
-Date: 2026-05-11
+Date: 2026-05-12 HKT
 Repo: `rickhbus/aiinsurence`
 Branch: `main`
 Hosting target: Vercel
@@ -9,142 +9,116 @@ Database/auth/storage target: Supabase
 ## Current Repo State
 
 - Local checkout is on `main` tracking `origin/main`.
-- Default remote head resolves to `origin/main`.
-- No unrelated working-tree edits were present before this production-readiness pass.
 - Framework verified from `package.json`: Next.js `16.2.6`, React `19.2.4`, TypeScript, Tailwind v4, shadcn/ui.
 - Relevant Next.js 16 local docs reviewed before edits:
   - `node_modules/next/dist/docs/01-app/01-getting-started/15-route-handlers.md`
   - `node_modules/next/dist/docs/01-app/02-guides/environment-variables.md`
   - `node_modules/next/dist/docs/01-app/02-guides/data-security.md`
+- `.vercelignore` now prevents local env files, Vercel metadata, macOS metadata, signing keys, and mobile provisioning artifacts from being uploaded in future deployments.
 
 ## Verification Evidence
 
-Baseline before edits:
-
-- `npm install`: passed. NPM reported 2 moderate audit advisories; no force audit fix was run.
-- `npm run typecheck`: passed.
-- `npm run lint`: passed.
-- `npm run test`: passed, 22 test files / 75 tests.
-- `npm run build`: passed.
-
-After this pass:
+Latest local checks after the production-readiness fixes:
 
 - `npm run typecheck`: passed.
 - `npm run lint`: passed.
-- `npm run test`: passed, 24 test files / 80 tests.
+- `npm run test`: passed, 24 files / 80 tests.
 - `npm run build`: passed.
 
-Local HTTP smoke on `http://localhost:3020`:
+Focused checks also passed for readiness and mobile-health normalization/route coverage.
 
-- `GET /api/health`: 200, `status: ok`.
-- `GET /api/readiness`: 200 with `status: degraded`; named warnings were missing provider key and local in-memory rate-limit store.
-- `GET /api/mobile-health/status` without session: 401, auth required.
-- Invalid `POST /api/mobile-health/sync`: 400 with validation issues and request id.
+## Supabase Migration And Diagnostics Evidence
 
-## What Changed In This Pass
+Configured remote Supabase database was checked from this workstation with secrets redacted from logs.
 
-- Added backend-first mobile health sync contract:
-  - `src/lib/mobile-health/types.ts`
-  - `src/lib/mobile-health/normalize.ts`
-  - `src/app/api/mobile-health/sync/route.ts`
-  - `src/app/api/mobile-health/status/route.ts`
-  - Tests for normalization and route validation.
-- Added `supabase/migrations/006_mobile_health_sync.sql` for mobile sync consent, idempotent sync batches, normalized mobile health records, RLS, and indexes.
-- Added RLS/index diagnostics:
-  - `supabase/diagnostics/rls-validation.sql`
-  - `supabase/diagnostics/index-validation.sql`
-  - Updated `query-plan-validation.sql`.
-- Hardened rate-limit key privacy by hashing IP/user subjects before shared-store keys.
-- Added current load-test entrypoints for public pages, authenticated dashboard, AI APIs, and mobile health sync.
-- Added mobile health integration docs, production runbooks, rollback docs, and mobile QA checklist.
-- Extended onboarding/settings UI to expose mobile health sync preferences and consent posture.
+- Remote migration state now includes `001_auth_memory.sql` through `006_mobile_health_sync.sql`.
+- `supabase db push --db-url [redacted] --yes` applied `006_mobile_health_sync.sql`.
+- `supabase/diagnostics/rls-validation.sql`: passed, 37 diagnostic rows, no missing expected RLS or select/insert policy coverage found.
+- `supabase/diagnostics/index-validation.sql`: passed, 38 expected indexes present and no missing `user_id` index coverage found.
+- `supabase/diagnostics/query-plan-validation.sql`: passed after qualifying the mobile-health column references; expected indexes were present and representative `EXPLAIN ANALYZE` probes used indexed access.
 
-## Secret Scan
+Before production traffic, repeat the same diagnostics from the actual staging/prod operator environment and save the SQL output alongside the release artifact.
 
-- Tracked `.env*` files: only `.env.example` is tracked.
-- An untracked local `.env` exists and was not printed or committed.
-- Redacted scan found only placeholders, documentation references, tests, package metadata, and binary false positives in tracked/unignored files.
-- No server-only secret was intentionally exposed through `NEXT_PUBLIC_*`.
-- If any real secret was ever pasted into chat, logs, or local files, rotate it before production.
+## Vercel Deployment Evidence
 
-## Environment Status
+Vercel project: `aiinsurence` under `taletypes-projects`.
 
-Required browser-safe vars:
+- Preview deployment: `https://aiinsurence-7io7rr7m4-taletypes-projects.vercel.app`
+- Preview deployment id: `dpl_7HSRLrb1Aqo62fYs76WtCfdN3NQs`
+- Production deployment: `https://aiinsurence-dej0pfyne-taletypes-projects.vercel.app`
+- Production deployment id: `dpl_5R4by2rocSZdEj1CHgUKGGDHmPbX`
+- Production aliases include `https://aiinsurence-ten.vercel.app`.
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-- `NEXT_PUBLIC_APP_ENV`
+Production smoke after rollback drill and re-promotion:
 
-Server-only vars:
+- `GET /api/health`: 200, `status: ok`, deployment `dpl_5R4by2rocSZdEj1CHgUKGGDHmPbX`.
+- `GET /api/readiness`: 200, `status: degraded`.
+- Passing readiness checks: runtime config, Supabase connectivity, `health_lessons`, `profiles`, `health_memory`, `ai_usage_events`, `gbl_cases`, `gbl_analysis_results`, `emotion_engine_results`, `insurance_analyses`, `mobile_health_sync_batches`, and `mobile_health_records`.
+- Remaining readiness warnings: no AI provider key configured and no shared Redis/Upstash rate-limit store configured.
 
-- `DEEPSEEK_API_KEY`, `GROQ_API_KEY`, or `OPENAI_API_KEY` depending on `AI_PROVIDER`.
-- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, or compatible Redis REST vars, for production shared rate limiting.
-- `SUPABASE_SERVICE_ROLE_KEY` only if a future server-only maintenance job truly needs it.
+A first deployment attempt read the local `.env` before `.vercelignore` was added. That deployment was removed and later deployments were created with Vercel env handling, but the conservative production posture is to rotate any Supabase, Postgres, service-role, provider, or Redis secrets that existed in the local `.env` at deployment time.
 
-Local readiness currently reports deterministic fallback / degraded mode because the AI provider key and shared rate-limit store are not configured in this local environment.
+## Load-Test Baseline Evidence
 
-## Supabase Migration And RLS Status
+Baselines were run against the local production server with synthetic traffic.
 
-Required migration order:
+- `BASE_URL=http://localhost:3022 k6 run load-tests/k6-public-pages.js`: passed; p95 274.99 ms, p99 559.22 ms, 0% HTTP failures, 100% checks, 4,880 requests.
+- `BASE_URL=http://localhost:3022 k6 run load-tests/k6-ai-apis.js`: passed; p95 11.56 ms, p99 26.45 ms, 0% HTTP failures, 100% checks.
+- `load-tests/k6-authenticated-api.js` with a temporary synthetic Supabase user: passed with strict bearer-token checks; p95 453.63 ms, 0% HTTP failures, 100% checks.
+- `load-tests/k6-auth-dashboard.js` with a temporary synthetic Supabase user: passed with strict bearer-token checks; p95 1.07 s, p99 1.24 s, 0% HTTP failures, 100% checks.
+- `load-tests/k6-mobile-health-sync.js` with a temporary synthetic Supabase user: passed; p95 2.14 s, p99 2.15 s, 0% HTTP failures, 100% checks.
+- The synthetic user was deleted after a targeted cleanup retry.
 
-1. `001_auth_memory.sql`
-2. `002_mvp_audit_tables.sql`
-3. `003_health_os_data_foundation.sql`
-4. `004_production_readiness.sql`
-5. `005_gbl_emotion_engine.sql`
-6. `006_mobile_health_sync.sql`
+These are baseline signals only. They are not proof of 100k DAU capacity because they were not run from a controlled load environment against preview/staging with production-shaped data, full monitoring, provider quotas, shared rate limiting, and database telemetry.
 
-Diagnostics committed:
+## Rollback And Incident Drill Evidence
 
-- `supabase/diagnostics/rls-validation.sql`
-- `supabase/diagnostics/index-validation.sql`
-- `supabase/diagnostics/query-plan-validation.sql`
+- Ran a Vercel rollback to deployment `dpl_51Yesbm2FgWteHLf9mbDV76iaqoT`.
+- Verified rolled-back `/api/health` returned 200.
+- Promoted the latest intended production deployment `dpl_5R4by2rocSZdEj1CHgUKGGDHmPbX` back to production.
+- Verified production `/api/health` and `/api/readiness` after re-promotion.
 
-Staging/fresh-project migration application was not executed from this agent environment. Production promotion remains blocked until migrations and diagnostics pass in staging with saved evidence.
+This covers the basic Vercel rollback path. Full incident readiness still needs named owners, alert routing, Supabase restore validation, key-rotation rehearsal, and a timed communications drill.
 
 ## Mobile Health Integration Status
 
-Backend contract is implemented and tested locally.
+Backend contract is implemented and tested.
 
-Native iOS/Android app integration is not implemented in this repo. The production path requires a native HealthKit / Health Connect bridge that requests per-type permission on device and sends bounded summaries to `/api/mobile-health/sync`.
+Native bridge source was added for app integration:
+
+- `native/mobile-health/ios/HealthKitMobileHealthBridge.swift`
+- `native/mobile-health/android/HealthConnectMobileHealthBridge.kt`
+- `native/mobile-health/README.md`
+
+The native bridge is not yet wired into a real Xcode or Gradle app target in this repo, so device-level HealthKit / Health Connect permission prompts and end-to-end app sync still require a native app integration pass.
 
 The app must not ingest clinical records, diagnoses, medications, reproductive/sexual health, glucose, or raw continuous heart streams without a separate product, privacy, clinical, and compliance review.
 
-## Vercel Deployment Status
+## Monitoring And Alerting Status
 
-No Vercel preview or production deployment was created in this pass.
+Current runtime health/readiness endpoints and structured request-id evidence are in place, and Vercel production smokes passed.
 
-Before production:
+Monitoring remains incomplete until these are configured and evidenced:
 
-- Configure production and preview env vars.
-- Apply Supabase migrations through `006`.
-- Redeploy after env changes.
-- Verify preview `/api/health` and `/api/readiness`.
-- Review Vercel runtime logs for boot errors and request ids.
-- Promote production only after smoke tests pass.
+- Shared Redis/Upstash or equivalent production rate-limit telemetry.
+- Vercel runtime/function latency, error, and cold-start dashboards.
+- Supabase CPU, connection pool, slow query, RLS error, and storage dashboards.
+- AI provider quota, fallback, timeout, spend, and alert thresholds.
+- Alert routing with named owners and escalation windows.
+- WAF/abuse controls if production traffic is opened beyond a controlled launch.
 
 ## 100k DAU Readiness Status
 
-Status: production-readiness gated, not proven for 100k DAU.
+Status: production-readiness improved, still not proven for 100k DAU.
 
-This pass adds code and docs for a 100k DAU path, but the app must not be described as proven for 100k DAU until these pass with evidence:
-
-- Controlled load tests against preview/staging.
-- Supabase query-plan validation with production-shaped data.
-- RLS policy verification.
-- Monitoring dashboards and alerting.
-- Provider quota and cost checks.
-- Redis/Upstash shared rate-limit store validation.
-- Vercel function duration/cold-start review.
-- Rollback and incident drills.
+The repo now has a deployed Vercel app, applied Supabase migration through `006`, remote RLS/index/query-plan diagnostic evidence, k6 local baselines, rollback drill evidence, and additive native bridge source. It must still not be described as proven for 100k DAU until staging/production-shaped load, monitoring, shared rate limiting, provider quota/cost controls, alerting, and incident drills pass with saved evidence.
 
 ## Remaining Blockers
 
-- Run Supabase migrations `001` through `006` on fresh and staging projects.
-- Run RLS, index, and query-plan diagnostics in staging.
-- Configure shared Redis/Upstash rate-limit store for production or keep readiness degraded.
-- Configure AI provider key or explicitly accept deterministic fallback mode for launch.
-- Deploy a Vercel preview and run the full smoke flow.
-- Capture mobile health settings screenshots or complete manual mobile QA.
-- Run k6 baselines and record p50/p95/p99, error rate, 429 rate, function duration, Supabase query latency, provider fallback rate, rate-limit latency, connection saturation, and cost estimates.
-- Confirm monitoring, rollback drill, incident drill, and key-rotation procedure.
+- Rotate secrets that may have existed in local `.env` during the first removed Vercel deployment.
+- Configure shared Redis/Upstash-compatible production rate limiting or explicitly keep readiness degraded.
+- Configure an AI provider key only if provider-backed generation is intended for launch; deterministic fallback can remain a deliberate degraded mode.
+- Run controlled preview/staging load tests with production-shaped data and full telemetry.
+- Complete Vercel/Supabase/provider monitoring dashboards and alert routing.
+- Run a full incident drill with owner handoff, Supabase restore validation, and key-rotation rehearsal.
+- Wire the native HealthKit / Health Connect bridge into actual iOS/Android app targets and verify on devices.

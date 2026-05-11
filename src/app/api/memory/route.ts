@@ -14,7 +14,7 @@ import {
 } from "@/lib/server/persistence-auth";
 
 export async function GET(request: Request) {
-  const auth = await getAuthenticatedSupabase();
+  const auth = await getAuthenticatedSupabase(request);
 
   if (!auth.ok) {
     return auth.response;
@@ -55,7 +55,7 @@ export async function PATCH(request: Request) {
     return parsed.response;
   }
 
-  const auth = await getAuthenticatedSupabase();
+  const auth = await getAuthenticatedSupabase(request);
 
   if (!auth.ok) {
     return auth.response;
@@ -83,7 +83,7 @@ export async function DELETE(request: Request) {
     return parsed.response;
   }
 
-  const auth = await getAuthenticatedSupabase();
+  const auth = await getAuthenticatedSupabase(request);
 
   if (!auth.ok) {
     return auth.response;

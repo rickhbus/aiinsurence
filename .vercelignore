@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+.vercel
+.DS_Store
+**/.DS_Store
+*.pem
+*.p8
+*.key
+*.mobileprovision
+*.provisionprofile
+ios/**/*.mobileprovision
+android/**/*.keystore
+android/**/*.jks

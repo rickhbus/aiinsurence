@@ -6,8 +6,8 @@ import {
 } from "@/lib/server/persistence-auth";
 import { saveConsentEvent } from "@/lib/user-memory";
 
-export async function GET() {
-  const auth = await getAuthenticatedSupabase();
+export async function GET(request: Request) {
+  const auth = await getAuthenticatedSupabase(request);
 
   if (!auth.ok) {
     return auth.response;
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     return parsed.response;
   }
 
-  const auth = await getAuthenticatedSupabase();
+  const auth = await getAuthenticatedSupabase(request);
 
   if (!auth.ok) {
     return auth.response;

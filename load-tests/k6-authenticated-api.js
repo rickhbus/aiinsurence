@@ -4,6 +4,8 @@ import { check, sleep } from "k6";
 const BASE_URL = __ENV.BASE_URL || "http://localhost:3000";
 const AUTH_TOKEN = __ENV.AUTH_TOKEN || "";
 
+http.setResponseCallback(http.expectedStatuses(200));
+
 export const options = {
   stages: [
     { duration: "30s", target: 1 },
@@ -30,8 +32,7 @@ export default function authenticatedApi() {
 
   check(response, {
     "history authenticated API returns non-5xx": (res) => res.status < 500,
-    "history authenticated API returns auth-aware status": (res) =>
-      [200, 401, 403].includes(res.status),
+    "history authenticated API accepts bearer token": (res) => res.status === 200,
   });
 
   sleep(1);

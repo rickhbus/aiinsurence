@@ -103,25 +103,21 @@ export async function probeSupabaseReadiness(
     },
   );
 
-  const checks: ReadinessCheck[] = [];
-
-  for (const table of REQUIRED_TABLES) {
+  const checks = await Promise.all(REQUIRED_TABLES.map(async (table) => {
     const tableStarted = Date.now();
     const { error, status } = await supabase
       .from(table.table)
       .select(table.column, { head: true, count: "exact" })
       .limit(1);
 
-    checks.push(
-      classifyTableProbe({
-        table: table.table,
-        access: table.access,
-        httpStatus: status,
-        error,
-        durationMs: Date.now() - tableStarted,
-      }),
-    );
-  }
+    return classifyTableProbe({
+      table: table.table,
+      access: table.access,
+      httpStatus: status,
+      error,
+      durationMs: Date.now() - tableStarted,
+    });
+  }));
 
   checks.unshift({
     name: "supabase_connectivity",

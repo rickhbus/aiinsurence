@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     return parsed.response;
   }
 
-  const auth = await getAuthenticatedSupabase();
+  const auth = await getAuthenticatedSupabase(request);
 
   if (!auth.ok) {
     return auth.response;

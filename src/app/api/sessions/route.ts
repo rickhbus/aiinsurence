@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const auth = await getAuthenticatedSupabase();
+  const auth = await getAuthenticatedSupabase(request);
 
   if (!auth.ok) {
     return auth.response;

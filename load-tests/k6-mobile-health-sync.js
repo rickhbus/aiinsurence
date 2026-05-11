@@ -4,6 +4,8 @@ import { check, sleep } from "k6";
 const BASE_URL = __ENV.BASE_URL || "http://localhost:3000";
 const AUTH_TOKEN = __ENV.AUTH_TOKEN || "";
 
+http.setResponseCallback(http.expectedStatuses(200, 429));
+
 export const options = {
   stages: [
     { duration: "30s", target: 1 },
@@ -60,7 +62,7 @@ export default function mobileHealthSync() {
   );
 
   check(response, {
-    "mobile sync returns auth-aware status": (res) => [200, 401, 403, 429].includes(res.status),
+    "mobile sync accepts bearer token": (res) => [200, 429].includes(res.status),
     "mobile sync avoids raw 5xx": (res) => res.status < 500,
     "mobile sync returns JSON": (res) => String(res.headers["Content-Type"]).includes("application/json"),
   });

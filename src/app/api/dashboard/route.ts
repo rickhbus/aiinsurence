@@ -5,8 +5,8 @@ import { getAuthenticatedSupabase } from "@/lib/server/persistence-auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const auth = await getAuthenticatedSupabase();
+export async function GET(request: Request) {
+  const auth = await getAuthenticatedSupabase(request);
 
   if (!auth.ok) {
     return auth.response;
