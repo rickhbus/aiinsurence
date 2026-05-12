@@ -4,7 +4,7 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 
 ## Data And Auth
 
-- [ ] Supabase migrations `001` to `006` applied in order.
+- [ ] Supabase migrations `001` to `008` applied in order.
 - [ ] RLS enabled on every user-owned table.
 - [ ] Own-row select/insert/update/delete policies verified.
 - [ ] No user-owned table grants public cross-user access.
@@ -50,7 +50,7 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 
 - [ ] Dashboard real-data response works for an authenticated user.
 - [ ] Dashboard shows empty states when Supabase is unavailable locally.
-- [ ] Everyday Health Loop saves wake, meal, drink, and exercise check-ins for an anonymous or signed-in user.
+- [ ] Everyday Health Loop supports local-only anonymous use and saves wake, meal, drink, toilet, mood, and exercise check-ins only with Supabase session/consent.
 - [ ] Quick Add saves work for run, gym, meal, water, sleep, and body metric.
 - [ ] Quick Add buttons show pending state and prevent duplicate saves.
 - [ ] Summary refresh updates daily summaries, weekly summaries, streaks, and goal progress after logs.

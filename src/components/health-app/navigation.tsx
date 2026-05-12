@@ -80,8 +80,9 @@ export const navGroups: NavGroup[] = [
     icon: Home,
     children: [
       { label: ui.dashboard, href: "/dashboard", page: "dashboard", icon: Home },
-      { label: ui.todayPlan, href: "/dashboard#today-plan", page: "dashboard", icon: Activity, badge: { zh: "4", en: "4" } },
-      { label: ui.coach, href: "/coach", page: "coach", icon: Brain, badge: { zh: "新", en: "New" } },
+      { label: { zh: "今日狀態", en: "Today" }, href: "/today", page: "today", icon: Activity, badge: { zh: "新", en: "New" } },
+      { label: { zh: "快速 Check-in", en: "Check-in" }, href: "/check-in", page: "check-in", icon: Sun },
+      { label: ui.coach, href: "/coach", page: "coach", icon: Brain },
     ],
   },
   {
@@ -92,11 +93,13 @@ export const navGroups: NavGroup[] = [
     children: [
       { label: ui.running, href: "/track/running", page: "running", icon: Footprints },
       { label: ui.walking, href: "/track/walking", page: "walking", icon: Footprints },
-      { label: ui.gym, href: "/track/gym", page: "gym", icon: Dumbbell },
+      { label: ui.gym, href: "/gym", page: "gym", icon: Dumbbell },
+      { label: { zh: "健身模板", en: "Gym templates" }, href: "/gym/templates", page: "gym-templates", icon: Dumbbell },
       { label: ui.sports, href: "/track/sports", page: "sports", icon: Activity },
       { label: ui.body, href: "/track/body", page: "body", icon: Scale },
       { label: ui.sleep, href: "/track/sleep", page: "sleep", icon: BedDouble },
-      { label: ui.water, href: "/track/water", page: "water", icon: Waves },
+      { label: { zh: "補水", en: "Hydration" }, href: "/hydration", page: "hydration", icon: Waves },
+      { label: { zh: "腸胃 / 小便", en: "Toilet" }, href: "/toilet", page: "toilet", icon: Waves },
     ],
   },
   {
@@ -104,7 +107,7 @@ export const navGroups: NavGroup[] = [
     label: ui.nutrition,
     icon: Apple,
     children: [
-      { label: ui.foodLog, href: "/nutrition/food-log", page: "food-log", icon: Apple, badge: { zh: "未記錄", en: "Due" } },
+      { label: ui.foodLog, href: "/food", page: "food", icon: Apple, badge: { zh: "未記錄", en: "Due" } },
       { label: ui.dietPlan, href: "/nutrition/diet-plan", page: "diet-plan", icon: Apple },
       { label: ui.mealRecommendations, href: "/nutrition", page: "nutrition", icon: Apple },
       { label: ui.caloriesMacros, href: "/nutrition", page: "nutrition", icon: BarChart3 },
@@ -131,6 +134,7 @@ export const navGroups: NavGroup[] = [
     children: [
       { label: ui.gbl, href: "/gbl", page: "gbl", icon: Brain },
       { label: ui.emotionEngine, href: "/emotion", page: "emotion", icon: HeartPulse },
+      { label: { zh: "心情教練", en: "Mood coach" }, href: "/mood", page: "mood", icon: HeartPulse },
       { label: ui.history, href: "/history", page: "history", icon: BarChart3 },
     ],
   },
@@ -143,7 +147,7 @@ export const navGroups: NavGroup[] = [
       { label: ui.urgentSigns, href: "/healthcare", page: "healthcare", icon: ShieldCheck },
       { label: ui.publicPrivate, href: "/healthcare", page: "healthcare", icon: Stethoscope },
       { label: ui.specialistFinder, href: "/healthcare", page: "healthcare", icon: Stethoscope },
-      { label: ui.visitPreparation, href: "/healthcare", page: "healthcare", icon: BookOpenCheck },
+      { label: ui.visitPreparation, href: "/doctor", page: "doctor", icon: BookOpenCheck },
     ],
   },
   {
@@ -156,6 +160,8 @@ export const navGroups: NavGroup[] = [
       { label: ui.claimPreparation, href: "/insurance", page: "insurance", icon: BookOpenCheck },
       { label: ui.exclusions, href: "/insurance", page: "insurance", icon: ShieldCheck },
       { label: ui.questionsToAsk, href: "/insurance", page: "insurance", icon: Brain },
+      { label: { zh: "收費方案", en: "Pricing" }, href: "/pricing", page: "pricing", icon: ShieldCheck },
+      { label: { zh: "商業合作", en: "Business" }, href: "/business", page: "business", icon: BookOpenCheck },
     ],
   },
   {
@@ -163,7 +169,7 @@ export const navGroups: NavGroup[] = [
     label: ui.progress,
     icon: BarChart3,
     children: [
-      { label: ui.weeklyReport, href: "/progress", page: "progress", icon: BarChart3 },
+      { label: ui.weeklyReport, href: "/reports", page: "reports", icon: BarChart3 },
       { label: ui.goals, href: "/goals", page: "goals", icon: Activity },
       { label: ui.streaks, href: "/progress", page: "progress", icon: Activity },
       { label: ui.achievements, href: "/progress", page: "progress", icon: ShieldCheck },
@@ -176,6 +182,7 @@ export const navGroups: NavGroup[] = [
     icon: UserRound,
     children: [
       { label: ui.memory, href: "/profile/memory", page: "memory", icon: Brain },
+      { label: { zh: "家庭照護", en: "Family" }, href: "/family", page: "family", icon: UserRound },
       { label: ui.preferences, href: "/profile", page: "profile", icon: UserRound },
       { label: ui.medicalNotes, href: "/profile", page: "profile", icon: Stethoscope },
       { label: ui.privacyConsent, href: "/settings", page: "settings", icon: ShieldCheck },
@@ -186,9 +193,9 @@ export const navGroups: NavGroup[] = [
 
 const quickAddActions: NavChild[] = [
   { label: { zh: "新增跑步", en: "Add run" }, href: "/track/running", page: "running", icon: Footprints },
-  { label: { zh: "新增健身", en: "Add gym" }, href: "/track/gym", page: "gym", icon: Dumbbell },
-  { label: { zh: "新增飲食", en: "Add food" }, href: "/nutrition/food-log", page: "food-log", icon: Apple },
-  { label: { zh: "新增飲水", en: "Add water" }, href: "/track/water", page: "water", icon: Waves },
+  { label: { zh: "新增健身", en: "Add gym" }, href: "/gym", page: "gym", icon: Dumbbell },
+  { label: { zh: "新增飲食", en: "Add food" }, href: "/food", page: "food", icon: Apple },
+  { label: { zh: "新增飲水", en: "Add water" }, href: "/hydration", page: "hydration", icon: Waves },
   { label: { zh: "新增睡眠", en: "Add sleep" }, href: "/track/sleep", page: "sleep", icon: BedDouble },
   { label: { zh: "新增體重", en: "Add weight" }, href: "/track/body", page: "body", icon: Scale },
   { label: { zh: "新增症狀", en: "Add symptom" }, href: "/healthcare/symptom-routing", page: "symptom-routing", icon: Stethoscope },
@@ -196,9 +203,9 @@ const quickAddActions: NavChild[] = [
 ];
 
 const bottomNavItems = [
-  { label: ui.dashboard, href: "/dashboard", icon: Home, page: "dashboard" as HealthPage },
+  { label: { zh: "今日", en: "Today" }, href: "/today", icon: Home, page: "today" as HealthPage },
   { label: ui.track, href: "/track", icon: Footprints, page: "track" as HealthPage },
-  { label: ui.nutrition, href: "/nutrition", icon: Apple, page: "nutrition" as HealthPage },
+  { label: ui.nutrition, href: "/food", icon: Apple, page: "food" as HealthPage },
   { label: ui.healthcare, href: "/healthcare", icon: Stethoscope, page: "healthcare" as HealthPage },
   { label: ui.coach, href: "/coach", icon: Brain, page: "coach" as HealthPage },
 ];

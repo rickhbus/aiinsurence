@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { HealthPage, Locale } from "@/lib/health-app/types";
 import { cn } from "@/lib/utils";
 import { CoachPage, RightCoachPanel } from "./coach";
 import { DashboardPage } from "./dashboard";
 import { EmotionEnginePage, GblPage, HistoryPage } from "./intelligence";
-import { HealthcarePage, InsurancePage, LearnPage, LessonPage } from "./knowledge-healthcare";
+import { HealthcarePage, LearnPage, LessonPage } from "./knowledge-healthcare";
 import { MobileBottomNav, QuickAddButton, Sidebar, TopHeader } from "./navigation";
 import {
   AuthLandingPage,
@@ -16,14 +16,30 @@ import {
   ProgressPage,
   SettingsPage,
 } from "./profile-progress";
-import { isOnboardingComplete, OnboardingPage } from "./onboarding";
+import { OnboardingPage } from "./onboarding";
 import {
   GenericTrackerPage,
-  GymPage,
   NutritionPage,
   RunningPage,
   TrackOverviewPage,
 } from "./trackers";
+import {
+  BusinessPage,
+  CheckInPage,
+  DoctorPrepPage,
+  FamilyPage,
+  FoodPage,
+  GymPage as HealthOsGymPage,
+  GymTemplatesPage,
+  HealthOsLanding,
+  HydrationPage,
+  InsurancePrepPage,
+  MoodPage,
+  PricingPage,
+  ReportsPage,
+  TodayPage,
+  ToiletPage,
+} from "@/components/health-os/mvp-pages";
 
 export function HealthAppShell({
   currentPage = "dashboard",
@@ -37,16 +53,6 @@ export function HealthAppShell({
   const [coachOpen, setCoachOpen] = useState(true);
   const isFocusedPage = currentPage === "auth" || currentPage === "onboarding";
   const showRightCoach = currentPage !== "coach" && !isFocusedPage;
-
-  useEffect(() => {
-    if (currentPage === "auth" || currentPage === "onboarding") {
-      return;
-    }
-
-    if (!isOnboardingComplete()) {
-      window.location.assign("/onboarding");
-    }
-  }, [currentPage]);
 
   return (
     <div className="min-h-dvh overflow-x-clip bg-[linear-gradient(160deg,var(--health-bg-start),var(--background)_40%,var(--health-bg-end)_90%,var(--background))]">
@@ -102,6 +108,32 @@ function PageContent({
   locale: Locale;
 }) {
   switch (currentPage) {
+    case "landing":
+      return <HealthOsLanding />;
+    case "today":
+      return <TodayPage />;
+    case "check-in":
+      return <CheckInPage />;
+    case "mood":
+      return <MoodPage />;
+    case "food":
+      return <FoodPage />;
+    case "hydration":
+      return <HydrationPage />;
+    case "toilet":
+      return <ToiletPage />;
+    case "gym-templates":
+      return <GymTemplatesPage />;
+    case "reports":
+      return <ReportsPage />;
+    case "family":
+      return <FamilyPage />;
+    case "doctor":
+      return <DoctorPrepPage />;
+    case "pricing":
+      return <PricingPage />;
+    case "business":
+      return <BusinessPage />;
     case "dashboard":
       return <DashboardPage locale={locale} />;
     case "coach":
@@ -111,7 +143,7 @@ function PageContent({
     case "running":
       return <RunningPage locale={locale} />;
     case "gym":
-      return <GymPage locale={locale} />;
+      return <HealthOsGymPage />;
     case "nutrition":
     case "food-log":
       return <NutritionPage locale={locale} />;
@@ -129,7 +161,7 @@ function PageContent({
     case "symptom-routing":
       return <HealthcarePage locale={locale} />;
     case "insurance":
-      return <InsurancePage locale={locale} />;
+      return <InsurancePrepPage />;
     case "progress":
       return <ProgressPage locale={locale} />;
     case "goals":

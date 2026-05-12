@@ -1,5 +1,5 @@
-import { HealthAppShell } from "@/components/health-app/app-shell";
+import { HealthOsLanding } from "@/components/health-os/mvp-pages";
 
 export default function Home() {
-  return <HealthAppShell currentPage="dashboard" />;
+  return <HealthOsLanding />;
 }

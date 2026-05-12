@@ -48,6 +48,19 @@ export type MemoryCategory =
   | "behavior";
 
 export type HealthPage =
+  | "landing"
+  | "today"
+  | "check-in"
+  | "mood"
+  | "food"
+  | "hydration"
+  | "toilet"
+  | "gym-templates"
+  | "reports"
+  | "family"
+  | "doctor"
+  | "pricing"
+  | "business"
   | "dashboard"
   | "coach"
   | "track"
