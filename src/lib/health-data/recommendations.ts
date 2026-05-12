@@ -55,25 +55,36 @@ export async function upsertTodayRecommendation(
 
 export function buildTodayRecommendation(data: DashboardData): TodayRecommendation {
   const hadHardRun = data.recent.running.some((run) => (run.rpe ?? 0) >= 7);
+  const hadExerciseCheckin = data.recent.checkins.some((entry) => entry.checkin_type === "exercise");
+  const hadWakeCheckin = data.recent.checkins.some((entry) => entry.checkin_type === "wake_up");
+  const mealCheckins = data.recent.checkins.filter((entry) => entry.checkin_type === "meal").length;
   const needsProtein = data.today.protein_total < 90;
   const needsWater = data.today.water_total_ml < 2000;
   const sleepLow = data.today.sleep_hours > 0 && data.today.sleep_hours < 7;
 
   return {
     workout: {
-      title: hadHardRun ? "恢復活動日" : "輕量力量訓練",
+      title: hadHardRun ? "恢復活動日" : hadExerciseCheckin ? "完成後恢復" : "10 分鐘起動",
       summary: hadHardRun
         ? "昨日或近期跑步強度偏高，今日先維持活動但避免加跑量。"
+        : hadExerciseCheckin
+          ? "你已經完成運動打卡，接下來重點是補水、伸展和觀察恢復。"
         : "用 25-35 分鐘全身或上身力量訓練，保持穩定節奏。",
       reason: hadHardRun
         ? "安全進步比短期加量重要，RPE 高後需要恢復。"
+        : hadExerciseCheckin
+          ? "完成運動後，恢復質素會影響下一次訓練表現。"
         : "近期紀錄仍可建立基本力量與活動一致性。",
       action: hadHardRun
         ? "步行 20 分鐘，加 8-10 分鐘伸展。"
+        : hadExerciseCheckin
+          ? "飲 250-500ml 水，做 5 分鐘輕鬆伸展。"
         : "完成 4 個動作，每個 2-3 組，RPE 6-7。",
     },
     nutrition: {
-      title: needsProtein ? "午餐加一份蛋白質" : "維持均衡餐盤",
+      title: needsProtein
+        ? mealCheckins > 0 ? "下一餐補蛋白質" : "先記錄第一餐加蛋白質"
+        : "維持均衡餐盤",
       summary: needsProtein
         ? "今日蛋白質仍有空間，可以用香港日常食物簡單補足。"
         : "今天營養節奏不錯，重點是避免高糖飲品和過油醬汁。",
@@ -85,18 +96,24 @@ export function buildTodayRecommendation(data: DashboardData): TodayRecommendati
         : "保持半碗至一碗主食、足量蔬菜和一掌心蛋白質。",
     },
     recovery: {
-      title: sleepLow ? "今晚優先睡眠一致性" : needsWater ? "補水節奏" : "保留恢復窗口",
-      summary: sleepLow
+      title: !hadWakeCheckin ? "起床後先建立節奏" : sleepLow ? "今晚優先睡眠一致性" : needsWater ? "補水節奏" : "保留恢復窗口",
+      summary: !hadWakeCheckin
+        ? "先完成起床打卡，讓今日建議從簡單節奏開始。"
+        : sleepLow
         ? "睡眠不足會影響食慾、恢復和訓練表現。"
         : needsWater
           ? "香港天氣濕熱，飲水不足會拖低恢復感。"
           : "今天不需要把所有目標都推到最大。",
-      reason: sleepLow
+      reason: !hadWakeCheckin
+        ? "每天第一個小動作比一次過追蹤所有數字更容易持續。"
+        : sleepLow
         ? `昨晚約 ${data.today.sleep_hours} 小時，先改善一致性。`
         : needsWater
           ? `今日飲水約 ${data.today.water_total_ml}ml，仍可分段補足。`
           : "可持續習慣來自穩定而不是極端。",
-      action: sleepLow
+      action: !hadWakeCheckin
+        ? "按一次起床打卡，然後飲 250ml 水。"
+        : sleepLow
         ? "睡前 15 分鐘放低手機，明早記錄精神狀態。"
         : needsWater
           ? "未來兩小時分兩次各飲 250ml。"

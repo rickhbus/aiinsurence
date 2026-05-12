@@ -27,9 +27,11 @@ Apply in numeric order:
 4. `supabase/migrations/004_production_readiness.sql`
 5. `supabase/migrations/005_gbl_emotion_engine.sql`
 6. `supabase/migrations/006_mobile_health_sync.sql`
+7. `supabase/migrations/007_daily_checkins.sql`
 
 `004_production_readiness.sql` adds onboarding profile fields, normalizes explicit own-row RLS policies, preserves stricter linked-row checks, and adds dashboard-scale indexes.
 `006_mobile_health_sync.sql` adds mobile sync consent, idempotent sync batches, normalized mobile health records, RLS, and mobile-health indexes.
+`007_daily_checkins.sql` adds user-owned everyday wake, meal, water, exercise, and health-review check-ins with own-row RLS and dashboard indexes.
 
 `005_gbl_emotion_engine.sql` adds AI.GBL cases, AI.GBL analysis results, Emotion Engine results, insurance analyses, and a simple analysis job table for future async work.
 
@@ -37,7 +39,7 @@ Apply in numeric order:
 
 User-owned RLS tables:
 
-`profiles`, `user_preferences`, `household_members`, `conversation_sessions`, `conversation_messages`, `saved_recommendations`, `consent_events`, `triage_assessments`, `department_recommendations`, `insurance_profiles`, `insurance_recommendations`, `escalation_cases`, `audit_logs`, `health_memory`, `running_logs`, `gym_logs`, `meals`, `water_logs`, `sleep_logs`, `body_metrics`, `goals`, `daily_health_summaries`, `weekly_health_summaries`, `user_streaks`, `user_goal_progress`, `ai_daily_recommendations`, `ai_usage_events`, `symptom_checks`, `insurance_notes`, `analytics_events`, `gbl_cases`, `gbl_analysis_results`, `emotion_engine_results`, `insurance_analyses`, `analysis_jobs`.
+`profiles`, `user_preferences`, `household_members`, `conversation_sessions`, `conversation_messages`, `saved_recommendations`, `consent_events`, `triage_assessments`, `department_recommendations`, `insurance_profiles`, `insurance_recommendations`, `escalation_cases`, `audit_logs`, `health_memory`, `running_logs`, `gym_logs`, `meals`, `water_logs`, `sleep_logs`, `body_metrics`, `daily_checkins`, `goals`, `daily_health_summaries`, `weekly_health_summaries`, `user_streaks`, `user_goal_progress`, `ai_daily_recommendations`, `ai_usage_events`, `symptom_checks`, `insurance_notes`, `analytics_events`, `gbl_cases`, `gbl_analysis_results`, `emotion_engine_results`, `insurance_analyses`, `analysis_jobs`.
 
 Public read-only content:
 

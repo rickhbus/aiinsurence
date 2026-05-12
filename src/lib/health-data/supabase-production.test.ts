@@ -13,6 +13,8 @@ const allMigrations = [
   "003_health_os_data_foundation.sql",
   "004_production_readiness.sql",
   "005_gbl_emotion_engine.sql",
+  "006_mobile_health_sync.sql",
+  "007_daily_checkins.sql",
 ]
   .map((migration) => readFileSync(join(migrationDir, migration), "utf8"))
   .join("\n");
@@ -58,6 +60,8 @@ describe("Supabase production readiness migration", () => {
       "003_health_os_data_foundation.sql",
       "004_production_readiness.sql",
       "005_gbl_emotion_engine.sql",
+      "006_mobile_health_sync.sql",
+      "007_daily_checkins.sql",
     ];
 
     for (const migration of migrations) {
@@ -110,5 +114,13 @@ describe("Supabase production readiness migration", () => {
     expect(allMigrations).toContain("gbl_cases_select_own");
     expect(allMigrations).toContain("emotion_engine_results_insert_own");
     expect(allMigrations).toContain("Do not use for diagnosis or insurance eligibility");
+  });
+
+  it("adds everyday daily check-ins with RLS and bounded dashboard indexes", () => {
+    expect(allMigrations).toContain("create table if not exists public.daily_checkins");
+    expect(allMigrations).toContain("daily_checkins_own_rows");
+    expect(allMigrations).toContain("daily_checkins_user_created_idx");
+    expect(allMigrations).toContain("daily_checkins_user_type_created_idx");
+    expect(allMigrations).toContain("Not clinical data and not used for insurance eligibility");
   });
 });

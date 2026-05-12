@@ -50,6 +50,7 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 
 - [ ] Dashboard real-data response works for an authenticated user.
 - [ ] Dashboard shows empty states when Supabase is unavailable locally.
+- [ ] Everyday Health Loop saves wake, meal, drink, and exercise check-ins for an anonymous or signed-in user.
 - [ ] Quick Add saves work for run, gym, meal, water, sleep, and body metric.
 - [ ] Quick Add buttons show pending state and prevent duplicate saves.
 - [ ] Summary refresh updates daily summaries, weekly summaries, streaks, and goal progress after logs.

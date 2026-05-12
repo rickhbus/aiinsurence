@@ -138,6 +138,7 @@ Apply migrations in order:
 4. `supabase/migrations/004_production_readiness.sql`
 5. `supabase/migrations/005_gbl_emotion_engine.sql`
 6. `supabase/migrations/006_mobile_health_sync.sql`
+7. `supabase/migrations/007_daily_checkins.sql`
 
 ## AI Provider
 

@@ -85,6 +85,19 @@ export const bodyMetricInputSchema = z.object({
   { message: "At least one body metric is required." },
 );
 
+export const dailyCheckinInputSchema = z.object({
+  checkin_type: z.enum(["wake_up", "meal", "water", "exercise", "health_review"]),
+  label: optionalText(120),
+  amount: z.coerce.number().min(0).max(100000).optional().nullable(),
+  unit: optionalText(40),
+  note: optionalText(240),
+  metadata: z
+    .record(z.string(), z.union([z.string().max(120), z.number(), z.boolean(), z.null()]))
+    .optional()
+    .default({}),
+  created_at: createdAtSchema,
+});
+
 export const goalInputSchema = z.object({
   title: z.string().trim().min(1).max(140),
   goal_type: z.enum([
@@ -236,6 +249,7 @@ export type MealInput = z.infer<typeof mealInputSchema>;
 export type WaterInput = z.infer<typeof waterInputSchema>;
 export type SleepInput = z.infer<typeof sleepInputSchema>;
 export type BodyMetricInput = z.infer<typeof bodyMetricInputSchema>;
+export type DailyCheckinInput = z.infer<typeof dailyCheckinInputSchema>;
 export type GoalInput = z.infer<typeof goalInputSchema>;
 export type HealthMemoryInput = z.infer<typeof healthMemoryInputSchema>;
 export type HealthMemoryUpdateInput = z.infer<typeof healthMemoryUpdateSchema>;

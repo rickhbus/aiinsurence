@@ -6,6 +6,7 @@ import { routeSymptoms } from "./symptoms";
 import { EMERGENCY_COPY_ZH, INSURANCE_DISCLAIMER_ZH, type DashboardData } from "./types";
 import {
   bodyMetricInputSchema,
+  dailyCheckinInputSchema,
   mealInputSchema,
   runningLogInputSchema,
   sleepInputSchema,
@@ -23,6 +24,8 @@ describe("production health safety foundation", () => {
     expect(mealInputSchema.safeParse({ meal_type: "lunch", food_name: "rice", notes: "x".repeat(1200) }).success).toBe(false);
     expect(sleepInputSchema.safeParse({ sleep_hours: 25 }).success).toBe(false);
     expect(bodyMetricInputSchema.safeParse({}).success).toBe(false);
+    expect(dailyCheckinInputSchema.safeParse({ checkin_type: "wake_up" }).success).toBe(true);
+    expect(dailyCheckinInputSchema.safeParse({ checkin_type: "diagnosis", note: "x" }).success).toBe(false);
   });
 
   it("escalates red flags to 999 and A&E without diagnosis language", () => {
@@ -85,7 +88,7 @@ describe("production health safety foundation", () => {
         health_score_avg: 50,
         ai_summary: null,
       },
-      recent: { running: [], gym: [], meals: [], sleep: [], body: [] },
+      recent: { running: [], gym: [], meals: [], sleep: [], body: [], checkins: [] },
       profile: {
         displayName: "匿名使用者",
         preferredLanguage: "zh-Hant",

@@ -12,6 +12,7 @@ export type AnalyticsEventName =
   | "water_logged"
   | "sleep_logged"
   | "body_metric_logged"
+  | "daily_checkin_logged"
   | "coach_message_sent"
   | "recommendation_viewed"
   | "recommendation_saved"

@@ -9,6 +9,7 @@ import { logWarn } from "@/lib/observability/logger";
 import { calculateDailySummary, calculateWeeklySummary } from "./calculations";
 import type {
   BodyMetricRow,
+  DailyCheckinRow,
   DailyHealthSummary,
   DashboardData,
   GoalRow,
@@ -38,6 +39,7 @@ export async function getDashboardData(
     waterResult,
     sleepResult,
     bodyResult,
+    checkinsResult,
     goalsResult,
     memoryResult,
   ] = await Promise.all([
@@ -105,6 +107,14 @@ export async function getDashboardData(
       .order("created_at", { ascending: false })
       .limit(12),
     supabase
+      .from("daily_checkins")
+      .select("id,user_id,checkin_type,label,amount,unit,note,metadata,created_at")
+      .eq("user_id", userId)
+      .gte("created_at", day.from)
+      .lt("created_at", day.to)
+      .order("created_at", { ascending: false })
+      .limit(40),
+    supabase
       .from("goals")
       .select("id,user_id,title,goal_type,target_value,current_value,unit,deadline,weekly_action,status,created_at,updated_at")
       .eq("user_id", userId)
@@ -124,6 +134,7 @@ export async function getDashboardData(
   const water = getDataOrFallback<WaterLogRow[]>(waterResult, [], "load dashboard water logs");
   const sleep = getDataOrFallback<SleepLogRow[]>(sleepResult, [], "load dashboard sleep logs");
   const body = getDataOrFallback<BodyMetricRow[]>(bodyResult, [], "load dashboard body metrics");
+  const checkins = getDataOrFallback<DailyCheckinRow[]>(checkinsResult, [], "load dashboard daily check-ins");
   const goals = getDataOrFallback<GoalRow[]>(goalsResult, [], "load dashboard goals");
   const todayRaw = filterRowsByDay({ running, gym, meals, water, sleep }, day.date);
   const today =
@@ -159,7 +170,7 @@ export async function getDashboardData(
     location_area: string | null;
   } | null>(profileResult, null, "load profile");
   const empty =
-    running.length + gym.length + meals.length + water.length + sleep.length + body.length === 0;
+    running.length + gym.length + meals.length + water.length + sleep.length + body.length + checkins.length === 0;
   const baseData: Omit<DashboardData, "recommendation"> = {
     profile: {
       displayName: profile?.display_name || "匿名使用者",
@@ -177,6 +188,7 @@ export async function getDashboardData(
       meals: meals.slice(0, 8),
       sleep: sleep.slice(0, 7),
       body: body.slice(0, 12),
+      checkins: checkins.slice(0, 20),
     },
     goals,
     memoryCount: getCountOrFallback(memoryResult, "load memory count"),

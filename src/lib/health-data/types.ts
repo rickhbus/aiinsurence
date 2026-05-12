@@ -14,6 +14,25 @@ export type HealthMemoryCategory =
   | "insurance"
   | "behavior";
 
+export type DailyCheckinType =
+  | "wake_up"
+  | "meal"
+  | "water"
+  | "exercise"
+  | "health_review";
+
+export type DailyCheckinRow = {
+  id: string;
+  user_id: string;
+  checkin_type: DailyCheckinType;
+  label: string | null;
+  amount: number | string | null;
+  unit: string | null;
+  note: string | null;
+  metadata: Record<string, string | number | boolean | null>;
+  created_at: string;
+};
+
 export type RunningLogRow = {
   id: string;
   user_id: string;
@@ -186,6 +205,7 @@ export type DashboardData = {
     meals: MealRow[];
     sleep: SleepLogRow[];
     body: BodyMetricRow[];
+    checkins: DailyCheckinRow[];
   };
   goals: GoalRow[];
   memoryCount: number;

@@ -22,6 +22,7 @@ import {
 } from "@/lib/health-app/content";
 import { label, text, ui } from "@/lib/health-app/i18n";
 import type { HealthPage, Locale, LocalizedText } from "@/lib/health-app/types";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -808,6 +809,7 @@ function PageHeader({ title, description, locale }: { title: LocalizedText; desc
 type LogPayload = Record<string, string | number | null | undefined>;
 
 function useHealthLogSubmit(locale: Locale) {
+  const [supabase] = useState(() => getSupabaseBrowserClient());
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
 
@@ -820,12 +822,19 @@ function useHealthLogSubmit(locale: Locale) {
     setSaving(true);
 
     try {
+      const accessToken = supabase ? await getHealthLogAccessToken(supabase) : null;
+      const headers = new Headers({
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      });
+
+      if (accessToken) {
+        headers.set("Authorization", `Bearer ${accessToken}`);
+      }
+
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers,
         body: JSON.stringify(stripEmptyFields(payload)),
       });
       const body = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -848,6 +857,25 @@ function useHealthLogSubmit(locale: Locale) {
   }
 
   return { saving, submit };
+}
+
+async function getHealthLogAccessToken(
+  supabase: NonNullable<ReturnType<typeof getSupabaseBrowserClient>>,
+) {
+  try {
+    const currentSession = await supabase.auth.getSession();
+    const existingToken = currentSession.data.session?.access_token;
+
+    if (existingToken) {
+      return existingToken;
+    }
+
+    const anonymousSession = await supabase.auth.signInAnonymously();
+
+    return anonymousSession.data.session?.access_token ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function stripEmptyFields(payload: LogPayload) {

@@ -35,6 +35,7 @@ const REQUIRED_TABLES = [
   { table: "health_lessons", column: "id", access: "public" },
   { table: "profiles", column: "id", access: "protected" },
   { table: "health_memory", column: "id", access: "protected" },
+  { table: "daily_checkins", column: "id", access: "protected" },
   { table: "ai_usage_events", column: "id", access: "protected" },
   { table: "gbl_cases", column: "id", access: "protected" },
   { table: "gbl_analysis_results", column: "id", access: "protected" },

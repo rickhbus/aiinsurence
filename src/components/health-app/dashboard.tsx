@@ -10,6 +10,7 @@ import {
   AIGblCard,
   AIRecommendationCard,
   EmotionEngineCard,
+  EverydayActionsCard,
   GymProgressCard,
   HealthcareReminderCard,
   HealthScoreCard,
@@ -121,6 +122,7 @@ export function DashboardPage({ locale }: { locale: Locale }) {
       <section className="grid gap-6 xl:grid-cols-12" aria-label={label(ui.dashboard, locale)}>
         <HealthScoreCard locale={locale} data={dashboardData} className="xl:col-span-5" />
         <TodayPlanCard locale={locale} data={dashboardData} className="xl:col-span-7" />
+        <EverydayActionsCard locale={locale} data={dashboardData} className="md:col-span-2 xl:col-span-12" />
 
         <AIRecommendationCard locale={locale} data={dashboardData} className="md:col-span-2 xl:col-span-4" />
         <ActivitySummaryCard locale={locale} data={dashboardData} className="md:col-span-2 xl:col-span-8" />

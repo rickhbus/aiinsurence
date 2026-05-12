@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import {
   Activity,
@@ -10,6 +11,7 @@ import {
   BedDouble,
   BookOpenCheck,
   Brain,
+  CheckCircle2,
   Dumbbell,
   Droplets,
   Flame,
@@ -18,7 +20,9 @@ import {
   Info,
   Moon,
   Plus,
+  RefreshCw,
   ShieldCheck,
+  Smartphone,
   Sparkles,
   Stethoscope,
   Target,
@@ -27,13 +31,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   foodRecommendations,
   lessons,
 } from "@/lib/health-app/content";
 import type { Lesson, Locale, LocalizedText, MacroDatum, MetricDatum } from "@/lib/health-app/types";
-import type { DashboardData, GoalRow } from "@/lib/health-data/types";
+import type { DailyCheckinRow, DashboardData, GoalRow } from "@/lib/health-data/types";
 import { label, safetyCopy, text, ui } from "@/lib/health-app/i18n";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -557,6 +563,262 @@ export function FoodRecommendationCard({
   );
 }
 
+type EverydayAction = {
+  type: DailyCheckinRow["checkin_type"];
+  label: LocalizedText;
+  detail: LocalizedText;
+  icon: LucideIcon;
+  payload?: Record<string, string | number | boolean | null>;
+};
+
+type MobileHealthStatus = {
+  connectedPlatforms?: string[];
+  lastSuccessfulSync?: string | null;
+  consent?: { mobileHealthSync?: boolean };
+};
+
+const everydayActions: EverydayAction[] = [
+  {
+    type: "wake_up",
+    label: { zh: "起床", en: "Wake" },
+    detail: { zh: "開始今日節奏", en: "Start the day" },
+    icon: BedDouble,
+  },
+  {
+    type: "meal",
+    label: { zh: "進食", en: "Eat" },
+    detail: { zh: "已完成一餐", en: "Meal done" },
+    icon: Apple,
+  },
+  {
+    type: "water",
+    label: { zh: "飲水", en: "Drink" },
+    detail: { zh: "快速新增 300ml", en: "Add 300ml" },
+    icon: Droplets,
+    payload: { amount: 300, unit: "ml" },
+  },
+  {
+    type: "exercise",
+    label: { zh: "運動", en: "Exercise" },
+    detail: { zh: "完成活動打卡", en: "Movement done" },
+    icon: Dumbbell,
+  },
+];
+
+export function EverydayActionsCard({ locale, className, data }: CardProps) {
+  const [supabase] = useState(() => getSupabaseBrowserClient());
+  const [checkins, setCheckins] = useState<DailyCheckinRow[]>([]);
+  const [mobileStatus, setMobileStatus] = useState<MobileHealthStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [savingType, setSavingType] = useState<DailyCheckinRow["checkin_type"] | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadEverydayState() {
+      if (!supabase) {
+        if (active) {
+          setUnavailable(true);
+          setLoading(false);
+        }
+        return;
+      }
+
+      const token = await getEverydayAccessToken(supabase);
+
+      if (!token) {
+        if (active) {
+          setUnavailable(true);
+          setLoading(false);
+        }
+        return;
+      }
+
+      const [checkinsResult, mobileResult] = await Promise.all([
+        fetchJson<{ checkins?: DailyCheckinRow[] }>("/api/daily/checkins", token),
+        fetchJson<MobileHealthStatus>("/api/mobile-health/status", token),
+      ]);
+
+      if (!active) {
+        return;
+      }
+
+      if (checkinsResult.ok) {
+        setCheckins(checkinsResult.data.checkins ?? []);
+      } else {
+        setUnavailable(true);
+      }
+
+      if (mobileResult.ok) {
+        setMobileStatus(mobileResult.data);
+      }
+
+      setLoading(false);
+    }
+
+    loadEverydayState();
+
+    return () => {
+      active = false;
+    };
+  }, [supabase]);
+
+  async function logAction(action: EverydayAction) {
+    if (!supabase || savingType) {
+      return;
+    }
+
+    setSavingType(action.type);
+
+    try {
+      const token = await getEverydayAccessToken(supabase);
+
+      if (!token) {
+        throw new Error("auth unavailable");
+      }
+
+      if (action.type === "water") {
+        const waterResult = await postJson("/api/logs/water", { amount_ml: 300 }, token);
+
+        if (!waterResult.ok) {
+          throw new Error("water log failed");
+        }
+      }
+
+      const result = await postJson(
+        "/api/daily/checkins",
+        {
+          checkin_type: action.type,
+          label: text(action.label, locale),
+          amount: action.payload?.amount ?? null,
+          unit: action.payload?.unit ?? null,
+          metadata: {
+            surface: "dashboard_everyday_loop",
+          },
+        },
+        token,
+      );
+
+      if (!result.ok) {
+        throw new Error("daily check-in failed");
+      }
+
+      const refreshed = await fetchJson<{ checkins?: DailyCheckinRow[] }>("/api/daily/checkins", token);
+
+      if (refreshed.ok) {
+        setCheckins(refreshed.data.checkins ?? []);
+      }
+
+      window.dispatchEvent(new Event("health-log-saved"));
+      toast.success(locale === "zh-Hant" ? "已記錄。" : "Logged.");
+    } catch {
+      toast.error(locale === "zh-Hant" ? "暫時未能記錄，請稍後再試。" : "Could not log this yet. Try again later.");
+    } finally {
+      setSavingType(null);
+    }
+  }
+
+  const visibleCheckins = loading ? data?.recent.checkins ?? checkins : checkins;
+  const completedTypes = new Set(visibleCheckins.map((entry) => entry.checkin_type));
+  const completedCount = everydayActions.filter((action) => completedTypes.has(action.type)).length;
+  const suggestion = getEverydaySuggestion({ data, checkins: visibleCheckins, mobileStatus });
+  const connectedPlatforms = mobileStatus?.connectedPlatforms ?? [];
+  const mobileConnected = Boolean(mobileStatus?.consent?.mobileHealthSync || connectedPlatforms.length > 0);
+
+  return (
+    <DashboardCard className={className} icon={Sparkles} title={{ zh: "每日健康循環", en: "Everyday Health Loop" }} locale={locale} index={2}>
+      <div className="grid gap-2 sm:grid-cols-4">
+        {everydayActions.map((action) => {
+          const isDone = completedTypes.has(action.type);
+          const isSaving = savingType === action.type;
+
+          return (
+            <Button
+              key={action.type}
+              type="button"
+              variant={isDone ? "secondary" : "outline"}
+              className="h-auto min-h-20 flex-col items-start justify-between gap-3 rounded-xl p-3 text-left"
+              disabled={loading || !supabase || unavailable || Boolean(savingType)}
+              onClick={() => logAction(action)}
+            >
+              <span className="flex w-full items-center justify-between gap-2">
+                <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <action.icon aria-hidden="true" />
+                </span>
+                {isSaving ? (
+                  <RefreshCw className="animate-spin text-muted-foreground" aria-hidden="true" />
+                ) : isDone ? (
+                  <CheckCircle2 className="text-primary" aria-hidden="true" />
+                ) : null}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate font-semibold">{text(action.label, locale)}</span>
+                <span className="block truncate text-xs font-normal text-muted-foreground">{text(action.detail, locale)}</span>
+              </span>
+            </Button>
+          );
+        })}
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-[1.35fr_0.9fr]">
+        <div className="rounded-xl bg-muted/30 p-4 ring-1 ring-border/40">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">
+              {locale === "zh-Hant" ? `${completedCount}/4 已完成` : `${completedCount}/4 done`}
+            </Badge>
+            {data ? (
+              <Badge variant="outline">
+                {locale === "zh-Hant" ? "按今日紀錄分析" : "Based on today"}
+              </Badge>
+            ) : null}
+            {unavailable ? (
+              <Badge variant="secondary">
+                {locale === "zh-Hant" ? "雲端紀錄未就緒" : "Cloud log not ready"}
+              </Badge>
+            ) : null}
+          </div>
+          <h3 className="mt-3 text-sm font-semibold">{text(suggestion.title, locale)}</h3>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">{text(suggestion.body, locale)}</p>
+        </div>
+
+        <div className="rounded-xl bg-muted/30 p-4 ring-1 ring-border/40">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Smartphone aria-hidden="true" className="text-primary" />
+              <span className="text-sm font-semibold">
+                {locale === "zh-Hant" ? "Apple / Android 健康" : "Apple / Android health"}
+              </span>
+            </div>
+            <Badge variant={mobileConnected ? "default" : "secondary"}>
+              {mobileConnected
+                ? locale === "zh-Hant" ? "可分析" : "Ready"
+                : locale === "zh-Hant" ? "待連接" : "Pending"}
+            </Badge>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            {mobileConnected
+              ? locale === "zh-Hant"
+                ? `已連接 ${connectedPlatforms.join(", ") || "手機健康同步"}，AI 建議會使用已同步摘要。`
+                : `Connected to ${connectedPlatforms.join(", ") || "mobile health sync"}; suggestions can use synced summaries.`
+              : locale === "zh-Hant"
+                ? "瀏覽器不會直接讀取 HealthKit 或 Health Connect；原生 App 會逐項請求授權並只同步摘要。"
+                : "The browser does not read HealthKit or Health Connect directly; the native app asks permission and syncs summaries only."}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/settings">{locale === "zh-Hant" ? "同步設定" : "Sync settings"}</Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/track">{locale === "zh-Hant" ? "詳細記錄" : "Detailed logs"}</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    </DashboardCard>
+  );
+}
+
 export function SafetyDisclaimer({ locale, compact = false }: { locale: Locale; compact?: boolean }) {
   return (
     <div className={cn("rounded-2xl border bg-muted/25 p-4 text-sm leading-6 text-muted-foreground backdrop-blur-sm", compact && "p-3 text-xs")}>
@@ -680,6 +942,152 @@ function EmptyCardMessage({ locale }: { locale: Locale }) {
 
 function dataOrEmpty<T>(data: T[] | undefined) {
   return data && data.length > 0 ? data : (emptyMetrics as T[]);
+}
+
+async function getEverydayAccessToken(
+  supabase: NonNullable<ReturnType<typeof getSupabaseBrowserClient>>,
+) {
+  try {
+    const currentSession = await supabase.auth.getSession();
+    const existingToken = currentSession.data.session?.access_token;
+
+    if (existingToken) {
+      return existingToken;
+    }
+
+    const anonymousSession = await supabase.auth.signInAnonymously();
+
+    return anonymousSession.data.session?.access_token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchJson<T>(url: string, token: string): Promise<
+  | { ok: true; data: T }
+  | { ok: false }
+> {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      return { ok: false };
+    }
+
+    return { ok: true, data: (await response.json()) as T };
+  } catch {
+    return { ok: false };
+  }
+}
+
+async function postJson(url: string, payload: Record<string, unknown>, token: string) {
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    return { ok: response.ok };
+  } catch {
+    return { ok: false };
+  }
+}
+
+function getEverydaySuggestion({
+  data,
+  checkins,
+  mobileStatus,
+}: {
+  data?: DashboardData | null;
+  checkins: DailyCheckinRow[];
+  mobileStatus: MobileHealthStatus | null;
+}) {
+  const completedTypes = new Set(checkins.map((entry) => entry.checkin_type));
+  const waterMl = data?.today.water_total_ml ?? 0;
+  const protein = data?.today.protein_total ?? 0;
+  const activeMinutes = data?.today.active_minutes ?? 0;
+  const mobileConnected = Boolean(
+    mobileStatus?.consent?.mobileHealthSync ||
+      (mobileStatus?.connectedPlatforms?.length ?? 0) > 0,
+  );
+
+  if (!completedTypes.has("wake_up")) {
+    return {
+      title: { zh: "先做今天第一個小動作", en: "Start with the first tiny action" },
+      body: {
+        zh: "按一次起床，然後飲 250-300ml 水。今日分析會先用簡單節奏開始，不需要一次填完所有資料。",
+        en: "Tap wake, then drink 250-300ml water. Today’s analysis starts from rhythm, not perfect tracking.",
+      },
+    };
+  }
+
+  if (waterMl < 600 && !completedTypes.has("water")) {
+    return {
+      title: { zh: "先補水，再追其他目標", en: "Hydrate before chasing the rest" },
+      body: {
+        zh: "今日飲水紀錄偏少。先新增 300ml，運動或外出前留意口渴、頭暈和抽筋訊號。",
+        en: "Water is low today. Add 300ml first, and watch thirst, dizziness, or cramps before exercise or going out.",
+      },
+    };
+  }
+
+  if (!completedTypes.has("meal")) {
+    return {
+      title: { zh: "下一餐用蛋白質做中心", en: "Anchor the next meal with protein" },
+      body: {
+        zh: "如果只是快速打卡，下一步可在詳細飲食頁補充食物。香港外食可選雞、魚、蛋或豆腐，加菜少汁。",
+        en: "After a quick meal tap, add details later if useful. For Hong Kong meals, pick chicken, fish, eggs, or tofu with vegetables and less sauce.",
+      },
+    };
+  }
+
+  if (protein < 90) {
+    return {
+      title: { zh: "今日蛋白質仍可補一份", en: "Add one more protein serving" },
+      body: {
+        zh: `目前約 ${Math.round(protein)}g 蛋白質。下一餐可加雞蛋、魚、雞肉、豆腐或希臘乳酪。`,
+        en: `Protein is around ${Math.round(protein)}g so far. Add eggs, fish, chicken, tofu, or Greek yogurt next.`,
+      },
+    };
+  }
+
+  if (!completedTypes.has("exercise") && activeMinutes === 0) {
+    return {
+      title: { zh: "今天用 10 分鐘活動保留連續性", en: "Keep the streak with 10 minutes" },
+      body: {
+        zh: "如果沒有正式訓練，做 10 分鐘步行、伸展或輕量自重動作即可。胸痛、嚴重氣促或尖銳痛楚要停止並求助。",
+        en: "If there is no formal workout, use 10 minutes of walking, stretching, or light bodyweight movement. Stop and seek help for chest pain, severe breathlessness, or sharp pain.",
+      },
+    };
+  }
+
+  if (mobileConnected) {
+    return {
+      title: { zh: "用手機摘要校準建議", en: "Calibrate with mobile summaries" },
+      body: {
+        zh: "已同步的步數、睡眠、運動和心率摘要可幫助建議更貼近今天狀態；不會用於診斷或保險決定。",
+        en: "Synced steps, sleep, workout, and heart-rate summaries can tune today’s guidance; they are not used for diagnosis or insurance decisions.",
+      },
+    };
+  }
+
+  return {
+    title: { zh: "今日節奏已建立", en: "Today’s rhythm is set" },
+    body: {
+      zh: "保持簡單：補水、均衡餐盤、輕量活動和固定睡眠時間。需要更精準分析時可連接原生手機健康同步。",
+      en: "Keep it simple: water, a balanced plate, light movement, and consistent sleep. Connect native mobile health sync when you want sharper analysis.",
+    },
+  };
 }
 
 function getAveragePace(runs: DashboardData["recent"]["running"] | undefined, locale: Locale) {
