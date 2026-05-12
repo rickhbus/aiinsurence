@@ -29,7 +29,7 @@ const fallbackSummary = buildDailyHealthSummary({
   gymWorkouts: [{ durationMinutes: 0, intensity: 4 }],
 });
 
-export function TodayDashboard() {
+export function AdvancedTodayDashboard() {
   const [summary, setSummary] = useState<DailyHealthSummary>(fallbackSummary);
   const [mode, setMode] = useState<"local" | "real" | "loading">("loading");
   const [supabase] = useState(() => getSupabaseBrowserClient());

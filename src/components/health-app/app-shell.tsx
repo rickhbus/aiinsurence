@@ -7,7 +7,7 @@ import { CoachPage, RightCoachPanel } from "./coach";
 import { DashboardPage } from "./dashboard";
 import { EmotionEnginePage, GblPage, HistoryPage } from "./intelligence";
 import { HealthcarePage, LearnPage, LessonPage } from "./knowledge-healthcare";
-import { MobileBottomNav, QuickAddButton, Sidebar, TopHeader } from "./navigation";
+import { MobileBottomNav, Sidebar, TopHeader } from "./navigation";
 import {
   AuthLandingPage,
   GoalsPage,
@@ -34,6 +34,7 @@ import {
   HealthOsLanding,
   HydrationPage,
   InsurancePrepPage,
+  MorePage,
   MoodPage,
   PricingPage,
   ReportsPage,
@@ -92,7 +93,6 @@ export function HealthAppShell({
         </div>
         {showRightCoach && coachOpen ? <RightCoachPanel locale={locale} onClose={() => setCoachOpen(false)} /> : null}
         {!isFocusedPage ? <MobileBottomNav currentPage={currentPage} locale={locale} /> : null}
-        {!isFocusedPage ? <QuickAddButton locale={locale} /> : null}
       </div>
     </div>
   );
@@ -112,6 +112,10 @@ function PageContent({
       return <HealthOsLanding />;
     case "today":
       return <TodayPage />;
+    case "today-advanced":
+      return <TodayPage />;
+    case "more":
+      return <MorePage />;
     case "check-in":
       return <CheckInPage />;
     case "mood":

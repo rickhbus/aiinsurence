@@ -1,13 +1,17 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
+  BarChart3,
   BriefcaseBusiness,
+  Brain,
   CalendarDays,
   ClipboardList,
   Dumbbell,
+  HeartPulse,
   Home,
   ShieldCheck,
   Stethoscope,
+  Settings,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -30,7 +34,7 @@ import { WorkoutStartCard } from "@/components/gym/workout-start-card";
 import { WorkoutTemplateCard } from "@/components/gym/workout-template-card";
 import { WORKOUT_TEMPLATES } from "@/lib/health-os/constants";
 import { CheckInForm } from "./check-in-form";
-import { TodayDashboard } from "./today-dashboard";
+import { AdvancedTodayDashboard } from "./today-dashboard";
 
 export function HealthOsLanding() {
   const cards = [
@@ -90,7 +94,41 @@ export function HealthOsLanding() {
 }
 
 export function TodayPage() {
-  return <TodayDashboard />;
+  return <AdvancedTodayDashboard />;
+}
+
+export function MorePage() {
+  const items: Array<{ href: string; title: string; icon: LucideIcon }> = [
+    { href: "/reports", title: "Reports", icon: BarChart3 },
+    { href: "/doctor", title: "Doctor Prep", icon: Stethoscope },
+    { href: "/insurance", title: "Insurance", icon: ShieldCheck },
+    { href: "/pricing", title: "Pricing", icon: ShieldCheck },
+    { href: "/business", title: "Business", icon: BriefcaseBusiness },
+    { href: "/gbl", title: "GBL", icon: Brain },
+    { href: "/emotion", title: "Emotion Engine", icon: HeartPulse },
+    { href: "/family", title: "Family", icon: Users },
+    { href: "/settings", title: "Settings", icon: Settings },
+  ];
+
+  return (
+    <PageFrame title="更多 / More" description="進階資料和設定集中在這裡。">
+      <div className="grid gap-2">
+        {items.map((item) => (
+          <Button
+            key={item.href}
+            asChild
+            variant="outline"
+            className="h-auto min-h-14 justify-start rounded-xl px-4 py-3 text-left"
+          >
+            <Link href={item.href}>
+              <item.icon data-icon="inline-start" aria-hidden="true" />
+              {item.title}
+            </Link>
+          </Button>
+        ))}
+      </div>
+    </PageFrame>
+  );
 }
 
 export function CheckInPage() {

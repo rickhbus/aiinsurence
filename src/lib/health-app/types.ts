@@ -50,6 +50,8 @@ export type MemoryCategory =
 export type HealthPage =
   | "landing"
   | "today"
+  | "today-advanced"
+  | "more"
   | "check-in"
   | "mood"
   | "food"

@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -12,6 +13,8 @@ const data = [
 ];
 
 export function MoodTrendChart() {
+  const mounted = useMounted();
+
   return (
     <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-xl">
       <CardHeader>
@@ -19,16 +22,28 @@ export function MoodTrendChart() {
         <CardDescription>示範趨勢；真實趨勢會由 RLS mood logs 載入。</CardDescription>
       </CardHeader>
       <CardContent className="h-56">
-        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-          <LineChart data={data}>
-            <XAxis dataKey="day" tickLine={false} axisLine={false} />
-            <YAxis domain={[0, 10]} tickLine={false} axisLine={false} width={24} />
-            <Tooltip />
-            <Line type="monotone" dataKey="mood" stroke="var(--chart-1)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="stress" stroke="var(--chart-4)" strokeWidth={2} dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
+        {mounted ? (
+          <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+            <LineChart data={data}>
+              <XAxis dataKey="day" tickLine={false} axisLine={false} />
+              <YAxis domain={[0, 10]} tickLine={false} axisLine={false} width={24} />
+              <Tooltip />
+              <Line type="monotone" dataKey="mood" stroke="var(--chart-1)" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="stress" stroke="var(--chart-4)" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="h-full min-h-56 rounded-lg bg-muted/35" aria-hidden="true" />
+        )}
       </CardContent>
     </Card>
+  );
+}
+
+function useMounted() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
   );
 }
