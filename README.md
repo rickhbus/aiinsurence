@@ -83,6 +83,42 @@ npm run dev
 Open http://localhost:3000.
 If port 3000 is already in use, Next.js will print the alternate local URL.
 
+## Local Supabase
+
+The repo includes Supabase CLI config and numeric migrations. To boot a local
+Supabase stack, Docker must be running:
+
+```bash
+npx supabase start
+npx supabase status
+```
+
+Copy the local API URL and anon key from `supabase status` into `.env.local`:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+Reset local data and reapply migrations with:
+
+```bash
+npm run supabase:reset
+```
+
+For a remote project, link it with the Supabase CLI, then apply migrations:
+
+```bash
+npx supabase link --project-ref <project-ref>
+npm run supabase:push
+```
+
+Do not put service-role keys in browser env vars. Configure Supabase Auth
+redirect URLs for `http://localhost:3000/auth/callback`, Vercel preview
+callbacks, and the production callback before enabling production traffic.
+
 ## Persistence
 
 The MVP uses Supabase Auth and RLS-protected tables for profiles, preferences,

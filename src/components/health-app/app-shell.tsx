@@ -51,27 +51,34 @@ export function HealthAppShell({
   return (
     <div className="min-h-dvh overflow-x-clip bg-[linear-gradient(160deg,var(--health-bg-start),var(--background)_40%,var(--health-bg-end)_90%,var(--background))]">
       <div className="flex min-h-dvh">
-        <Sidebar
-          currentPage={currentPage}
-          locale={locale}
-          collapsed={sidebarCollapsed}
-          onCollapsedChange={setSidebarCollapsed}
-        />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <TopHeader
+        {!isFocusedPage ? (
+          <Sidebar
             currentPage={currentPage}
             locale={locale}
-            setLocale={setLocale}
-            sidebarCollapsed={sidebarCollapsed}
-            onSidebarToggle={() => setSidebarCollapsed((current) => !current)}
-            coachOpen={coachOpen}
-            onCoachToggle={() => setCoachOpen((current) => !current)}
-            showCoachToggle={showRightCoach}
+            collapsed={sidebarCollapsed}
+            onCollapsedChange={setSidebarCollapsed}
           />
+        ) : null}
+        <div className="flex min-w-0 flex-1 flex-col">
+          {!isFocusedPage ? (
+            <TopHeader
+              currentPage={currentPage}
+              locale={locale}
+              setLocale={setLocale}
+              sidebarCollapsed={sidebarCollapsed}
+              onSidebarToggle={() => setSidebarCollapsed((current) => !current)}
+              coachOpen={coachOpen}
+              onCoachToggle={() => setCoachOpen((current) => !current)}
+              showCoachToggle={showRightCoach}
+            />
+          ) : null}
           <main
             className={cn(
-              "mx-auto w-full min-w-0 flex-1 px-4 pb-[calc(7.5rem_+_env(safe-area-inset-bottom))] pt-6 sm:px-5 lg:px-8 lg:pb-10",
-              showRightCoach && coachOpen ? "xl:max-w-[1180px]" : "xl:max-w-[1360px]",
+              "mx-auto w-full min-w-0 flex-1 px-4 sm:px-5 lg:px-8",
+              isFocusedPage
+                ? "pb-10 pt-4 sm:pt-8 xl:max-w-[1120px]"
+                : "pb-[calc(7.5rem_+_env(safe-area-inset-bottom))] pt-6 lg:pb-10",
+              !isFocusedPage ? (showRightCoach && coachOpen ? "xl:max-w-[1180px]" : "xl:max-w-[1360px]") : null,
             )}
           >
             <PageContent currentPage={currentPage} lessonSlug={lessonSlug} locale={locale} />

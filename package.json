@@ -8,6 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "monitor:readiness": "node scripts/monitor-production-readiness.mjs",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:status": "supabase status",
+    "supabase:reset": "supabase db reset",
+    "supabase:push": "supabase db push",
+    "supabase:rls": "supabase db lint --linked --level warning",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
