@@ -1,6 +1,10 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { getSupabaseRequestHeaders } from "@/lib/supabase/client";
+import { useEffect, useState } from "react";
 
 const plans = [
   {
@@ -35,7 +39,63 @@ const plans = [
   },
 ];
 
+type PaymentConfigResponse = {
+  configured: boolean;
+  plans: Array<{
+    id: string;
+    checkoutEnabled: boolean;
+  }>;
+};
+
 export function PricingCards() {
+  const [paymentConfig, setPaymentConfig] = useState<PaymentConfigResponse | null>(null);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    fetch("/api/payments/config", { headers: { Accept: "application/json" } })
+      .then((response) => response.json())
+      .then((body) => {
+        if (active) {
+          setPaymentConfig(body);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setPaymentConfig({ configured: false, plans: [] });
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function startCheckout(planName: string) {
+    const plan = planName.toLowerCase();
+    setLoadingPlan(plan);
+
+    try {
+      const headers = await getSupabaseRequestHeaders({
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      });
+      const response = await fetch("/api/payments/checkout", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ plan }),
+      });
+      const body = await response.json().catch(() => null);
+
+      if (response.ok && typeof body?.url === "string") {
+        window.location.href = body.url;
+      }
+    } finally {
+      setLoadingPlan(null);
+    }
+  }
+
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {plans.map((plan) => (
@@ -51,12 +111,57 @@ export function PricingCards() {
             {plan.features.map((feature) => <p key={feature}>{feature}</p>)}
           </CardContent>
           <CardFooter>
-            <Button variant={plan.name === "Plus" ? "default" : "outline"} className="w-full">
-              Mock entitlement / 未接駁付款
-            </Button>
+            <PricingAction
+              planName={plan.name}
+              configured={Boolean(paymentConfig?.configured)}
+              checkoutEnabled={Boolean(paymentConfig?.plans.some((item) => item.id === plan.name.toLowerCase() && item.checkoutEnabled))}
+              loading={loadingPlan === plan.name.toLowerCase()}
+              onCheckout={() => startCheckout(plan.name)}
+            />
           </CardFooter>
         </Card>
       ))}
     </div>
+  );
+}
+
+function PricingAction({
+  planName,
+  configured,
+  checkoutEnabled,
+  loading,
+  onCheckout,
+}: {
+  planName: string;
+  configured: boolean;
+  checkoutEnabled: boolean;
+  loading: boolean;
+  onCheckout: () => void;
+}) {
+  if (planName === "Free" || planName.includes("Partner") || planName.includes("Employer")) {
+    return (
+      <Button variant="outline" className="w-full" disabled>
+        目前方案 / Current option
+      </Button>
+    );
+  }
+
+  if (!configured || !checkoutEnabled) {
+    return (
+      <Button variant="outline" className="w-full" disabled>
+        Payment not configured
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      variant={planName === "Plus" ? "default" : "outline"}
+      className="w-full"
+      disabled={loading}
+      onClick={onCheckout}
+    >
+      {loading ? "Opening checkout" : "Subscribe / 付款"}
+    </Button>
   );
 }

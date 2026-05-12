@@ -3,7 +3,7 @@
 import { Camera } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
-export function MealPhotoUploader({ onPendingImage }: { onPendingImage?: (value: boolean) => void }) {
+export function MealPhotoUploader({ onImageSelected }: { onImageSelected?: (file: File | null) => void }) {
   return (
     <label className="grid gap-2 text-sm font-medium">
       相片 / Meal photo
@@ -13,10 +13,10 @@ export function MealPhotoUploader({ onPendingImage }: { onPendingImage?: (value:
           <Input
             type="file"
             accept="image/*"
-            onChange={(event) => onPendingImage?.(Boolean(event.target.files?.length))}
+            onChange={(event) => onImageSelected?.(event.target.files?.[0] ?? null)}
           />
           <p className="mt-2 text-xs leading-5 text-muted-foreground">
-            影像分析供應商尚未實作；目前不會假裝辨識相片，只會標記為 pending。
+            相片會先送到伺服器檢查和分析；瀏覽器不會直接連接 AI 供應商。
           </p>
         </div>
       </div>

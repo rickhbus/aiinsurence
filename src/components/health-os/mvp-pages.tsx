@@ -21,6 +21,7 @@ import { B2BLeadForm } from "@/components/business/b2b-lead-form";
 import { PlanFeatureTable } from "@/components/business/plan-feature-table";
 import { MealHistoryList } from "@/components/food/meal-history-list";
 import { MealLogForm } from "@/components/food/meal-log-form";
+import { FamilySharingPanel } from "@/components/family/family-sharing-panel";
 import { HydrationQuickAdd } from "@/components/hydration/hydration-quick-add";
 import { MoodCheckInForm } from "@/components/mood/mood-check-in-form";
 import { MoodTrendChart } from "@/components/mood/mood-trend-chart";
@@ -202,19 +203,7 @@ export function ReportsPage() {
 export function FamilyPage() {
   return (
     <PageFrame title="Family Health Dashboard" description="Consent-first caregiver sharing">
-      <div className="grid gap-4 md:grid-cols-3">
-        {["自己 / Me", "父母 / Elder", "小朋友 / Child"].map((member) => (
-          <Card key={member} className="border-border/60 bg-card/80 shadow-sm backdrop-blur-xl">
-            <CardHeader>
-              <Users aria-hidden="true" className="size-5 text-primary" />
-              <CardTitle>{member}</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm leading-6 text-muted-foreground">
-              需要明確同意才可分享；不會自動顯示私人健康資料。
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <FamilySharingPanel />
     </PageFrame>
   );
 }
@@ -222,6 +211,11 @@ export function FamilyPage() {
 export function DoctorPrepPage() {
   return (
     <PageFrame title="Doctor Visit Prep" description="Symptoms timeline, recent logs, questions and red flags">
+      <Button asChild className="min-h-12 w-full sm:w-fit">
+        <a href="/api/doctor/report" target="_blank" rel="noreferrer">
+          匯出醫生摘要 / Export doctor report
+        </a>
+      </Button>
       <PreparationGrid
         icon={Stethoscope}
         items={[
@@ -257,7 +251,7 @@ export function InsurancePrepPage() {
 
 export function PricingPage() {
   return (
-    <PageFrame title="Pricing" description="Mock entitlements until real payment infrastructure is introduced server-side">
+    <PageFrame title="Pricing" description="Stripe checkout is enabled only when server-side payment env vars are configured.">
       <PricingCards />
       <PlanFeatureTable />
     </PageFrame>

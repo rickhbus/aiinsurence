@@ -2,22 +2,25 @@
 
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getSupabaseRequestHeaders } from "@/lib/supabase/client";
 
-type SubmitOptions = {
+type BaseSubmitOptions = {
   endpoint: string;
-  payload: Record<string, unknown>;
   successZh: string;
   successEn?: string;
   locale?: "zh-Hant" | "en";
 };
 
+type SubmitOptions = BaseSubmitOptions & (
+  | { payload: Record<string, unknown>; formData?: never }
+  | { formData: FormData; payload?: never }
+);
+
 export function useHealthOsSubmit() {
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
-  const [supabase] = useState(() => getSupabaseBrowserClient());
 
-  async function submit({ endpoint, payload, successZh, successEn, locale = "zh-Hant" }: SubmitOptions) {
+  async function submit(options: SubmitOptions) {
     if (savingRef.current) {
       return null;
     }
@@ -26,38 +29,36 @@ export function useHealthOsSubmit() {
     setSaving(true);
 
     try {
-      const headers = new Headers({
-        "Content-Type": "application/json",
+      const isFormData = "formData" in options;
+      const headers = await getSupabaseRequestHeaders({
         Accept: "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
       });
-      const token = supabase ? await getAccessToken(supabase) : null;
 
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-
-      const response = await fetch(endpoint, {
+      const response = await fetch(options.endpoint, {
         method: "POST",
         headers,
-        body: JSON.stringify(stripEmpty(payload)),
+        body: isFormData
+          ? options.formData
+          : JSON.stringify(stripEmpty(options.payload)),
       });
       const body = await response.json().catch(() => null);
 
       if (!response.ok) {
         const error = typeof body?.error === "string"
           ? body.error
-          : locale === "zh-Hant"
-            ? "暫時未能保存，已保留本機輸入。"
-            : "Could not save yet; local input is kept.";
+          : options.locale === "en"
+            ? "Could not save yet; local input is kept."
+            : "暫時未能保存，已保留本機輸入。";
         toast.error(error);
         return body;
       }
 
-      toast.success(locale === "zh-Hant" ? successZh : successEn ?? successZh);
+      toast.success(options.locale === "en" ? options.successEn ?? options.successZh : options.successZh);
       window.dispatchEvent(new Event("health-log-saved"));
       return body;
     } catch {
-      toast.error(locale === "zh-Hant" ? "暫時未能連線。" : "Connection failed.");
+      toast.error(options.locale === "en" ? "Connection failed." : "暫時未能連線。");
       return null;
     } finally {
       savingRef.current = false;
@@ -66,23 +67,6 @@ export function useHealthOsSubmit() {
   }
 
   return { saving, submit };
-}
-
-async function getAccessToken(supabase: NonNullable<ReturnType<typeof getSupabaseBrowserClient>>) {
-  try {
-    const currentSession = await supabase.auth.getSession();
-    const existingToken = currentSession.data.session?.access_token;
-
-    if (existingToken) {
-      return existingToken;
-    }
-
-    const anonymousSession = await supabase.auth.signInAnonymously();
-
-    return anonymousSession.data.session?.access_token ?? null;
-  } catch {
-    return null;
-  }
 }
 
 function stripEmpty(payload: Record<string, unknown>) {

@@ -87,6 +87,14 @@ export function getEnvIssues(
     });
   }
 
+  if (containsPublicPaymentSecretLeak(env)) {
+    issues.push({
+      key: "NEXT_PUBLIC_STRIPE_*",
+      message: "Stripe secret and webhook keys must never use a NEXT_PUBLIC_ prefix.",
+      severity: "error",
+    });
+  }
+
   if (!client.supabaseUrl) {
     issues.push({
       key: "NEXT_PUBLIC_SUPABASE_URL",
@@ -109,6 +117,12 @@ export function getEnvIssues(
       message: `AI provider key is not configured for ${server.aiProvider}; provider-backed generation will use deterministic fallback where supported.`,
       severity: "warning",
     });
+  }
+
+  if (mode !== "client" && hasAnyPaymentEnv(env)) {
+    for (const issue of getPaymentEnvWarnings(env)) {
+      issues.push(issue);
+    }
   }
 
   return issues;
@@ -205,6 +219,53 @@ function containsPublicServiceRoleLeak(env: RawEnv) {
         normalizedValue.includes("service_role"))
     );
   });
+}
+
+function containsPublicPaymentSecretLeak(env: RawEnv) {
+  return Object.entries(env).some(([key, value]) => {
+    const normalizedKey = key.toLowerCase();
+    const normalizedValue = clean(value)?.toLowerCase() ?? "";
+
+    return (
+      normalizedKey.startsWith("next_public_") &&
+      (normalizedKey.includes("stripe_secret") ||
+        normalizedKey.includes("stripe_webhook") ||
+        normalizedValue.startsWith("sk_") ||
+        normalizedValue.startsWith("whsec_"))
+    );
+  });
+}
+
+function hasAnyPaymentEnv(env: RawEnv) {
+  return [
+    env.STRIPE_SECRET_KEY,
+    env.STRIPE_WEBHOOK_SECRET,
+    env.STRIPE_PRICE_PLUS,
+    env.STRIPE_PRICE_PRO,
+    env.STRIPE_PRICE_FAMILY,
+    env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+  ].some((value) => Boolean(clean(value)));
+}
+
+function getPaymentEnvWarnings(env: RawEnv): EnvIssue[] {
+  const required = [
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "STRIPE_PRICE_PLUS",
+    "STRIPE_PRICE_PRO",
+    "STRIPE_PRICE_FAMILY",
+    "NEXT_PUBLIC_APP_URL",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+  ] as const;
+
+  return required
+    .filter((key) => !clean(env[key]))
+    .map((key) => ({
+      key,
+      message: "Stripe payments are partially configured; checkout or webhook entitlement updates will stay disabled until this is set server-side.",
+      severity: "warning" as const,
+    }));
 }
 
 function clean(value: string | undefined) {

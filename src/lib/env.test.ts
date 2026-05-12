@@ -99,4 +99,40 @@ describe("environment validation", () => {
       ]),
     );
   });
+
+  it("warns on partial Stripe payment config without blocking app boot", () => {
+    const issues = getEnvIssues("production", {
+      APP_ENV: "production",
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key",
+      STRIPE_SECRET_KEY: "sk_test_123",
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: "STRIPE_WEBHOOK_SECRET",
+          severity: "warning",
+        }),
+      ]),
+    );
+  });
+
+  it("rejects public Stripe secret leak attempts", () => {
+    const issues = getEnvIssues("production", {
+      APP_ENV: "production",
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key",
+      NEXT_PUBLIC_STRIPE_SECRET_KEY: "sk_test_public_leak",
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: "NEXT_PUBLIC_STRIPE_*",
+          severity: "error",
+        }),
+      ]),
+    );
+  });
 });

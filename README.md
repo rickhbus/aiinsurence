@@ -12,16 +12,16 @@ The app is **not** a doctor, insurer, broker, licensed insurance intermediary, t
 - `/today` daily dashboard with wake, sleep, mood, energy, stress, hydration, food, toilet/digestion, activity, gym, recovery, safety, and AI next action.
 - `/check-in` fast morning/evening check-in.
 - `/mood` Mood & Emotion Coach built on the existing Emotion Engine.
-- `/food` manual food log plus photo-upload UI with honest pending image-analysis behavior.
+- `/food` manual food log plus server-side food photo analysis when an AI provider is configured; otherwise it returns a safe provider-unavailable fallback.
 - `/hydration` water, caffeine, and alcohol tracker.
 - `/toilet` bowel and urine log with red-flag routing.
 - `/gym` workout coach with sessions, exercise sets, RPE, pain flags, recovery guidance, and charts.
 - `/gym/templates` built-in workout templates.
-- `/reports` AI daily/weekly report surface and doctor-summary export placeholder.
-- `/family` consent-first family/caregiver placeholder.
+- `/reports` AI daily/weekly report surface and doctor-summary export readiness.
+- `/family` minimal consent-first family/caregiver groups, invites, and sharing scopes.
 - `/doctor` doctor visit preparation.
 - `/insurance` insurance preparation education only.
-- `/pricing` mock subscription and B2B entitlement surfaces.
+- `/pricing` Stripe Checkout subscription buttons when payment env vars are configured, with mock/free fallback when they are not.
 - `/business` gym/PT/employer/clinic lead capture.
 - Existing `/gbl`, `/emotion`, and `/history` remain available.
 
@@ -59,8 +59,10 @@ Apply migrations in numeric order:
 6. `supabase/migrations/006_mobile_health_sync.sql`
 7. `supabase/migrations/007_daily_checkins.sql`
 8. `supabase/migrations/008_health_companion_mvp.sql`
+9. `supabase/migrations/009_auth_anonymous_profile_trigger.sql`
+10. `supabase/migrations/010_food_payments_family_doctor.sql`
 
-Migration `008` adds the Daily Health OS MVP tables: `daily_health_logs`, `mood_logs`, `meal_logs`, `hydration_logs`, `bowel_urine_logs`, `gym_workouts`, `gym_exercise_sets`, `workout_templates`, `subscription_entitlements`, and `business_leads`, plus additive summary columns.
+Migration `008` adds the Daily Health OS MVP tables: `daily_health_logs`, `mood_logs`, `meal_logs`, `hydration_logs`, `bowel_urine_logs`, `gym_workouts`, `gym_exercise_sets`, `workout_templates`, `subscription_entitlements`, and `business_leads`, plus additive summary columns. Migration `010` adds Stripe entitlement columns, locks entitlement writes to server/webhook updates, and adds consent-based family tables.
 
 ## API Routes
 
@@ -81,6 +83,12 @@ New typed routes include:
 - `POST /api/gym/analyze`
 - `POST /api/reports/daily`
 - `GET /api/reports/weekly`
+- `GET /api/doctor/report`
+- `GET/POST /api/family`
+- `GET /api/payments/config`
+- `POST /api/payments/checkout`
+- `POST /api/payments/portal`
+- `POST /api/payments/webhook`
 - `POST /api/business/leads`
 
 Authenticated writes require Supabase sessions. Anonymous users can use local-first UI and non-persistent deterministic analysis where appropriate.
@@ -95,7 +103,7 @@ See `docs/mobile-health-integration.md`.
 
 ## Monetization
 
-`/pricing` implements mock entitlements only:
+`/pricing` supports these subscription plans:
 
 - Free
 - Plus HK$58/month
@@ -104,7 +112,22 @@ See `docs/mobile-health-integration.md`.
 - Gym/PT Partner
 - Employer Wellness
 
-No real payment processing is integrated unless a future server-side payment provider is added with proper secrets and webhook handling.
+Stripe Checkout is used only when all required server-side env vars are present. Webhooks, not client claims, update `subscription_entitlements`. When payment env vars are absent or partial, checkout buttons safely show `Payment not configured` and mock/free entitlements remain the fallback.
+
+Required payment env vars:
+
+```bash
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+NEXT_PUBLIC_APP_URL=
+STRIPE_PRICE_PLUS=
+STRIPE_PRICE_PRO=
+STRIPE_PRICE_FAMILY=
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+`SUPABASE_SERVICE_ROLE_KEY` is server-only and is used by the Stripe webhook route to update entitlement rows under RLS. Never prefix it with `NEXT_PUBLIC_`.
 
 ## Local Development
 

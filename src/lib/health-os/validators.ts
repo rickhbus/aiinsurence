@@ -87,6 +87,7 @@ export const foodLogSchema = z.object({
   alcoholUnits: z.coerce.number().min(0).max(30).optional().nullable(),
   highSugarFlag: z.boolean().default(false),
   highSodiumFlag: z.boolean().default(false),
+  aiSummary: optionalText(1200),
   consentToSave: z.boolean().default(false),
 });
 

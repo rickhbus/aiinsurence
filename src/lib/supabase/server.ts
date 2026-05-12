@@ -71,6 +71,27 @@ export function createBearerClient(accessToken: string) {
   );
 }
 
+export function createAdminClient() {
+  const env = readRuntimeEnv();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+  if (!env.isSupabaseConfigured || !serviceRoleKey) {
+    return null;
+  }
+
+  return createSupabaseClient(
+    env.supabaseUrl!,
+    serviceRoleKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        persistSession: false,
+      },
+    },
+  );
+}
+
 function readRuntimeEnv() {
   try {
     return assertProductionEnvIfNeeded();

@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       alcohol_units: parsed.data.alcoholUnits,
       high_sugar_flag: parsed.data.highSugarFlag,
       high_sodium_flag: parsed.data.highSodiumFlag,
-      ai_summary: analysis.summary,
+      ai_summary: parsed.data.aiSummary ?? analysis.summary,
     })
     .select("*")
     .single();

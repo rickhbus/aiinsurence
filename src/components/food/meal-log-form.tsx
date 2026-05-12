@@ -9,37 +9,56 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useHealthOsSubmit } from "@/components/health-os/client-submit";
 import type { FoodAnalysis } from "@/lib/health-os/types";
+import type { FoodPhotoAnalysis } from "@/lib/food/photo-analysis";
 import { MealPhotoUploader } from "./meal-photo-uploader";
 import { NutritionSummaryCard } from "./nutrition-summary-card";
 
 export function MealLogForm() {
   const { saving, submit } = useHealthOsSubmit();
   const [mealType, setMealType] = useState("lunch");
-  const [hasImage, setHasImage] = useState(false);
-  const [analysis, setAnalysis] = useState<FoodAnalysis | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [analysis, setAnalysis] = useState<FoodAnalysis | FoodPhotoAnalysis | null>(null);
   const [consentToSave, setConsentToSave] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    const manualPayload = buildManualPayload(data, mealType, consentToSave);
+
+    if (photoFile) {
+      const photoPayload = new FormData();
+      photoPayload.set("image", photoFile);
+      photoPayload.set("mealType", mealType);
+      photoPayload.set("description", String(manualPayload.description ?? ""));
+
+      const analyzed = await submit({
+        endpoint: "/api/food/analyze",
+        formData: photoPayload,
+        successZh: "已完成相片粗略分析。",
+      });
+      const photoAnalysis = analyzed?.analysis;
+
+      if (isFoodPhotoAnalysis(photoAnalysis)) {
+        setAnalysis(photoAnalysis);
+      }
+
+      if (consentToSave) {
+        await submit({
+          endpoint: "/api/food/log",
+          payload: {
+            ...foodPhotoAnalysisToLogPayload(photoAnalysis, manualPayload, photoFile),
+            consentToSave: true,
+          },
+          successZh: "已保存飲食紀錄。",
+        });
+      }
+
+      return;
+    }
+
     const body = await submit({
       endpoint: consentToSave ? "/api/food/log" : "/api/food/analyze",
-      payload: {
-        mealType,
-        imagePath: hasImage ? "pending-provider-image" : undefined,
-        description: stringValue(data.get("description")),
-        estimatedCalories: numberValue(data.get("estimatedCalories")),
-        proteinG: numberValue(data.get("proteinG")),
-        carbsG: numberValue(data.get("carbsG")),
-        fatG: numberValue(data.get("fatG")),
-        fiberG: numberValue(data.get("fiberG")),
-        waterMl: numberValue(data.get("waterMl")),
-        caffeineMg: numberValue(data.get("caffeineMg")),
-        alcoholUnits: numberValue(data.get("alcoholUnits")),
-        highSugarFlag: data.get("highSugarFlag") === "on",
-        highSodiumFlag: data.get("highSodiumFlag") === "on",
-        consentToSave,
-      },
+      payload: manualPayload,
       successZh: consentToSave ? "已保存飲食紀錄。" : "已生成飲食摘要。",
     });
 
@@ -54,7 +73,7 @@ export function MealLogForm() {
         <form onSubmit={onSubmit}>
           <CardHeader>
             <CardTitle>Food & Nutrition Journal</CardTitle>
-            <CardDescription>手動輸入先行；相片分析只保留安全 contract，不假裝已辨識。</CardDescription>
+            <CardDescription>相片分析會以粗略估算回覆；未配置供應商時仍可用文字記錄。</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-3">
             <label className="grid gap-2 text-sm font-medium">
@@ -68,7 +87,7 @@ export function MealLogForm() {
                 </SelectContent>
               </Select>
             </label>
-            <MealPhotoUploader onPendingImage={setHasImage} />
+            <MealPhotoUploader onImageSelected={setPhotoFile} />
             <label className="grid gap-2 text-sm font-medium md:col-span-3">
               Manual meal text
               <Textarea name="description" placeholder="例如：雞飯少汁，加菜，凍檸茶少甜。" />
@@ -104,4 +123,58 @@ function numberValue(value: FormDataEntryValue | null) {
   const number = Number(stringValue(value));
 
   return Number.isFinite(number) && stringValue(value) !== "" ? number : undefined;
+}
+
+function buildManualPayload(data: FormData, mealType: string, consentToSave: boolean) {
+  return {
+    mealTime: new Date().toISOString(),
+    mealType,
+    description: stringValue(data.get("description")),
+    estimatedCalories: numberValue(data.get("estimatedCalories")),
+    proteinG: numberValue(data.get("proteinG")),
+    carbsG: numberValue(data.get("carbsG")),
+    fatG: numberValue(data.get("fatG")),
+    fiberG: numberValue(data.get("fiberG")),
+    waterMl: numberValue(data.get("waterMl")),
+    caffeineMg: numberValue(data.get("caffeineMg")),
+    alcoholUnits: numberValue(data.get("alcoholUnits")),
+    highSugarFlag: data.get("highSugarFlag") === "on",
+    highSodiumFlag: data.get("highSodiumFlag") === "on",
+    consentToSave,
+  };
+}
+
+function foodPhotoAnalysisToLogPayload(
+  photoAnalysis: unknown,
+  manualPayload: ReturnType<typeof buildManualPayload>,
+  photoFile: File,
+) {
+  if (!isFoodPhotoAnalysis(photoAnalysis)) {
+    return {
+      ...manualPayload,
+      imagePath: `browser-upload:${photoFile.name}`,
+    };
+  }
+
+  return {
+    mealTime: manualPayload.mealTime,
+    mealType: manualPayload.mealType,
+    imagePath: `browser-upload:${photoFile.name}`,
+    description: photoAnalysis.mealName ?? manualPayload.description,
+    estimatedCalories: photoAnalysis.estimatedCalories,
+    proteinG: photoAnalysis.proteinG,
+    carbsG: photoAnalysis.carbsG,
+    fatG: photoAnalysis.fatG,
+    fiberG: photoAnalysis.fiberG,
+    waterMl: photoAnalysis.waterMl,
+    caffeineMg: photoAnalysis.caffeineMg,
+    alcoholUnits: photoAnalysis.alcoholUnits,
+    highSugarFlag: photoAnalysis.highSugarFlag,
+    highSodiumFlag: photoAnalysis.highSodiumFlag,
+    aiSummary: photoAnalysis.summaryZh,
+  };
+}
+
+function isFoodPhotoAnalysis(value: unknown): value is FoodPhotoAnalysis {
+  return Boolean(value && typeof value === "object" && "summaryZh" in value);
 }
