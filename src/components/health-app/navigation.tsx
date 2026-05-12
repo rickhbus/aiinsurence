@@ -10,15 +10,12 @@ import {
   ChevronsRight,
   ClipboardList,
   Dumbbell,
-  Footprints,
   HeartPulse,
   Home,
   Moon,
   MoreHorizontal,
   PanelRightClose,
   PanelRightOpen,
-  Plus,
-  Scale,
   Search,
   ShieldCheck,
   Stethoscope,
@@ -113,22 +110,11 @@ export const navGroups: NavGroup[] = [
   },
 ];
 
-const quickAddActions: NavChild[] = [
-  { label: { zh: "新增跑步", en: "Add run" }, href: "/track/running", page: "running", icon: Footprints },
-  { label: { zh: "新增健身", en: "Add gym" }, href: "/gym", page: "gym", icon: Dumbbell },
-  { label: { zh: "新增飲食", en: "Add food" }, href: "/food", page: "food", icon: Apple },
-  { label: { zh: "新增飲水", en: "Add water" }, href: "/hydration", page: "hydration", icon: Waves },
-  { label: { zh: "新增睡眠", en: "Add sleep" }, href: "/track/sleep", page: "sleep", icon: BedDouble },
-  { label: { zh: "新增體重", en: "Add weight" }, href: "/track/body", page: "body", icon: Scale },
-  { label: { zh: "新增症狀", en: "Add symptom" }, href: "/healthcare/symptom-routing", page: "symptom-routing", icon: Stethoscope },
-  { label: { zh: "新增保險備註", en: "Add insurance note" }, href: "/insurance", page: "insurance", icon: ShieldCheck },
-];
-
 const bottomNavItems = [
-  { label: { zh: "今日", en: "Today" }, href: "/today", icon: Home, page: "today" as HealthPage },
-  { label: { zh: "記錄", en: "Log" }, href: "/track", icon: ClipboardList, page: "track" as HealthPage },
+  { label: { zh: "今日 / Today", en: "Today" }, href: "/today", icon: Home, page: "today" as HealthPage },
+  { label: { zh: "記錄 / Log", en: "Log" }, href: "/track", icon: ClipboardList, page: "track" as HealthPage },
   { label: { zh: "AI", en: "AI" }, href: "/coach", icon: Brain, page: "coach" as HealthPage },
-  { label: { zh: "更多", en: "More" }, href: "/more", icon: MoreHorizontal, page: "more" as HealthPage },
+  { label: { zh: "更多 / More", en: "More" }, href: "/more", icon: MoreHorizontal, page: "more" as HealthPage },
 ];
 
 export function Sidebar({
@@ -145,10 +131,9 @@ export function Sidebar({
   const [query, setQuery] = useState("");
   const activeGroup = useMemo(() => findActiveGroup(currentPage), [currentPage]);
   const [openGroups, setOpenGroups] = useState<string[]>(() => {
-    const preferred = activeGroup?.id === "home" ? ["home", "track"] : ["home", activeGroup?.id ?? "track"];
+    const preferred = activeGroup?.id === "today" ? ["today", "log"] : ["today", activeGroup?.id ?? "log"];
     return Array.from(new Set(preferred)).slice(0, 2);
   });
-  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const filteredGroups = filterGroups(navGroups, query, locale);
 
   function toggleGroup(groupId: string) {
@@ -170,7 +155,7 @@ export function Sidebar({
     >
       <div className="flex min-h-0 flex-1 flex-col px-3 py-4">
         <div className="mb-4 flex items-center gap-2 px-1">
-          <Link href="/dashboard" className="flex min-w-0 flex-1 items-center gap-3">
+          <Link href="/today" className="flex min-w-0 flex-1 items-center gap-3">
             <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/75 text-primary-foreground shadow-md shadow-primary/25">
               <HeartPulse aria-hidden="true" />
             </span>
@@ -215,7 +200,6 @@ export function Sidebar({
           </Tooltip>
         ) : (
           <div className="mb-4 flex flex-col gap-3">
-            <QuickAddMenu locale={locale} open={quickAddOpen} onOpenChange={setQuickAddOpen} />
             <label className="relative block">
               <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -296,42 +280,11 @@ export function TopHeader({
   showCoachToggle: boolean;
 }) {
   const { resolvedTheme, setTheme } = useTheme();
-  const [open, setOpen] = useState(false);
   const activeLabel = findActiveLabel(currentPage);
 
   return (
     <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-3 border-b border-border/50 bg-background/75 px-4 backdrop-blur-2xl lg:px-6">
       <div className="flex min-w-0 items-center gap-3">
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="lg:hidden" aria-label="Open menu">
-              <Menu aria-hidden="true" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-[90vw] max-w-sm p-0">
-            <SheetHeader className="border-b p-4 text-left">
-              <SheetTitle>{text(ui.appNameFull, locale)}</SheetTitle>
-              <SheetDescription>
-                {locale === "zh-Hant"
-                  ? "健身、營養、醫療導航和保險教育。"
-                  : "Fitness, nutrition, care navigation, and insurance education."}
-              </SheetDescription>
-            </SheetHeader>
-            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3">
-              <QuickAddMenu locale={locale} open onOpenChange={() => undefined} staticOpen />
-              {navGroups.map((group) => (
-                <MobileMenuGroup
-                  key={group.id}
-                  group={group}
-                  currentPage={currentPage}
-                  locale={locale}
-                  onNavigate={() => setOpen(false)}
-                />
-              ))}
-            </div>
-          </SheetContent>
-        </Sheet>
-
         <Button
           variant="ghost"
           size="icon"
@@ -409,7 +362,7 @@ export function TopHeader({
 
 export function MobileBottomNav({ currentPage, locale }: { currentPage: HealthPage; locale: Locale }) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 grid min-h-20 grid-cols-5 border-t border-border/40 bg-background/90 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-2xl lg:hidden" aria-label="Mobile bottom navigation">
+    <nav className="fixed inset-x-0 bottom-0 z-40 grid min-h-20 grid-cols-4 border-t border-border/40 bg-background/90 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-2xl lg:hidden" aria-label="Mobile bottom navigation">
       {bottomNavItems.map((item) => {
         const active = isPageInGroup(currentPage, item.page) || currentPage === item.page;
         return (
@@ -427,41 +380,6 @@ export function MobileBottomNav({ currentPage, locale }: { currentPage: HealthPa
         );
       })}
     </nav>
-  );
-}
-
-export function QuickAddButton({ locale }: { locale: Locale }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="fixed right-4 bottom-[calc(5.75rem_+_env(safe-area-inset-bottom))] z-40 lg:hidden">
-      {open ? (
-        <div className="mb-3 grid w-56 gap-2 rounded-2xl border bg-popover p-2 text-popover-foreground shadow-lg">
-          {quickAddActions.map((action) => (
-            <Button key={action.href + action.label.en} asChild variant="ghost" className="justify-start">
-              <Link href={action.href} onClick={() => setOpen(false)}>
-                {action.icon ? <action.icon data-icon="inline-start" aria-hidden="true" /> : null}
-                {text(action.label, locale)}
-              </Link>
-            </Button>
-          ))}
-        </div>
-      ) : null}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            size="icon-lg"
-            className="fab-glow rounded-full bg-gradient-to-br from-primary to-primary/80"
-            aria-label={label(ui.quickAdd, locale)}
-            aria-expanded={open}
-            onClick={() => setOpen((current) => !current)}
-          >
-            <Plus aria-hidden="true" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>{label(ui.quickAdd, locale)}</TooltipContent>
-      </Tooltip>
-    </div>
   );
 }
 
@@ -591,89 +509,6 @@ function SidebarGroup({
   );
 }
 
-function MobileMenuGroup({
-  group,
-  currentPage,
-  locale,
-  onNavigate,
-}: {
-  group: NavGroup;
-  currentPage: HealthPage;
-  locale: Locale;
-  onNavigate: () => void;
-}) {
-  const active = groupIncludesPage(group, currentPage);
-
-  return (
-    <section className="rounded-2xl border bg-card/70 p-2">
-      <div className="mb-1 flex items-center gap-2 px-2 py-1 text-sm font-medium">
-        <group.icon aria-hidden="true" className={cn("text-muted-foreground", active && "text-primary")} />
-        <span>{text(group.label, locale)}</span>
-      </div>
-      <div className="grid gap-1">
-        {group.children.map((child) => {
-          const childActive = currentPage === child.page && !child.href.includes("#");
-
-          return (
-            <Link
-              key={child.href + child.label.en}
-              href={child.href}
-              onClick={onNavigate}
-              className={cn(
-                "flex min-h-10 items-center justify-between rounded-xl px-3 text-sm text-muted-foreground",
-                childActive && "bg-primary text-primary-foreground",
-              )}
-            >
-              <span>{text(child.label, locale)}</span>
-              {child.badge ? <Badge variant="secondary">{text(child.badge, locale)}</Badge> : null}
-            </Link>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-function QuickAddMenu({
-  locale,
-  open,
-  onOpenChange,
-  staticOpen = false,
-}: {
-  locale: Locale;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  staticOpen?: boolean;
-}) {
-  return (
-    <div className="rounded-2xl border bg-card/78 p-2 shadow-sm">
-      {!staticOpen ? (
-        <Button className="w-full justify-between rounded-xl" onClick={() => onOpenChange(!open)} aria-expanded={open}>
-          <span className="inline-flex items-center gap-2">
-            <Plus data-icon="inline-start" aria-hidden="true" />
-            {label(ui.quickAdd, locale)}
-          </span>
-          <ChevronDown aria-hidden="true" className={cn("transition-transform", open && "rotate-180")} />
-        </Button>
-      ) : (
-        <div className="px-2 py-1 text-sm font-medium">{label(ui.quickAdd, locale)}</div>
-      )}
-      {(open || staticOpen) ? (
-        <div className="mt-2 grid grid-cols-2 gap-1">
-          {quickAddActions.map((action) => (
-            <Button key={action.href + action.label.en} asChild variant="ghost" size="sm" className="h-auto justify-start whitespace-normal rounded-xl px-2 py-2 text-left">
-              <Link href={action.href}>
-                {action.icon ? <action.icon data-icon="inline-start" aria-hidden="true" /> : null}
-                {text(action.label, locale)}
-              </Link>
-            </Button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 function filterGroups(groups: NavGroup[], query: string, locale: Locale) {
   const normalized = query.trim().toLowerCase();
   if (!normalized) {
@@ -726,11 +561,20 @@ function groupIncludesPage(group: NavGroup, page: HealthPage) {
   }
 
   return (
-    (group.id === "track" && page === "track") ||
-    (group.id === "nutrition" && page === "nutrition") ||
-    (group.id === "learn" && page === "learn") ||
-    (group.id === "healthcare" && page === "healthcare") ||
-    (group.id === "progress" && page === "progress") ||
-    (group.id === "profile" && page === "profile")
+    (group.id === "today" && (page === "today" || page === "today-advanced")) ||
+    (group.id === "log" && ["track", "check-in", "mood", "food", "hydration", "toilet", "gym"].includes(page)) ||
+    (group.id === "ai" && page === "coach") ||
+    (group.id === "more" && [
+      "more",
+      "reports",
+      "doctor",
+      "insurance",
+      "pricing",
+      "business",
+      "gbl",
+      "emotion",
+      "family",
+      "settings",
+    ].includes(page))
   );
 }
