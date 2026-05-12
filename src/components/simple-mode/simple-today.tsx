@@ -1,35 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { Brain, ClipboardList, Home, MoreHorizontal } from "lucide-react";
+import { ClipboardList, Home, MoreHorizontal, Users } from "lucide-react";
 import { useState } from "react";
+import { CallFamilyButton } from "@/components/family/call-family-button";
+import { CaregiverOnboarding } from "@/components/family/caregiver-onboarding";
+import { PhotoJournalButton } from "@/components/photo-journal/photo-journal-button";
 import { BigButton } from "./big-button";
 import { EmergencyButton } from "./emergency-button";
 import { SimpleMoodPicker, type SimpleMood } from "./simple-mood-picker";
 import { SimpleSuggestion, type SimpleSuggestionState } from "./simple-suggestion";
+import { simpleActionChoices } from "@/lib/health-app/senior-mode";
 import { getSupabaseRequestHeaders } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 type SimpleAction = "food" | "water" | "toilet" | "move";
 type SavingAction = SimpleMood | SimpleAction | null;
 
-const actionChoices: Array<{
-  action: SimpleAction;
-  emoji: string;
-  label: string;
-  tone?: "default" | "soft" | "warning";
-}> = [
-  { action: "food", emoji: "🍚", label: "食咗嘢 / I ate" },
-  { action: "water", emoji: "💧", label: "飲咗水 / I drank water", tone: "default" },
-  { action: "toilet", emoji: "🚽", label: "去廁所 / Toilet" },
-  { action: "move", emoji: "🏃", label: "做運動 / I moved" },
-];
-
 const bottomItems = [
-  { href: "/today", label: "今日 / Today", icon: Home, active: true },
-  { href: "/track", label: "記錄 / Log", icon: ClipboardList },
-  { href: "/coach", label: "AI", icon: Brain },
-  { href: "/more", label: "更多 / More", icon: MoreHorizontal },
+  { href: "/today", label: "今日", icon: Home, active: true },
+  { href: "/track", label: "記錄", icon: ClipboardList },
+  { href: "/family", label: "屋企人", icon: Users },
+  { href: "/more", label: "更多", icon: MoreHorizontal },
 ];
 
 export function SimpleToday() {
@@ -159,6 +151,7 @@ export function SimpleToday() {
     setSaving(null);
 
     if (saved) {
+      void recordDailyCheckIn(action);
       window.dispatchEvent(new Event("health-log-saved"));
       setResult(successResult);
       return;
@@ -169,6 +162,30 @@ export function SimpleToday() {
       suggestion: successResult.suggestion,
       tone: successResult.tone ?? "warning",
     });
+  }
+
+  async function recordDailyCheckIn(action: SavingAction) {
+    if (!action) {
+      return;
+    }
+
+    const payload = {
+      food: { checkin_type: "meal", label: "食咗嘢" },
+      water: { checkin_type: "water", label: "飲咗水" },
+      toilet: { checkin_type: "health_review", label: "去廁所" },
+      move: { checkin_type: "exercise", label: "郁咗一陣" },
+      good: { checkin_type: "health_review", label: "好" },
+      okay: { checkin_type: "health_review", label: "一般" },
+      "not-good": {
+        checkin_type: "health_review",
+        label: "唔舒服",
+        metadata: { notFeelingWell: true },
+      },
+    }[action];
+
+    if (payload) {
+      await postWithAnonymousSession("/api/daily/checkins", payload);
+    }
   }
 
   async function postWithAnonymousSession(endpoint: string, payload: Record<string, unknown>) {
@@ -195,26 +212,30 @@ export function SimpleToday() {
       <div className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-3xl flex-col gap-6">
         <header className="pt-2">
           <h1 className="text-4xl font-bold leading-tight tracking-normal text-foreground sm:text-5xl">
-            今日點呀？ / How are you today?
+            今日點呀？
           </h1>
         </header>
+
+        <CaregiverOnboarding />
 
         <section aria-label="Mood" className="grid gap-3">
           <SimpleMoodPicker disabled={saving !== null} onSelect={recordMood} />
         </section>
 
         <section aria-label="Actions" className="grid gap-3 sm:grid-cols-2">
-          {actionChoices.map((choice) => (
+          {simpleActionChoices.map((choice) => (
             <BigButton
               key={choice.action}
               emoji={choice.emoji}
-              tone={choice.tone ?? "soft"}
+              tone={choice.action === "water" ? "default" : "soft"}
               disabled={saving !== null}
-              onClick={() => recordAction(choice.action)}
+              onClick={() => recordAction(choice.action as SimpleAction)}
             >
-              {saving === choice.action ? "保存中 / Saving" : choice.label}
+              {saving === choice.action ? "保存中" : choice.label}
             </BigButton>
           ))}
+          <PhotoJournalButton disabled={saving !== null} onResult={setResult} />
+          <CallFamilyButton disabled={saving !== null} onResult={setResult} />
         </section>
 
         <EmergencyButton onEmergency={setResult} />
@@ -224,9 +245,9 @@ export function SimpleToday() {
         <div className="mt-auto flex justify-center pt-2">
           <Link
             href="/today/advanced"
-            className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            className="rounded-full px-5 py-3 text-lg font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
-            進階資料 / Advanced
+            進階資料
           </Link>
         </div>
       </div>

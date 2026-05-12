@@ -19,8 +19,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PricingCards } from "@/components/business/pricing-cards";
 import { B2BLeadForm } from "@/components/business/b2b-lead-form";
 import { PlanFeatureTable } from "@/components/business/plan-feature-table";
+import { AppointmentPlanner } from "@/components/doctor/appointment-planner";
+import { CaregiverOnboarding } from "@/components/family/caregiver-onboarding";
+import { DailyCheckInStatus } from "@/components/family/daily-check-in-status";
 import { MealHistoryList } from "@/components/food/meal-history-list";
 import { MealLogForm } from "@/components/food/meal-log-form";
+import { FamilyWeeklyReport } from "@/components/family/family-weekly-report";
 import { FamilySharingPanel } from "@/components/family/family-sharing-panel";
 import { HydrationQuickAdd } from "@/components/hydration/hydration-quick-add";
 import { MoodCheckInForm } from "@/components/mood/mood-check-in-form";
@@ -31,6 +35,7 @@ import { RecoveryCard } from "@/components/gym/recovery-card";
 import { WorkoutLogForm } from "@/components/gym/workout-log-form";
 import { WorkoutStartCard } from "@/components/gym/workout-start-card";
 import { WorkoutTemplateCard } from "@/components/gym/workout-template-card";
+import { SimpleReminders } from "@/components/reminders/simple-reminders";
 import { WORKOUT_TEMPLATES } from "@/lib/health-os/constants";
 import { CheckInForm } from "./check-in-form";
 import { AdvancedTodayDashboard } from "./today-dashboard";
@@ -42,20 +47,18 @@ export function HealthOsLanding() {
         <section className="grid gap-7">
           <div className="grid gap-4">
             <h1 className="text-5xl font-bold leading-tight tracking-normal text-foreground sm:text-6xl">
-              今日點呀？
+              俾爸媽每日一撳，屋企人安心。
             </h1>
             <p className="text-2xl font-semibold leading-snug text-foreground">
-              撳一個掣，我幫你記低。
+              One tap for mum and dad. Peace of mind for the family.
             </p>
-            <div className="grid gap-2 text-lg leading-7 text-muted-foreground">
-              <p>How are you today?</p>
-              <p>Tap one button. I&apos;ll save it for you.</p>
-            </div>
           </div>
 
           <Button asChild size="lg" className="min-h-16 rounded-2xl text-xl font-bold">
             <Link href="/today">開始 / Start</Link>
           </Button>
+
+          <CaregiverOnboarding />
 
           <Link
             href="/more"
@@ -88,6 +91,7 @@ export function MorePage() {
     { href: "/emotion", title: "Emotion Engine", icon: HeartPulse },
     { href: "/family", title: "Family", icon: Users },
     { href: "/settings", title: "Settings", icon: Settings },
+    { href: "/privacy-simple", title: "私隱簡介", icon: ShieldCheck },
   ];
 
   return (
@@ -107,6 +111,7 @@ export function MorePage() {
           </Button>
         ))}
       </div>
+      <SimpleReminders />
     </PageFrame>
   );
 }
@@ -203,7 +208,9 @@ export function ReportsPage() {
 export function FamilyPage() {
   return (
     <PageFrame title="Family Health Dashboard" description="Consent-first caregiver sharing">
+      <DailyCheckInStatus />
       <FamilySharingPanel />
+      <FamilyWeeklyReport />
     </PageFrame>
   );
 }
@@ -211,6 +218,7 @@ export function FamilyPage() {
 export function DoctorPrepPage() {
   return (
     <PageFrame title="Doctor Visit Prep" description="Symptoms timeline, recent logs, questions and red flags">
+      <AppointmentPlanner />
       <Button asChild className="min-h-12 w-full sm:w-fit">
         <a href="/api/doctor/report" target="_blank" rel="noreferrer">
           匯出醫生摘要 / Export doctor report

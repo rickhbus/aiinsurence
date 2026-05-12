@@ -1,4 +1,4 @@
-export type PaymentPlan = "plus" | "pro" | "family";
+export type PaymentPlan = "care" | "family";
 
 export type PaymentPlanConfig = {
   id: PaymentPlan;
@@ -20,7 +20,7 @@ export type PaymentConfig = {
 
 type RawEnv = Record<string, string | undefined>;
 
-export const paymentPlanOrder: PaymentPlan[] = ["plus", "pro", "family"];
+export const paymentPlanOrder: PaymentPlan[] = ["care", "family"];
 
 export function getPaymentConfig(env: RawEnv = process.env): PaymentConfig {
   const appUrl = clean(env.NEXT_PUBLIC_APP_URL) || clean(env.APP_URL);
@@ -29,21 +29,15 @@ export function getPaymentConfig(env: RawEnv = process.env): PaymentConfig {
   const publishableKey = clean(env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
   const supabaseServiceRoleKey = clean(env.SUPABASE_SERVICE_ROLE_KEY);
   const plans: Record<PaymentPlan, PaymentPlanConfig> = {
-    plus: {
-      id: "plus",
-      name: "Plus",
+    care: {
+      id: "care",
+      name: "Care",
       priceLabel: "HK$58/month",
-      stripePriceId: clean(env.STRIPE_PRICE_PLUS),
-    },
-    pro: {
-      id: "pro",
-      name: "Pro",
-      priceLabel: "HK$128/month",
-      stripePriceId: clean(env.STRIPE_PRICE_PRO),
+      stripePriceId: clean(env.STRIPE_PRICE_CARE) || clean(env.STRIPE_PRICE_PLUS),
     },
     family: {
       id: "family",
-      name: "Family",
+      name: "Family Care",
       priceLabel: "HK$198/month",
       stripePriceId: clean(env.STRIPE_PRICE_FAMILY),
     },

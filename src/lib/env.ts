@@ -240,8 +240,8 @@ function hasAnyPaymentEnv(env: RawEnv) {
   return [
     env.STRIPE_SECRET_KEY,
     env.STRIPE_WEBHOOK_SECRET,
+    env.STRIPE_PRICE_CARE,
     env.STRIPE_PRICE_PLUS,
-    env.STRIPE_PRICE_PRO,
     env.STRIPE_PRICE_FAMILY,
     env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   ].some((value) => Boolean(clean(value)));
@@ -251,8 +251,7 @@ function getPaymentEnvWarnings(env: RawEnv): EnvIssue[] {
   const required = [
     "STRIPE_SECRET_KEY",
     "STRIPE_WEBHOOK_SECRET",
-    "STRIPE_PRICE_PLUS",
-    "STRIPE_PRICE_PRO",
+    "STRIPE_PRICE_CARE",
     "STRIPE_PRICE_FAMILY",
     "NEXT_PUBLIC_APP_URL",
     "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
@@ -260,7 +259,7 @@ function getPaymentEnvWarnings(env: RawEnv): EnvIssue[] {
   ] as const;
 
   return required
-    .filter((key) => !clean(env[key]))
+    .filter((key) => key === "STRIPE_PRICE_CARE" ? !clean(env.STRIPE_PRICE_CARE) && !clean(env.STRIPE_PRICE_PLUS) : !clean(env[key]))
     .map((key) => ({
       key,
       message: "Stripe payments are partially configured; checkout or webhook entitlement updates will stay disabled until this is set server-side.",

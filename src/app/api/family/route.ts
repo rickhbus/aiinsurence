@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { buildDailyCheckInStatus } from "@/lib/family/check-in-status";
 import { defaultFamilyShareScopes, familyShareScopes, normalizeFamilyShareScopes } from "@/lib/family/sharing";
 import { getAuthenticatedSupabase, readValidatedJson } from "@/lib/server/persistence-auth";
 import { getRequestId, jsonWithRequestId } from "@/lib/server/request-context";
@@ -37,7 +38,13 @@ export async function GET(request: Request) {
     return auth.response;
   }
 
-  const [memberships, invites, consents] = await Promise.all([
+  const today = new Date();
+  const start = new Date(today);
+  start.setUTCHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 1);
+
+  const [memberships, invites, consents, checkins, alerts] = await Promise.all([
     auth.supabase
       .from("family_memberships")
       .select("*, family_groups(*)")
@@ -53,6 +60,20 @@ export async function GET(request: Request) {
       .select("*")
       .eq("subject_user_id", auth.user.id)
       .order("created_at", { ascending: false }),
+    auth.supabase
+      .from("daily_checkins")
+      .select("checkin_type,label,note,metadata,created_at")
+      .eq("user_id", auth.user.id)
+      .gte("created_at", start.toISOString())
+      .lt("created_at", end.toISOString())
+      .order("created_at", { ascending: false }),
+    auth.supabase
+      .from("family_alerts")
+      .select("alert_type,created_at")
+      .eq("user_id", auth.user.id)
+      .gte("created_at", start.toISOString())
+      .lt("created_at", end.toISOString())
+      .order("created_at", { ascending: false }),
   ]);
   const error = memberships.error ?? invites.error ?? consents.error;
 
@@ -65,6 +86,11 @@ export async function GET(request: Request) {
     invites: invites.data ?? [],
     consents: consents.data ?? [],
     defaultScopes: defaultFamilyShareScopes,
+    checkInStatus: buildDailyCheckInStatus({
+      checkins: checkins.data ?? [],
+      alerts: alerts.data ?? [],
+      now: today,
+    }),
   }, undefined, requestId);
 }
 

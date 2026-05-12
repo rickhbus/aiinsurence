@@ -3,10 +3,11 @@ import {
   mapStripePriceToPlan,
   planForSubscriptionStatus,
   upsertSubscriptionEntitlement,
+  type EntitlementPlan,
   type EntitlementStatus,
   type EntitlementUpdate,
 } from "@/lib/payments/entitlements";
-import { getPaymentConfig, type PaymentPlan } from "@/lib/payments/config";
+import { getPaymentConfig } from "@/lib/payments/config";
 import { getStripeClient } from "@/lib/payments/stripe";
 import { createAdminClient } from "@/lib/supabase/server";
 import { getRequestId, jsonWithRequestId } from "@/lib/server/request-context";
@@ -105,8 +106,12 @@ function buildEntitlementUpdateFromEvent(event: Stripe.Event): EntitlementUpdate
   return null;
 }
 
-function normalizePlan(value: string | null | undefined): PaymentPlan | null {
-  return value === "plus" || value === "pro" || value === "family" ? value : null;
+function normalizePlan(value: string | null | undefined): EntitlementPlan | null {
+  if (value === "care" || value === "family" || value === "plus" || value === "pro") {
+    return value;
+  }
+
+  return null;
 }
 
 function stripeId(value: string | { id: string } | null) {

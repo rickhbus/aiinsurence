@@ -7,7 +7,7 @@ import { getRequestId, jsonWithRequestId } from "@/lib/server/request-context";
 export const dynamic = "force-dynamic";
 
 const checkoutSchema = z.object({
-  plan: z.enum(["plus", "pro", "family"]),
+  plan: z.enum(["care", "family"]),
 });
 
 export async function POST(request: Request) {

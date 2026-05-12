@@ -1,6 +1,7 @@
 "use client";
 
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { seniorMode, seniorModeSetting } from "@/lib/health-app/senior-mode";
 import { cn } from "@/lib/utils";
 
 type BigButtonTone = "default" | "soft" | "warning" | "danger";
@@ -25,14 +26,18 @@ export function BigButton({
   return (
     <button
       type="button"
-      className={cn(
-        "flex min-h-24 w-full items-center gap-4 rounded-2xl border px-5 py-4 text-left text-xl font-semibold tracking-normal shadow-sm transition active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60 sm:min-h-28 sm:text-2xl",
+        className={cn(
+        "flex w-full items-center gap-4 rounded-xl border text-left font-bold tracking-normal shadow-sm disabled:pointer-events-none disabled:opacity-60",
+        seniorMode && seniorModeSetting.biggerTapTargets
+          ? "min-h-28 px-5 py-5 text-2xl sm:min-h-32 sm:text-3xl"
+          : "min-h-24 px-5 py-4 text-xl sm:min-h-28 sm:text-2xl",
+        seniorMode && seniorModeSetting.reducedAnimation ? "transition-colors" : "transition active:scale-[0.99]",
         toneClassName[tone],
         className,
       )}
       {...props}
     >
-      <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-background/65 text-3xl shadow-inner sm:size-14 sm:text-4xl">
+      <span className="grid size-14 shrink-0 place-items-center rounded-xl bg-background/80 text-4xl shadow-inner sm:size-16 sm:text-5xl">
         {emoji}
       </span>
       <span className="min-w-0 leading-tight">{children}</span>

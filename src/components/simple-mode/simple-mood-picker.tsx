@@ -1,18 +1,9 @@
 "use client";
 
 import { BigButton } from "./big-button";
+import { simpleMoodChoices } from "@/lib/health-app/senior-mode";
 
 export type SimpleMood = "good" | "okay" | "not-good";
-
-const moodChoices: Array<{
-  mood: SimpleMood;
-  emoji: string;
-  label: string;
-}> = [
-  { mood: "good", emoji: "😊", label: "好 / Good" },
-  { mood: "okay", emoji: "😐", label: "一般 / Okay" },
-  { mood: "not-good", emoji: "😣", label: "唔舒服 / Not good" },
-];
 
 export function SimpleMoodPicker({
   disabled,
@@ -23,13 +14,13 @@ export function SimpleMoodPicker({
 }) {
   return (
     <div className="grid gap-3 sm:grid-cols-3">
-      {moodChoices.map((choice) => (
+      {simpleMoodChoices.map((choice) => (
         <BigButton
           key={choice.mood}
           emoji={choice.emoji}
           tone={choice.mood === "not-good" ? "warning" : "soft"}
           disabled={disabled}
-          onClick={() => onSelect(choice.mood)}
+          onClick={() => onSelect(choice.mood as SimpleMood)}
         >
           {choice.label}
         </BigButton>

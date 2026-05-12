@@ -8,8 +8,8 @@ The app is **not** a doctor, insurer, broker, licensed insurance intermediary, t
 
 ## MVP Surface
 
-- `/` premium landing and anonymous-first entry.
-- `/today` daily dashboard with wake, sleep, mood, energy, stress, hydration, food, toilet/digestion, activity, gym, recovery, safety, and AI next action.
+- `/` senior-first landing and anonymous-first entry.
+- `/today` Senior Mode / Big Button Mode with mood, food, water, toilet, movement, photo journal, call-family, and 999 actions.
 - `/check-in` fast morning/evening check-in.
 - `/mood` Mood & Emotion Coach built on the existing Emotion Engine.
 - `/food` manual food log plus server-side food photo analysis when an AI provider is configured; otherwise it returns a safe provider-unavailable fallback.
@@ -18,8 +18,8 @@ The app is **not** a doctor, insurer, broker, licensed insurance intermediary, t
 - `/gym` workout coach with sessions, exercise sets, RPE, pain flags, recovery guidance, and charts.
 - `/gym/templates` built-in workout templates.
 - `/reports` AI daily/weekly report surface and doctor-summary export readiness.
-- `/family` minimal consent-first family/caregiver groups, invites, and sharing scopes.
-- `/doctor` doctor visit preparation.
+- `/family` minimal consent-first family/caregiver groups, invites, daily check-in status, in-app family alerts, and family weekly report preview.
+- `/doctor` doctor visit preparation and appointment planner.
 - `/insurance` insurance preparation education only.
 - `/pricing` Stripe Checkout subscription buttons when payment env vars are configured, with mock/free fallback when they are not.
 - `/business` gym/PT/employer/clinic lead capture.
@@ -61,8 +61,9 @@ Apply migrations in numeric order:
 8. `supabase/migrations/008_health_companion_mvp.sql`
 9. `supabase/migrations/009_auth_anonymous_profile_trigger.sql`
 10. `supabase/migrations/010_food_payments_family_doctor.sql`
+11. `supabase/migrations/011_family_alerts_senior_mode.sql`
 
-Migration `008` adds the Daily Health OS MVP tables: `daily_health_logs`, `mood_logs`, `meal_logs`, `hydration_logs`, `bowel_urine_logs`, `gym_workouts`, `gym_exercise_sets`, `workout_templates`, `subscription_entitlements`, and `business_leads`, plus additive summary columns. Migration `010` adds Stripe entitlement columns, locks entitlement writes to server/webhook updates, and adds consent-based family tables.
+Migration `008` adds the Daily Health OS MVP tables: `daily_health_logs`, `mood_logs`, `meal_logs`, `hydration_logs`, `bowel_urine_logs`, `gym_workouts`, `gym_exercise_sets`, `workout_templates`, `subscription_entitlements`, and `business_leads`, plus additive summary columns. Migration `010` adds Stripe entitlement columns, locks entitlement writes to server/webhook updates, and adds consent-based family tables. Migration `011` adds senior/family-care tables for in-app family alerts, reminders, doctor appointments, and user-confirmed photo journal entries.
 
 ## API Routes
 
@@ -84,7 +85,12 @@ New typed routes include:
 - `POST /api/reports/daily`
 - `GET /api/reports/weekly`
 - `GET /api/doctor/report`
+- `GET/POST /api/doctor/appointments`
 - `GET/POST /api/family`
+- `POST /api/family/alert`
+- `GET /api/family/weekly-report`
+- `GET/POST /api/reminders`
+- `POST /api/photo-journal`
 - `GET /api/payments/config`
 - `POST /api/payments/checkout`
 - `POST /api/payments/portal`
@@ -105,14 +111,13 @@ See `docs/mobile-health-integration.md`.
 
 `/pricing` supports these subscription plans:
 
-- Free
-- Plus HK$58/month
-- Pro HK$128/month
-- Family HK$198/month
+- Basic / Free HK$0
+- Care HK$58/month
+- Family Care HK$198/month
 - Gym/PT Partner
 - Employer Wellness
 
-Stripe Checkout is used only when all required server-side env vars are present. Webhooks, not client claims, update `subscription_entitlements`. When payment env vars are absent or partial, checkout buttons safely show `Payment not configured` and mock/free entitlements remain the fallback.
+Family Care is positioned as “最適合照顧爸爸媽媽 / Best for caring for parents.” Stripe Checkout is used only when all required server-side env vars are present. Webhooks, not client claims, update `subscription_entitlements`. When payment env vars are absent or partial, checkout buttons safely show `Payment not configured` and mock/free entitlements remain the fallback.
 
 Required payment env vars:
 
@@ -121,13 +126,23 @@ STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 NEXT_PUBLIC_APP_URL=
-STRIPE_PRICE_PLUS=
-STRIPE_PRICE_PRO=
+STRIPE_PRICE_CARE=
 STRIPE_PRICE_FAMILY=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
+`STRIPE_PRICE_PLUS` is still accepted as a legacy fallback for the Care plan during migration.
+
 `SUPABASE_SERVICE_ROLE_KEY` is server-only and is used by the Stripe webhook route to update entitlement rows under RLS. Never prefix it with `NEXT_PUBLIC_`.
+
+## Senior / Family Care Positioning
+
+- Primary user: older adults / boomers.
+- Primary payer: adult children / caregivers.
+- Default UX: Senior Mode + Big Button Mode.
+- Monetization: Family Care.
+- Safety: not diagnosis, not an emergency replacement, call 999 for emergencies.
+- Consent: family sharing only with explicit consent.
 
 ## Local Development
 

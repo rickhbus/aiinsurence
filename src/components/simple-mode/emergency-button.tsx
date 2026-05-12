@@ -23,7 +23,7 @@ export function EmergencyButton({
         })
       }
     >
-      緊急 / 999
+      緊急 999
     </BigButton>
   );
 }
