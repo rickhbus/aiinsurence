@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import type { Locale } from "@/lib/health-app/types";
 import { text, ui } from "@/lib/health-app/i18n";
+import { getSupabaseRequestHeaders } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const ONBOARDING_STORAGE_KEY = "health:onboarding-completed:v1";
@@ -283,12 +284,13 @@ export function OnboardingPage({ locale }: { locale: Locale }) {
     setSaving(true);
 
     try {
+      const headers = await getSupabaseRequestHeaders({
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      });
       const response = await fetch("/api/onboarding", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers,
         body: JSON.stringify(state),
       });
 

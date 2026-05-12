@@ -14,6 +14,43 @@ export type AuthenticatedSupabase =
       response: Response;
     };
 
+export type OptionalAuthenticatedSupabase = {
+  supabase: SupabaseClient | null;
+  user: User | null;
+};
+
+export async function getOptionalAuthenticatedSupabase(
+  request?: Request,
+): Promise<OptionalAuthenticatedSupabase> {
+  const bearerToken = readBearerToken(request);
+
+  if (bearerToken) {
+    const supabase = createBearerClient(bearerToken);
+
+    if (!supabase) {
+      return { supabase: null, user: null };
+    }
+
+    const { data, error } = await supabase.auth.getUser(bearerToken);
+
+    if (error || !data.user) {
+      return { supabase: null, user: null };
+    }
+
+    return { supabase, user: data.user };
+  }
+
+  const supabase = await createClient();
+
+  if (!supabase) {
+    return { supabase: null, user: null };
+  }
+
+  const { data, error } = await supabase.auth.getUser();
+
+  return { supabase, user: error ? null : data.user };
+}
+
 export async function getAuthenticatedSupabase(request?: Request): Promise<AuthenticatedSupabase> {
   const requestId = request ? getRequestId(request) : crypto.randomUUID();
   const bearerToken = readBearerToken(request);

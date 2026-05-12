@@ -3,7 +3,10 @@ import { runGblAnalysis } from "@/lib/gbl/engine";
 import { saveGblAnalysis } from "@/lib/gbl/persistence";
 import { gblAnalysisInputSchema } from "@/lib/gbl/validators";
 import { hashUserId, logError } from "@/lib/observability/logger";
-import { readValidatedJson } from "@/lib/server/persistence-auth";
+import {
+  getOptionalAuthenticatedSupabase,
+  readValidatedJson,
+} from "@/lib/server/persistence-auth";
 import {
   checkAnonymousRateLimit,
   checkUserAiRateLimit,
@@ -15,7 +18,6 @@ import {
   jsonWithRequestId,
   withRequestIdHeaders,
 } from "@/lib/server/request-context";
-import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -27,11 +29,7 @@ export async function POST(request: Request) {
     return parsed.response;
   }
 
-  const supabase = await createClient();
-  const { data } = supabase
-    ? await supabase.auth.getUser()
-    : { data: { user: null } };
-  const user = data.user;
+  const { supabase, user } = await getOptionalAuthenticatedSupabase(request);
 
   if (supabase && user) {
     const limit = await checkUserAiRateLimit({

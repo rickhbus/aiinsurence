@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { getSupabaseRequestHeaders } from "@/lib/supabase/client";
 
 export function MemoryConsentCard({
   locale,
@@ -36,12 +37,13 @@ export function MemoryConsentCard({
     setSaving(true);
 
     try {
+      const headers = await getSupabaseRequestHeaders({
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      });
       const response = await fetch("/api/memory/confirm", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers,
         body: JSON.stringify({
           memory_type: category,
           content: value,

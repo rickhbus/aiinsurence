@@ -27,7 +27,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { label, text, ui } from "@/lib/health-app/i18n";
 import type { Locale, LocalizedText, MemoryCategory } from "@/lib/health-app/types";
 import type { DashboardData, HealthMemoryRow } from "@/lib/health-data/types";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  getSupabaseBrowserClient,
+  getSupabaseRequestHeaders,
+} from "@/lib/supabase/client";
 import type { Profile } from "@/lib/user-memory";
 import { GoalCard, SafetyDisclaimer } from "./dashboard-cards";
 import { ProgressChart } from "./charts";
@@ -192,8 +195,11 @@ export function MemoryPage({ locale }: { locale: Locale }) {
 
     async function loadMemory() {
       try {
+        const headers = await getSupabaseRequestHeaders({
+          Accept: "application/json",
+        });
         const response = await fetch("/api/memory", {
-          headers: { Accept: "application/json" },
+          headers,
         });
 
         if (!response.ok) {
@@ -382,12 +388,13 @@ export function MemoryPage({ locale }: { locale: Locale }) {
   );
 
   async function saveMemoryEdit(id: string) {
+    const headers = await getSupabaseRequestHeaders({
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    });
     const response = await fetch("/api/memory", {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      headers,
       body: JSON.stringify({ id, content: editingText }),
     });
 
@@ -404,12 +411,13 @@ export function MemoryPage({ locale }: { locale: Locale }) {
   }
 
   async function deleteMemory(id: string) {
+    const headers = await getSupabaseRequestHeaders({
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    });
     const response = await fetch("/api/memory", {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      headers,
       body: JSON.stringify({ id }),
     });
 

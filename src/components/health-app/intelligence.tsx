@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { getSupabaseRequestHeaders } from "@/lib/supabase/client";
 import { SafetyDisclaimer } from "./dashboard-cards";
 
 type ApiError = {
@@ -47,12 +48,13 @@ export function GblPage({ locale }: { locale: Locale }) {
     setError(null);
 
     try {
+      const headers = await getSupabaseRequestHeaders({
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      });
       const response = await fetch("/api/gbl/analyze", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers,
         body: JSON.stringify({
           title,
           analysisType,
@@ -191,12 +193,13 @@ export function EmotionEnginePage({ locale }: { locale: Locale }) {
     setError(null);
 
     try {
+      const headers = await getSupabaseRequestHeaders({
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      });
       const response = await fetch("/api/emotion/analyze", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers,
         body: JSON.stringify({ text: textValue, language: locale, save }),
       });
       const body = (await response.json()) as EmotionAnalysisResult | ApiError;
@@ -276,8 +279,11 @@ export function HistoryPage({ locale }: { locale: Locale }) {
 
     async function loadHistory() {
       try {
+        const headers = await getSupabaseRequestHeaders({
+          Accept: "application/json",
+        });
         const response = await fetch("/api/history?limit=30", {
-          headers: { Accept: "application/json" },
+          headers,
         });
         const body = (await response.json()) as { items: HistoryItem[] } | ApiError;
 

@@ -25,6 +25,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { getSupabaseRequestHeaders } from "@/lib/supabase/client";
 import { MemoryConsentCard } from "./memory-consent-card";
 
 export function RightCoachPanel({ locale, onClose }: { locale: Locale; onClose?: () => void }) {
@@ -71,12 +72,13 @@ export function CoachSurface({
     setSending(true);
 
     try {
+      const headers = await getSupabaseRequestHeaders({
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      });
       const response = await fetch("/api/coach", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers,
         body: JSON.stringify({ message: trimmed, language: locale }),
       });
       const body = (await response.json()) as CoachResponse | { error: string };
