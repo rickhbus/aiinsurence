@@ -28,23 +28,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import {
-  activityData,
   foodRecommendations,
-  goals,
-  gymLogs,
-  gymVolumeData,
-  healthScore,
   lessons,
-  macroData,
-  mealLogs,
-  runningDistanceData,
-  runningLogs,
-  sleepLogs,
-  waterData,
-  workoutTemplates,
-} from "@/lib/health-app/mock-data";
-import type { Goal, Lesson, Locale, LocalizedText } from "@/lib/health-app/types";
-import type { DashboardData } from "@/lib/health-data/types";
+} from "@/lib/health-app/content";
+import type { Lesson, Locale, LocalizedText, MacroDatum, MetricDatum } from "@/lib/health-app/types";
+import type { DashboardData, GoalRow } from "@/lib/health-data/types";
 import { label, safetyCopy, text, ui } from "@/lib/health-app/i18n";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -67,12 +55,14 @@ type CardProps = {
   data?: DashboardData | null;
 };
 
+const emptyMetrics: MetricDatum[] = [];
+
 export function HealthScoreCard({ locale, className, data }: CardProps) {
-  const score = data?.today.health_score ?? healthScore.score;
-  const activityScore = data?.today.activity_score ?? 86;
-  const nutritionScore = data?.today.nutrition_score ?? 82;
-  const sleepScore = data?.today.sleep_score ?? 72;
-  const hydrationScore = data?.today.hydration_score ?? 76;
+  const score = data?.today.health_score ?? 0;
+  const activityScore = data?.today.activity_score ?? 0;
+  const nutritionScore = data?.today.nutrition_score ?? 0;
+  const sleepScore = data?.today.sleep_score ?? 0;
+  const hydrationScore = data?.today.hydration_score ?? 0;
 
   return (
     <DashboardCard className={cn("health-card-glow", className)} icon={HeartPulse} title={{ zh: "健康分數", en: "Health Score" }} locale={locale} index={0}>
@@ -83,7 +73,9 @@ export function HealthScoreCard({ locale, className, data }: CardProps) {
         <div className="flex min-w-0 flex-1 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="w-fit">
-              {locale === "zh-Hant" ? "較上週 +8" : "+8 vs last week"}
+              {!data || data.empty
+                ? locale === "zh-Hant" ? "尚未有紀錄" : "No records yet"
+                : locale === "zh-Hant" ? "真實紀錄" : "Real records"}
             </Badge>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -103,7 +95,9 @@ export function HealthScoreCard({ locale, className, data }: CardProps) {
               ? locale === "zh-Hant"
                 ? "分數根據今日活動、飲食、睡眠和飲水摘要計算，只作生活方式教育參考。"
                 : "Score is calculated from today’s activity, nutrition, sleep, and hydration summaries for lifestyle education only."
-              : text(healthScore.explanation, locale)}
+              : locale === "zh-Hant"
+                ? "連接真實紀錄後，這裡會顯示生活方式教育分數。"
+                : "Connect real records to show lifestyle education scoring here."}
           </p>
           <div className="grid grid-cols-2 gap-2 text-center text-xs sm:grid-cols-4">
             <MiniStat value={String(activityScore)} label={locale === "zh-Hant" ? "活動量" : "Activity"} />
@@ -142,58 +136,41 @@ export function TodayPlanCard({ locale, className, data }: CardProps) {
           detail: { zh: recommendation.learning.action, en: recommendation.learning.action },
         },
       ]
-    : [
-    {
-      icon: Dumbbell,
-      title: { zh: "運動: 上半身力量 30 分鐘", en: "Exercise: 30-minute upper-body strength" },
-      detail: { zh: "昨日跑步較用力，今天避免再加跑量。", en: "Yesterday’s run was harder, so avoid extra run volume today." },
-    },
-    {
-      icon: Apple,
-      title: { zh: "飲食: 午餐加一份蛋白質", en: "Nutrition: add one protein serving at lunch" },
-      detail: { zh: "雞、魚、豆腐、蛋或希臘乳酪都可以。", en: "Chicken, fish, tofu, eggs, or Greek yogurt all work." },
-    },
-    {
-      icon: Moon,
-      title: { zh: "恢復: 睡前 15 分鐘放低手機", en: "Recovery: put the phone down 15 minutes earlier" },
-      detail: { zh: "睡眠一致性是今日最大改善位。", en: "Sleep consistency is today’s biggest improvement area." },
-    },
-    {
-      icon: BookOpenCheck,
-      title: { zh: "學習: 漸進超負荷", en: "Learn: progressive overload" },
-      detail: { zh: "只選一個動作小幅進步。", en: "Choose one exercise and improve by one small step." },
-    },
-  ];
+    : [];
 
   return (
     <DashboardCard className={className} icon={Sparkles} title={ui.todayPlan} locale={locale} index={1}>
-      <div className="flex flex-col gap-3">
-        {items.map((item) => (
-          <div key={item.title.en} className="group/plan flex items-start gap-3 rounded-xl bg-muted/35 p-3 transition-all duration-200 hover:bg-muted/55 hover:shadow-sm">
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 transition-colors group-hover/plan:bg-primary/15">
-              <item.icon aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <p className="font-medium">{text(item.title, locale)}</p>
-              <p className="mt-1 text-sm leading-5 text-muted-foreground">{text(item.detail, locale)}</p>
+      {items.length > 0 ? (
+        <div className="flex flex-col gap-3">
+          {items.map((item) => (
+            <div key={item.title.en} className="group/plan flex items-start gap-3 rounded-xl bg-muted/35 p-3 transition-all duration-200 hover:bg-muted/55 hover:shadow-sm">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 transition-colors group-hover/plan:bg-primary/15">
+                <item.icon aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <p className="font-medium">{text(item.title, locale)}</p>
+                <p className="mt-1 text-sm leading-5 text-muted-foreground">{text(item.detail, locale)}</p>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <EmptyCardMessage locale={locale} />
+      )}
     </DashboardCard>
   );
 }
 
 export function ActivitySummaryCard({ locale, className, data }: CardProps) {
-  const chartData = dataOrFallback(data?.charts.activity, activityData);
-  const activeMinutes = Math.round(data?.today.active_minutes ?? 47);
-  const calories = Math.round(data?.today.calories_total ?? 612);
-  const streak = data?.weekly.workout_days ?? 5;
+  const chartData = dataOrEmpty(data?.charts.activity);
+  const activeMinutes = Math.round(data?.today.active_minutes ?? 0);
+  const calories = Math.round(data?.today.calories_total ?? 0);
+  const streak = data?.weekly.workout_days ?? 0;
 
   return (
     <DashboardCard className={className} icon={Activity} title={{ zh: "活動摘要", en: "Activity summary" }} locale={locale} index={3}>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <MetricPill icon={Footprints} value="9,143" label={{ zh: "步數", en: "Steps" }} locale={locale} />
+        <MetricPill icon={Footprints} value="0" label={{ zh: "步數", en: "Steps" }} locale={locale} />
         <MetricPill icon={Flame} value={String(calories)} label={{ zh: "卡路里", en: "Calories" }} locale={locale} />
         <MetricPill icon={Activity} value={`${activeMinutes}m`} label={{ zh: "運動分鐘", en: "Workout minutes" }} locale={locale} />
         <MetricPill icon={Trophy} value={`${streak}d`} label={{ zh: "連續紀錄", en: "Weekly streak" }} locale={locale} />
@@ -205,17 +182,17 @@ export function ActivitySummaryCard({ locale, className, data }: CardProps) {
 
 export function RunningProgressCard({ locale, className, data }: CardProps) {
   const lastRun = data?.recent.running[0];
-  const weeklyDistance = data?.weekly.running_distance_km ?? 12.3;
-  const chartData = dataOrFallback(data?.charts.runningDistance, runningDistanceData);
-  const averagePace = getAveragePace(data?.recent.running);
+  const weeklyDistance = data?.weekly.running_distance_km ?? 0;
+  const chartData = dataOrEmpty(data?.charts.runningDistance);
+  const averagePace = getAveragePace(data?.recent.running, locale);
 
   return (
     <DashboardCard className={className} icon={Footprints} title={ui.running} locale={locale} href="/track/running" index={4}>
       <div className="grid grid-cols-2 gap-3">
         <MiniStat value={`${weeklyDistance} km`} label={locale === "zh-Hant" ? "本週距離" : "Weekly distance"} />
-        <MiniStat value={lastRun ? `${lastRun.distance_km} km` : "5.0 km"} label={locale === "zh-Hant" ? "上次跑步" : "Last run"} />
+        <MiniStat value={lastRun ? `${lastRun.distance_km} km` : locale === "zh-Hant" ? "未記錄" : "No log"} label={locale === "zh-Hant" ? "上次跑步" : "Last run"} />
         <MiniStat value={averagePace} label={locale === "zh-Hant" ? "平均配速" : "Average pace"} />
-        <MiniStat value="Recovery" label={locale === "zh-Hant" ? "下次建議" : "Next run"} />
+        <MiniStat value={data ? (locale === "zh-Hant" ? "按紀錄" : "By data") : (locale === "zh-Hant" ? "未載入" : "No data")} label={locale === "zh-Hant" ? "下次建議" : "Next run"} />
       </div>
       <ProgressChart data={chartData} variant="bar" height={142} />
       <p className="text-sm leading-6 text-muted-foreground">
@@ -229,16 +206,16 @@ export function RunningProgressCard({ locale, className, data }: CardProps) {
 
 export function GymProgressCard({ locale, className, data }: CardProps) {
   const lastWorkout = data?.recent.gym[0];
-  const volume = data?.charts.gymVolume.reduce((total, item) => total + item.value, 0) ?? 3104;
-  const chartData = dataOrFallback(data?.charts.gymVolume, gymVolumeData);
+  const volume = data?.charts.gymVolume.reduce((total, item) => total + item.value, 0) ?? 0;
+  const chartData = dataOrEmpty(data?.charts.gymVolume);
 
   return (
     <DashboardCard className={className} icon={Dumbbell} title={ui.gym} locale={locale} href="/track/gym" index={5}>
       <div className="grid grid-cols-2 gap-3">
-        <MiniStat value={lastWorkout?.workout_title || "Pull + core"} label={locale === "zh-Hant" ? "上次訓練" : "Last workout"} />
-        <MiniStat value={lastWorkout?.muscle_group || "Back, Core"} label={locale === "zh-Hant" ? "肌群" : "Muscles"} />
+        <MiniStat value={lastWorkout?.workout_title || (locale === "zh-Hant" ? "未記錄" : "No log")} label={locale === "zh-Hant" ? "上次訓練" : "Last workout"} />
+        <MiniStat value={lastWorkout?.muscle_group || (locale === "zh-Hant" ? "未記錄" : "No log")} label={locale === "zh-Hant" ? "肌群" : "Muscles"} />
         <MiniStat value={`${volume.toLocaleString()} kg`} label={locale === "zh-Hant" ? "本週容量" : "Weekly volume"} />
-        <MiniStat value="Green" label={locale === "zh-Hant" ? "恢復狀態" : "Recovery"} />
+        <MiniStat value={data ? (locale === "zh-Hant" ? "按紀錄" : "By data") : (locale === "zh-Hant" ? "未載入" : "No data")} label={locale === "zh-Hant" ? "恢復狀態" : "Recovery"} />
       </div>
       <MuscleGroupChart data={chartData} />
       <p className="text-sm leading-6 text-muted-foreground">
@@ -251,19 +228,17 @@ export function GymProgressCard({ locale, className, data }: CardProps) {
 }
 
 export function NutritionCard({ locale, className, data }: CardProps) {
-  const calories = data?.today.calories_total ?? 1710;
-  const protein = data?.today.protein_total ?? 108;
-  const carbs = data?.today.carbs_total ?? 46;
-  const fat = data?.today.fat_total ?? 20;
-  const waterLiters = ((data?.today.water_total_ml ?? 2300) / 1000).toFixed(1);
+  const calories = data?.today.calories_total ?? 0;
+  const protein = data?.today.protein_total ?? 0;
+  const carbs = data?.today.carbs_total ?? 0;
+  const fat = data?.today.fat_total ?? 0;
+  const waterLiters = ((data?.today.water_total_ml ?? 0) / 1000).toFixed(1);
   const totalMacros = Math.max(1, protein + carbs + fat);
-  const macroChartData = data
-    ? [
-        { name: "Protein", value: Math.round((protein / totalMacros) * 100), fill: "var(--chart-1)" },
-        { name: "Carbs", value: Math.round((carbs / totalMacros) * 100), fill: "var(--chart-2)" },
-        { name: "Fat", value: Math.round((fat / totalMacros) * 100), fill: "var(--chart-3)" },
-      ]
-    : macroData;
+  const macroChartData: MacroDatum[] = [
+    { name: "Protein", value: Math.round((protein / totalMacros) * 100), fill: "var(--chart-1)" },
+    { name: "Carbs", value: Math.round((carbs / totalMacros) * 100), fill: "var(--chart-2)" },
+    { name: "Fat", value: Math.round((fat / totalMacros) * 100), fill: "var(--chart-3)" },
+  ];
 
   return (
     <DashboardCard className={className} icon={Apple} title={ui.nutrition} locale={locale} href="/nutrition" index={6}>
@@ -273,7 +248,7 @@ export function NutritionCard({ locale, className, data }: CardProps) {
         <MiniStat value={`${carbs}g`} label={locale === "zh-Hant" ? "碳水" : "Carbs"} />
         <MiniStat value={`${fat}g`} label={locale === "zh-Hant" ? "脂肪" : "Fat"} />
         <MiniStat value={`${waterLiters}L`} label={locale === "zh-Hant" ? "飲水" : "Water"} />
-        <MiniStat value={String(data?.today.nutrition_score ?? 82)} label={locale === "zh-Hant" ? "餐質分" : "Meal quality"} />
+        <MiniStat value={String(data?.today.nutrition_score ?? 0)} label={locale === "zh-Hant" ? "餐質分" : "Meal quality"} />
       </div>
       <MacroChart data={macroChartData} />
       <p className="text-sm leading-6 text-muted-foreground">
@@ -286,9 +261,9 @@ export function NutritionCard({ locale, className, data }: CardProps) {
 }
 
 export function WaterCard({ locale, className, data }: CardProps) {
-  const waterMl = data?.today.water_total_ml ?? 2300;
+  const waterMl = data?.today.water_total_ml ?? 0;
   const progress = Math.min(100, Math.round((waterMl / 3000) * 100));
-  const chartData = dataOrFallback(data?.charts.water, waterData);
+  const chartData = dataOrEmpty(data?.charts.water);
 
   return (
     <DashboardCard className={className} icon={Droplets} title={ui.water} locale={locale} index={8}>
@@ -304,10 +279,8 @@ export function WaterCard({ locale, className, data }: CardProps) {
 }
 
 export function SleepCard({ locale, className, data }: CardProps) {
-  const average = data?.today.sleep_hours
-    ? data.today.sleep_hours.toFixed(1)
-    : (sleepLogs.reduce((sum, item) => sum + item.hours, 0) / sleepLogs.length).toFixed(1);
-  const sleepScore = data?.today.sleep_score ?? 72;
+  const average = data?.today.sleep_hours ? data.today.sleep_hours.toFixed(1) : "0.0";
+  const sleepScore = data?.today.sleep_score ?? 0;
 
   return (
     <DashboardCard className={className} icon={BedDouble} title={ui.sleep} locale={locale} index={7}>
@@ -315,9 +288,13 @@ export function SleepCard({ locale, className, data }: CardProps) {
         <div className="flex flex-col gap-3">
           <MiniStat value={`${average}h`} label={locale === "zh-Hant" ? "平均睡眠" : "Average sleep"} />
           <p className="text-sm leading-6 text-muted-foreground">
-            {locale === "zh-Hant"
-              ? "睡眠質素不差，但入睡時間仍可更固定。"
-              : "Sleep quality is decent, but bedtime consistency can improve."}
+            {data?.today.sleep_hours
+              ? locale === "zh-Hant"
+                ? "睡眠提示會根據你的真實睡眠紀錄更新。"
+                : "Sleep guidance updates from your real sleep records."
+              : locale === "zh-Hant"
+                ? "尚未有睡眠紀錄。新增紀錄後，這裡會顯示睡眠趨勢。"
+                : "No sleep record yet. Add records to show sleep trends here."}
           </p>
         </div>
         <ProgressRing value={sleepScore} label={locale === "zh-Hant" ? "睡眠分" : "sleep"} size={104} />
@@ -335,29 +312,29 @@ export function AIRecommendationCard({ locale, className, data }: CardProps) {
         <h3 className="text-xl font-semibold tracking-normal">
           {recommendation
             ? `${recommendation.workout.title}，${recommendation.nutrition.title}`
-            : locale === "zh-Hant" ? "輕量上身訓練，加強午餐蛋白質" : "Light upper-body work and more protein at lunch"}
+            : locale === "zh-Hant" ? "尚未有真實紀錄可生成建議" : "No real records available for recommendations"}
         </h3>
         <p className="text-sm leading-6 text-muted-foreground">
           {recommendation
             ? recommendation.workout.summary
             : locale === "zh-Hant"
-            ? "今天先維持活動節奏，不急於加跑量。"
-            : "Keep your activity rhythm today without rushing to add run volume."}
+            ? "新增活動、飲食、睡眠或飲水紀錄後，系統會用真實資料生成建議。"
+            : "Add activity, food, sleep, or water records to generate recommendations from real data."}
         </p>
         <div className="rounded-xl bg-muted/35 p-3 ring-1 ring-border/50">
           <p className="text-sm font-medium">{label(ui.why, locale)}</p>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
             {locale === "zh-Hant"
-              ? recommendation?.workout.reason ?? "你昨日跑步 RPE 7，今天再加跑量未必最有效；飲食記錄顯示午餐蛋白質仍可提升。"
-              : "Yesterday’s run was RPE 7, so more run volume may not be useful today; lunch protein can improve."}
+              ? recommendation?.workout.reason ?? "尚未載入真實紀錄，系統不會推斷原因。"
+              : recommendation?.workout.reason ?? "No real records are loaded, so the system will not infer a reason."}
           </p>
         </div>
         <div className="rounded-xl bg-muted/35 p-3 ring-1 ring-border/50">
           <p className="text-sm font-medium">{label(ui.action, locale)}</p>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
             {locale === "zh-Hant"
-              ? recommendation?.workout.action ?? "做 30 分鐘上身力量訓練，午餐加入豆腐、魚、雞蛋或雞肉。"
-            : "Do 30 minutes of upper-body strength and add tofu, fish, eggs, or chicken at lunch."}
+              ? recommendation?.workout.action ?? "先新增一筆真實紀錄，或使用醫療導航檢查安全警號。"
+            : recommendation?.workout.action ?? "Add a real record first, or use care navigation to check warning signs."}
           </p>
         </div>
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm leading-6 text-muted-foreground">
@@ -481,52 +458,58 @@ export function HealthcareReminderCard({ locale, className }: CardProps) {
 }
 
 export function WeeklyProgressCard({ locale, className, data }: CardProps) {
-  const gymVolume = data?.charts.gymVolume.reduce((total, item) => total + item.value, 0) ?? 3104;
-  const chartData = dataOrFallback(data?.charts.activity, activityData);
+  const gymVolume = data?.charts.gymVolume.reduce((total, item) => total + item.value, 0) ?? 0;
+  const chartData = dataOrEmpty(data?.charts.activity);
 
   return (
     <DashboardCard className={className} icon={TrendingUp} title={{ zh: "每週進度", en: "Weekly Progress" }} locale={locale} href="/progress" index={11}>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <MiniStat value={`${data?.weekly.running_distance_km ?? 12.3} km`} label={locale === "zh-Hant" ? "跑步趨勢" : "Running"} />
+        <MiniStat value={`${data?.weekly.running_distance_km ?? 0} km`} label={locale === "zh-Hant" ? "跑步趨勢" : "Running"} />
         <MiniStat value={`${gymVolume.toLocaleString()} kg`} label={locale === "zh-Hant" ? "健身容量" : "Gym volume"} />
-        <MiniStat value={`${data?.weekly.protein_consistency_days ?? 4}/7`} label={locale === "zh-Hant" ? "營養一致" : "Nutrition"} />
-        <MiniStat value={`${data?.weekly.water_goal_days ?? 5}d`} label={locale === "zh-Hant" ? "飲水連續" : "Water streak"} />
+        <MiniStat value={`${data?.weekly.protein_consistency_days ?? 0}/7`} label={locale === "zh-Hant" ? "營養一致" : "Nutrition"} />
+        <MiniStat value={`${data?.weekly.water_goal_days ?? 0}d`} label={locale === "zh-Hant" ? "飲水連續" : "Water streak"} />
       </div>
       <ProgressChart data={chartData} height={150} />
       <div className="rounded-xl bg-muted/35 p-3 text-sm leading-6 text-muted-foreground ring-1 ring-border/50">
         <Target aria-hidden="true" className="mb-2 text-primary" />
-        {locale === "zh-Hant"
-          ? "AI 週報重點：先守住睡眠和蛋白質，再小幅增加跑量。"
-          : "AI weekly insight: protect sleep and protein first, then nudge running volume gradually."}
+        {data?.weekly.ai_summary ||
+          (locale === "zh-Hant"
+            ? "有足夠真實紀錄後，AI 週報會在這裡顯示。"
+            : "AI weekly insight appears here after enough real records are available.")}
       </div>
     </DashboardCard>
   );
 }
 
-export function GoalCard({ goal, locale }: { goal: Goal; locale: Locale }) {
+export function GoalCard({ goal, locale }: { goal: GoalRow; locale: Locale }) {
+  const progress = getGoalProgress(goal);
+  const target = [goal.current_value ?? 0, goal.target_value ?? "-", goal.unit].filter(Boolean).join(" ");
+
   return (
     <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
       <CardHeader>
         <CardTitle className="flex items-center justify-between gap-3">
-          <span>{text(goal.type, locale)}</span>
-          <Badge variant="secondary">{goal.progress}%</Badge>
+          <span>{goal.title}</span>
+          <Badge variant="secondary">{progress}%</Badge>
         </CardTitle>
-        <CardDescription>{goal.target}</CardDescription>
+        <CardDescription>{target}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="h-2.5 overflow-hidden rounded-full bg-muted/50">
-          <div className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500" style={{ width: `${goal.progress}%` }} />
+          <div className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
         <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
-          {goal.weeklyActions.map((action) => (
-            <li key={action.en} className="flex items-start gap-2">
+          {[goal.weekly_action || (locale === "zh-Hant" ? "尚未設定每週行動。" : "No weekly action set.")].map((action) => (
+            <li key={action} className="flex items-start gap-2">
               <ShieldCheck aria-hidden="true" className="mt-0.5 text-primary" />
-              <span>{text(action, locale)}</span>
+              <span>{action}</span>
             </li>
           ))}
         </ul>
         <p className="rounded-xl bg-muted/30 p-3 text-sm leading-6 text-muted-foreground ring-1 ring-border/40">
-          {text(goal.suggestion, locale)}
+          {locale === "zh-Hant"
+            ? "建議會根據你的真實紀錄和恢復狀態調整。"
+            : "Suggestions adjust from your real records and recovery state."}
         </p>
       </CardContent>
     </Card>
@@ -685,20 +668,30 @@ function MetricPill({
   );
 }
 
-function dataOrFallback<T>(data: T[] | undefined, fallback: T[]) {
-  return data && data.length > 0 ? data : fallback;
+function EmptyCardMessage({ locale }: { locale: Locale }) {
+  return (
+    <div className="rounded-xl bg-muted/30 p-4 text-sm leading-6 text-muted-foreground ring-1 ring-border/40">
+      {locale === "zh-Hant"
+        ? "尚未載入真實資料。新增紀錄或登入匿名帳戶後，這裡會顯示個人化內容。"
+        : "No real data is loaded yet. Add records or start an anonymous session to show personalized content here."}
+    </div>
+  );
 }
 
-function getAveragePace(runs: DashboardData["recent"]["running"] | undefined) {
+function dataOrEmpty<T>(data: T[] | undefined) {
+  return data && data.length > 0 ? data : (emptyMetrics as T[]);
+}
+
+function getAveragePace(runs: DashboardData["recent"]["running"] | undefined, locale: Locale) {
   if (!runs || runs.length === 0) {
-    return "6:06/km";
+    return locale === "zh-Hant" ? "未記錄" : "No log";
   }
 
   const totalDistance = runs.reduce((total, run) => total + Number(run.distance_km ?? 0), 0);
   const totalSeconds = runs.reduce((total, run) => total + (run.duration_seconds ?? 0), 0);
 
   if (totalDistance <= 0 || totalSeconds <= 0) {
-    return "6:06/km";
+    return locale === "zh-Hant" ? "未記錄" : "No log";
   }
 
   const secondsPerKm = Math.round(totalSeconds / totalDistance);
@@ -708,4 +701,13 @@ function getAveragePace(runs: DashboardData["recent"]["running"] | undefined) {
   return `${minutes}:${seconds}/km`;
 }
 
-export { goals, mealLogs, runningLogs, gymLogs, workoutTemplates };
+function getGoalProgress(goal: GoalRow) {
+  const current = Number(goal.current_value ?? 0);
+  const target = Number(goal.target_value ?? 0);
+
+  if (!Number.isFinite(current) || !Number.isFinite(target) || target <= 0) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, Math.round((current / target) * 100)));
+}

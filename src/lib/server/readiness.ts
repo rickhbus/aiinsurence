@@ -161,7 +161,7 @@ function buildAiProviderCheck(env: Record<string, string | undefined>): Readines
     return {
       name: "ai_provider",
       status: "warn",
-      message: "AI provider key is absent; deterministic fallback/mock mode remains available.",
+      message: "AI provider key is absent; deterministic provider-free fallback remains available.",
     };
   }
 

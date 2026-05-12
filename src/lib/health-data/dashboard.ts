@@ -155,18 +155,19 @@ export async function getDashboardData(
   const profile = getDataOrFallback<{
     display_name: string | null;
     preferred_language: string | null;
+    care_preference: string | null;
     location_area: string | null;
   } | null>(profileResult, null, "load profile");
   const empty =
     running.length + gym.length + meals.length + water.length + sleep.length + body.length === 0;
   const baseData: Omit<DashboardData, "recommendation"> = {
     profile: {
-      displayName: profile?.display_name || "市民健康",
+      displayName: profile?.display_name || "匿名使用者",
       preferredLanguage: profile?.preferred_language === "en" ? "en" : "zh-Hant",
       memoryEnabled: getCountOrFallback(memoryResult, "load memory count") > 0,
-      goal: goals[0]?.title || "減脂並建立肌肉",
-      location: profile?.location_area || "香港",
-      fitnessLevel: "初級至中級",
+      goal: goals[0]?.title || "",
+      location: profile?.location_area || "",
+      fitnessLevel: "",
     },
     today,
     weekly,

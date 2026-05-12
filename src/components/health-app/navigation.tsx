@@ -32,7 +32,6 @@ import Link from "next/link";
 import { useTheme } from "next-themes";
 import type { Dispatch, SetStateAction } from "react";
 import { useMemo, useState } from "react";
-import { demoUser } from "@/lib/health-app/mock-data";
 import { label, locales, text, ui } from "@/lib/health-app/i18n";
 import type { HealthPage, Locale, LocalizedText } from "@/lib/health-app/types";
 import type { DashboardData } from "@/lib/health-data/types";
@@ -539,14 +538,17 @@ export function QuickAddButton({ locale }: { locale: Locale }) {
 }
 
 export function WelcomeStrip({ locale, data }: { locale: Locale; data?: DashboardData | null }) {
+  const guestName = locale === "zh-Hant" ? "匿名使用者" : "anonymous user";
+  const emptyValue = locale === "zh-Hant" ? "未設定" : "Not set";
+
   return (
     <section className="welcome-gradient overflow-hidden rounded-3xl border border-border/50 bg-card/72 p-5 shadow-lg shadow-primary/5 backdrop-blur-xl sm:p-6">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
           <p className="text-sm font-medium text-muted-foreground">
             {locale === "zh-Hant"
-              ? `早晨，${data?.profile.displayName ?? "市民健康"}`
-              : `Good morning, ${data?.profile.displayName ?? "Citizen Health"}`}
+              ? `早晨，${data?.profile.displayName || guestName}`
+              : `Good morning, ${data?.profile.displayName || guestName}`}
           </p>
           <h2 className="text-gradient-health mt-2 text-[clamp(2rem,9vw,3.25rem)] font-bold leading-tight tracking-tight">
             {locale === "zh-Hant" ? "小習慣，強健康。" : "Small habits, strong health."}
@@ -558,9 +560,9 @@ export function WelcomeStrip({ locale, data }: { locale: Locale; data?: Dashboar
           </p>
         </div>
         <div className="flex min-w-0 flex-wrap gap-2 overflow-hidden">
-          <Badge variant="secondary">{data?.profile.goal ?? text(demoUser.goal, locale)}</Badge>
-          <Badge variant="secondary">{data?.profile.location ?? text(demoUser.location, locale)}</Badge>
-          <Badge variant="secondary">{data?.profile.fitnessLevel ?? text(demoUser.fitnessLevel, locale)}</Badge>
+          <Badge variant="secondary">{data?.profile.goal || emptyValue}</Badge>
+          <Badge variant="secondary">{data?.profile.location || emptyValue}</Badge>
+          <Badge variant="secondary">{data?.profile.fitnessLevel || emptyValue}</Badge>
           <Badge variant="secondary">
             {data?.profile.preferredLanguage === "en"
               ? "Prefers English"

@@ -49,7 +49,7 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 ## Product Flows
 
 - [ ] Dashboard real-data response works for an authenticated user.
-- [ ] Dashboard demo/local fallback works when Supabase is unavailable locally.
+- [ ] Dashboard shows empty states when Supabase is unavailable locally.
 - [ ] Quick Add saves work for run, gym, meal, water, sleep, and body metric.
 - [ ] Quick Add buttons show pending state and prevent duplicate saves.
 - [ ] Summary refresh updates daily summaries, weekly summaries, streaks, and goal progress after logs.
@@ -58,7 +58,7 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 - [ ] AI routes are rate-limited.
 - [ ] AI routes record privacy-safe usage events.
 - [ ] AI context uses summaries, not full raw history.
-- [ ] AI.GBL analysis runs in mock/fallback mode when provider keys are absent.
+- [ ] AI.GBL analysis runs with deterministic provider-free fallback when provider keys are absent.
 - [ ] Emotion Engine analysis saves structured outputs only, not raw sensitive text.
 - [ ] Analysis history loads with a bounded `limit`, not full history.
 - [ ] 429 responses include `Retry-After` where appropriate.

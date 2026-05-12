@@ -1,14 +1,15 @@
 "use client";
 
-import { AlertTriangle, BookOpenCheck, HelpCircle, ShieldCheck, Stethoscope } from "lucide-react";
+import { AlertTriangle, BookOpenCheck, Brain, HelpCircle, ShieldCheck, Stethoscope } from "lucide-react";
 import Link from "next/link";
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { emergencyCopy, label, text, ui } from "@/lib/health-app/i18n";
-import { lessons, redFlags } from "@/lib/health-app/mock-data";
+import { lessons, redFlags } from "@/lib/health-app/content";
 import type { Lesson, Locale, LocalizedText } from "@/lib/health-app/types";
 import type { InsuranceHelperResponse, SymptomRoutingResponse } from "@/lib/health-data/types";
+import type { HealthInputAnalysisMode, HealthInputAnalysisResponse } from "@/lib/health-input-analysis";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -106,6 +107,8 @@ export function HealthcarePage({ locale }: { locale: Locale }) {
         locale={locale}
       />
 
+      <HealthInputAnalyzerForm locale={locale} />
+
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
         <SymptomRoutingForm locale={locale} />
         <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
@@ -129,6 +132,175 @@ export function HealthcarePage({ locale }: { locale: Locale }) {
         <CareLevelCard title={{ zh: "普通科 / 家庭醫生", en: "GP / family doctor" }} body={{ zh: "不確定原因、需要初步檢查或轉介時通常適合先看普通科。", en: "For unclear causes, initial checks, or referral, a GP is often a reasonable first step." }} locale={locale} />
         <CareLevelCard title={{ zh: "專科或急症", en: "Specialist or A&E" }} body={{ zh: "急性嚴重症狀先急症；非急但持續或複雜問題可由醫生轉介專科。", en: "Acute severe symptoms need A&E; persistent or complex non-urgent issues may need specialist referral." }} locale={locale} />
       </div>
+    </div>
+  );
+}
+
+export function HealthInputAnalyzerForm({ locale }: { locale: Locale }) {
+  const [input, setInput] = useState("");
+  const [mode, setMode] = useState<HealthInputAnalysisMode>("auto");
+  const [result, setResult] = useState<HealthInputAnalysisResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmed = input.trim();
+
+    if (!trimmed) {
+      toast.error(locale === "zh-Hant" ? "請輸入需要分析的內容。" : "Please enter text to analyze.");
+      return;
+    }
+
+    setLoading(true);
+    setResult(null);
+
+    try {
+      const response = await fetch("/api/health/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          input: trimmed,
+          mode,
+          language: locale,
+        }),
+      });
+      const body = (await response.json()) as HealthInputAnalysisResponse | { error: string };
+
+      if (!response.ok || "error" in body) {
+        throw new Error("error" in body ? body.error : "Analysis failed");
+      }
+
+      setResult(body as HealthInputAnalysisResponse);
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : locale === "zh-Hant" ? "分析失敗，請稍後再試。" : "Analysis failed. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Card className="overflow-hidden border-border/60 bg-card/78 shadow-sm backdrop-blur-xl">
+      <form onSubmit={onSubmit}>
+        <CardHeader>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle>{locale === "zh-Hant" ? "健康輸入分析" : "Health Input Analysis"}</CardTitle>
+              <CardDescription>
+                {locale === "zh-Hant"
+                  ? "輸入症狀、保險、索償、營養或健身問題；系統會先檢查安全邊界。"
+                  : "Enter symptoms, insurance, claims, nutrition, or fitness questions; safety boundaries are checked first."}
+              </CardDescription>
+            </div>
+            <Badge variant="secondary">{locale === "zh-Hant" ? "匿名可用" : "Anonymous ready"}</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="grid gap-3 md:grid-cols-[220px_minmax(0,1fr)]">
+            <Select value={mode} onValueChange={(value) => setMode(value as HealthInputAnalysisMode)}>
+              <SelectTrigger className="w-full" aria-label={locale === "zh-Hant" ? "分析模式" : "Analysis mode"}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>{locale === "zh-Hant" ? "分析模式" : "Analysis mode"}</SelectLabel>
+                  <SelectItem value="auto">{locale === "zh-Hant" ? "自動判斷" : "Auto detect"}</SelectItem>
+                  <SelectItem value="medical">{locale === "zh-Hant" ? "醫療導航" : "Medical navigation"}</SelectItem>
+                  <SelectItem value="insurance">{locale === "zh-Hant" ? "保險需要" : "Insurance needs"}</SelectItem>
+                  <SelectItem value="policy">{locale === "zh-Hant" ? "保單 / 索償" : "Policy / claims"}</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <Textarea
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              maxLength={3000}
+              placeholder={
+                locale === "zh-Hant"
+                  ? "例如：我胸口痛又氣促，或者：我想理解住院保單等候期。"
+                  : "Example: I have chest pain and shortness of breath, or: I want to understand a hospital policy waiting period."
+              }
+              aria-label={locale === "zh-Hant" ? "需要分析的內容" : "Text to analyze"}
+              className="min-h-24"
+            />
+          </div>
+
+          <Button disabled={loading}>
+            <Brain data-icon="inline-start" aria-hidden="true" />
+            {loading ? (locale === "zh-Hant" ? "分析中" : "Analyzing") : (locale === "zh-Hant" ? "分析輸入" : "Analyze input")}
+          </Button>
+
+          {result ? <HealthInputAnalysisResult result={result} locale={locale} /> : (
+            <Alert>
+              <ShieldCheck data-icon="inline-start" aria-hidden="true" />
+              <AlertTitle>{locale === "zh-Hant" ? "安全優先" : "Safety first"}</AlertTitle>
+              <AlertDescription>{locale === "zh-Hant" ? emergencyCopy.zh : emergencyCopy.en}</AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </form>
+    </Card>
+  );
+}
+
+function HealthInputAnalysisResult({
+  result,
+  locale,
+}: {
+  result: HealthInputAnalysisResponse;
+  locale: Locale;
+}) {
+  return (
+    <div className="grid gap-3">
+      <Alert variant={result.safety.safetyLocked ? "destructive" : "default"}>
+        <Stethoscope data-icon="inline-start" aria-hidden="true" />
+        <AlertTitle>{result.summary.urgencyLabel}</AlertTitle>
+        <AlertDescription className="whitespace-pre-line leading-6">
+          {result.assistant.message}
+        </AlertDescription>
+      </Alert>
+
+      <div className="flex flex-wrap gap-2">
+        <Badge variant="secondary">{result.detectedDomain}</Badge>
+        <Badge variant="outline">{result.intakeMode}</Badge>
+        <Badge variant={result.safety.safetyLocked ? "destructive" : "secondary"}>
+          {result.safety.level}
+        </Badge>
+        <Badge variant="outline">{result.assistant.ai.status}</Badge>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <AnalysisBlock
+          title={locale === "zh-Hant" ? "下一步" : "Next step"}
+          body={result.summary.nextAction}
+        />
+        <AnalysisBlock
+          title={locale === "zh-Hant" ? "照護方向" : "Care route"}
+          body={result.summary.careRoute}
+        />
+      </div>
+
+      {result.followUpQuestions.length > 0 ? (
+        <div className="rounded-xl border border-border/50 bg-muted/25 p-3">
+          <p className="mb-2 text-sm font-medium">{locale === "zh-Hant" ? "可補充資料" : "Helpful details"}</p>
+          <ul className="grid gap-1 text-sm leading-6 text-muted-foreground">
+            {result.followUpQuestions.map((question) => (
+              <li key={question}>{question}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function AnalysisBlock({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="min-w-0 rounded-xl border border-border/50 bg-background/55 p-3">
+      <p className="text-sm font-medium">{title}</p>
+      <p className="mt-1 text-sm leading-6 text-muted-foreground">{body}</p>
     </div>
   );
 }

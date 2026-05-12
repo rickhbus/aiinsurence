@@ -110,7 +110,7 @@ Required summary indexes:
 
 ## Known Local Caveat
 
-In local development, `/api/dashboard` returns `503` when Supabase env vars are not configured. The dashboard UI intentionally keeps the demo/local fallback visible. Configure `.env.local` with the required Supabase public URL and anon key to test real data locally.
+In local development, `/api/dashboard` returns `503` when Supabase env vars are not configured. The dashboard UI now keeps real-data panels empty until Supabase is configured. Configure `.env.local` with the required Supabase public URL and anon key to test real data locally.
 
 ## Production Deployment Notes
 

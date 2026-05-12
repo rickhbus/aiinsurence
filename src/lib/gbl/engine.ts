@@ -1,7 +1,7 @@
 import { analyzeIntake } from "@/lib/navigation-engine";
 import { classifyEmotion } from "@/lib/emotion-engine/classifier";
 import { detectGblSafetyFlags } from "./safety";
-import { buildMockGblOutput } from "./mock-provider";
+import { buildDeterministicGblOutput } from "./deterministic-output";
 import { generateProviderGblSummary } from "./provider";
 import {
   GBL_DISCLAIMERS,
@@ -25,7 +25,7 @@ export async function runGblAnalysis(
     .filter(Boolean)
     .join("\n\n");
   const safetyFlags = detectGblSafetyFlags(combinedText);
-  const mock = buildMockGblOutput({ context, flags: safetyFlags });
+  const deterministic = buildDeterministicGblOutput({ context, flags: safetyFlags });
   const provider = safetyFlags.emergency || safetyFlags.selfHarm
     ? { status: "unconfigured" as const, summary: null }
     : await generateProviderGblSummary({ context, flags: safetyFlags });
@@ -40,9 +40,9 @@ export async function runGblAnalysis(
     analysisType: request.analysisType,
     status,
     caseContext: context,
-    aiReadySummary: mock.aiReadySummary,
-    userVisibleSummary: provider.summary ?? mock.userVisibleSummary,
-    recommendations: mock.recommendations,
+    aiReadySummary: deterministic.aiReadySummary,
+    userVisibleSummary: provider.summary ?? deterministic.userVisibleSummary,
+    recommendations: deterministic.recommendations,
     safetyFlags,
     emotion: context.emotion.analysis,
     disclaimers: GBL_DISCLAIMERS,

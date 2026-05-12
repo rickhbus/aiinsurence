@@ -12,9 +12,9 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { coachMessages, memoryItems, suggestedPrompts } from "@/lib/health-app/mock-data";
+import { suggestedPrompts } from "@/lib/health-app/content";
 import { emergencyCopy, label, safetyCopy, text, ui } from "@/lib/health-app/i18n";
-import type { Locale } from "@/lib/health-app/types";
+import type { CoachMessage, Locale } from "@/lib/health-app/types";
 import type { CoachResponse } from "@/lib/health-data/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,7 @@ export function CoachSurface({
   onClose?: () => void;
 }) {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState(coachMessages);
+  const [messages, setMessages] = useState<CoachMessage[]>([]);
   const [sending, setSending] = useState(false);
   const [pendingMemory, setPendingMemory] = useState<CoachResponse["memorySuggestion"]>(null);
 
@@ -136,21 +136,21 @@ export function CoachSurface({
       >
         <div className="grid gap-2 text-sm leading-6">
           <p className="font-medium">
-            {locale === "zh-Hant" ? "上身力量 30 分鐘 + 午餐加蛋白質" : "Upper-body strength 30 min + protein at lunch"}
+            {locale === "zh-Hant" ? "等待你的真實紀錄" : "Waiting for your real records"}
           </p>
           <p className="text-muted-foreground">
             {locale === "zh-Hant"
-              ? "原因：昨日跑步較用力，今天以維持活動和恢復為主。"
-              : "Reason: yesterday’s run was harder, so today should maintain activity and recovery."}
+              ? "教練只會根據你的輸入和已保存資料估算今日建議。新增紀錄或提出問題後才會生成內容。"
+              : "The coach only estimates today’s plan from your input and saved data. Add records or ask a question to generate content."}
           </p>
           <p className="text-muted-foreground">
             {locale === "zh-Hant"
-              ? "行動：完成 4 個上身動作，各 2-3 組，RPE 6-7。"
-              : "Action: complete four upper-body movements, 2-3 sets each, RPE 6-7."}
+              ? "行動：先輸入一個目標、近期紀錄或照護問題。"
+              : "Action: enter a goal, recent record, or care question first."}
           </p>
           <p className="text-muted-foreground">
             {locale === "zh-Hant"
-              ? "安全：如有胸痛、嚴重氣促或痛楚惡化，停止並求醫。"
+              ? "安全：如有胸痛、嚴重氣促或痛楚惡化，請立即停止並求醫。"
               : "Safety: stop and seek care for chest pain, severe breathlessness, or worsening pain."}
           </p>
         </div>
@@ -173,6 +173,13 @@ export function CoachSurface({
 
       <ScrollArea className={cn("min-h-0 rounded-2xl border border-border/40 bg-background/40 backdrop-blur-sm", compact ? "h-[24dvh]" : "h-[34dvh]")}>
         <div className="flex flex-col gap-3 p-3">
+          {messages.length === 0 ? (
+            <div className="rounded-2xl bg-muted/50 p-3 text-sm leading-6 text-muted-foreground">
+              {locale === "zh-Hant"
+                ? "未有對話。你可以先問一個健康、健身、營養、醫療導航或保險教育問題。"
+                : "No conversation yet. Ask a health, fitness, nutrition, care navigation, or insurance education question."}
+            </div>
+          ) : null}
           {messages.map((message, index) => (
             <div
               key={`${message.role}-${index}`}
@@ -194,7 +201,14 @@ export function CoachSurface({
           <CoachInfoPanel
             icon={DatabaseZap}
             title={locale === "zh-Hant" ? "健康記憶摘要" : "Memory summary"}
-            lines={memoryItems.slice(0, 4).map((item) => text(item.content, locale))}
+            lines={[
+              locale === "zh-Hant"
+                ? "確認保存後的健康記憶會在這裡摘要。"
+                : "Confirmed health memories will be summarized here.",
+              locale === "zh-Hant"
+                ? "未經你確認，不會把對話內容保存成記憶。"
+                : "Conversation content is not saved as memory without your confirmation.",
+            ]}
           />
           <CoachInfoPanel
             icon={Stethoscope}
@@ -289,7 +303,7 @@ function CoachHeader({
 
 function StatusChips({ locale }: { locale: Locale }) {
   const items = [
-    locale === "zh-Hant" ? "記憶: 開啟" : "Memory: on",
+    locale === "zh-Hant" ? "記憶: 需確認" : "Memory: confirm first",
     locale === "zh-Hant" ? "語言: 繁體中文" : "Language: Traditional Chinese",
     locale === "zh-Hant" ? "安全模式: 開啟" : "Safety mode: on",
   ];

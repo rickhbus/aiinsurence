@@ -66,7 +66,7 @@ Recommended dashboards:
 
 ## Cost-Control Plan
 
-- Keep deterministic fallback/mock mode available when AI provider keys are absent or provider calls fail.
+- Keep deterministic provider-free fallback available when AI provider keys are absent or provider calls fail.
 - Set AI provider spend caps and alerts.
 - Track token estimates in `ai_usage_events`.
 - Keep provider retries bounded.

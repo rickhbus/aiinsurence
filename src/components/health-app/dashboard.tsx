@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { DashboardData } from "@/lib/health-data/types";
 import { label, ui } from "@/lib/health-app/i18n";
 import type { Locale } from "@/lib/health-app/types";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   ActivitySummaryCard,
   AIGblCard,
@@ -23,22 +24,49 @@ import {
 } from "./dashboard-cards";
 import { WelcomeStrip } from "./navigation";
 
+type DashboardMode =
+  | "loading"
+  | "real"
+  | "config-unavailable"
+  | "auth-unavailable"
+  | "unavailable";
+
 export function DashboardPage({ locale }: { locale: Locale }) {
+  const [supabase] = useState(() => getSupabaseBrowserClient());
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [dashboardMode, setDashboardMode] = useState<"loading" | "real" | "demo">("loading");
+  const [dashboardMode, setDashboardMode] = useState<DashboardMode>("loading");
 
   useEffect(() => {
     let active = true;
 
     async function loadDashboard() {
+      if (!supabase) {
+        if (active) {
+          setDashboardMode("config-unavailable");
+        }
+        return;
+      }
+
+      const accessToken = await getDashboardAccessToken(supabase);
+
+      if (!accessToken) {
+        if (active) {
+          setDashboardMode("auth-unavailable");
+        }
+        return;
+      }
+
       try {
+        const headers = new Headers({ Accept: "application/json" });
+        headers.set("Authorization", `Bearer ${accessToken}`);
+
         const response = await fetch("/api/dashboard", {
-          headers: { Accept: "application/json" },
+          headers,
         });
 
         if (!response.ok) {
           if (active) {
-            setDashboardMode("demo");
+            setDashboardMode(getDashboardErrorMode(response.status));
           }
           return;
         }
@@ -51,9 +79,8 @@ export function DashboardPage({ locale }: { locale: Locale }) {
         }
       } catch {
         if (active) {
-          setDashboardMode("demo");
+          setDashboardMode("unavailable");
         }
-        // Local development without Supabase keeps the mock dashboard visible.
       }
     }
 
@@ -69,7 +96,9 @@ export function DashboardPage({ locale }: { locale: Locale }) {
       active = false;
       window.removeEventListener("health-log-saved", refreshDashboard);
     };
-  }, []);
+  }, [supabase]);
+
+  const fallbackCopy = getDashboardFallbackCopy(dashboardMode, locale);
 
   return (
     <div className="flex flex-col gap-6">
@@ -83,11 +112,9 @@ export function DashboardPage({ locale }: { locale: Locale }) {
         </div>
       ) : null}
 
-      {dashboardMode === "demo" ? (
-        <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-sm leading-6 text-muted-foreground">
-          {locale === "zh-Hant"
-            ? "目前顯示本機示範資料。設定 Supabase 後，儀表板會載入你的真實紀錄。"
-            : "Showing local demo data. Configure Supabase to load your real dashboard records."}
+      {fallbackCopy ? (
+        <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-sm leading-6 text-muted-foreground" role="status">
+          {fallbackCopy}
         </div>
       ) : null}
 
@@ -115,4 +142,57 @@ export function DashboardPage({ locale }: { locale: Locale }) {
       <SafetyDisclaimer locale={locale} />
     </div>
   );
+}
+
+async function getDashboardAccessToken(
+  supabase: NonNullable<ReturnType<typeof getSupabaseBrowserClient>>,
+) {
+  try {
+    const currentSession = await supabase.auth.getSession();
+    const existingToken = currentSession.data.session?.access_token;
+
+    if (existingToken) {
+      return existingToken;
+    }
+
+    const anonymousSession = await supabase.auth.signInAnonymously();
+
+    return anonymousSession.data.session?.access_token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function getDashboardErrorMode(status: number): DashboardMode {
+  if (status === 503) {
+    return "config-unavailable";
+  }
+
+  if (status === 401 || status === 403) {
+    return "auth-unavailable";
+  }
+
+  return "unavailable";
+}
+
+function getDashboardFallbackCopy(mode: DashboardMode, locale: Locale) {
+  if (mode === "config-unavailable") {
+    return locale === "zh-Hant"
+      ? "Supabase 尚未設定，儀表板只會顯示空狀態。設定完成後會載入真實紀錄。"
+      : "Supabase is not configured, so the dashboard will show empty states. Real records load after setup.";
+  }
+
+  if (mode === "auth-unavailable") {
+    return locale === "zh-Hant"
+      ? "匿名模式暫時未能啟動，儀表板未能載入真實紀錄。"
+      : "Anonymous mode could not start, so real dashboard records are not loaded.";
+  }
+
+  if (mode === "unavailable") {
+    return locale === "zh-Hant"
+      ? "暫時未能載入真實紀錄；請稍後再試。"
+      : "Real records are temporarily unavailable. Please try again later.";
+  }
+
+  return null;
 }

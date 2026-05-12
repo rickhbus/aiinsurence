@@ -18,11 +18,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import {
   foodRecommendations,
-  gymVolumeData,
-  paceTrendData,
-  weeklyNutritionData,
   workoutTemplates,
-} from "@/lib/health-app/mock-data";
+} from "@/lib/health-app/content";
 import { label, text, ui } from "@/lib/health-app/i18n";
 import type { HealthPage, Locale, LocalizedText } from "@/lib/health-app/types";
 import { Button } from "@/components/ui/button";
@@ -57,6 +54,8 @@ import {
   WorkoutTemplateCard,
 } from "./dashboard-cards";
 import { MuscleGroupChart, ProgressChart } from "./charts";
+
+const emptyChartData: Array<{ label: string; value: number; secondary?: number }> = [];
 
 export function TrackOverviewPage({ locale }: { locale: Locale }) {
   const cards: Array<{ title: LocalizedText; href: string; icon: LucideIcon; body: LocalizedText }> = [
@@ -125,7 +124,7 @@ export function RunningPage({ locale }: { locale: Locale }) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ProgressChart data={paceTrendData} variant="line" height={220} />
+              <ProgressChart data={emptyChartData} variant="line" height={220} />
             </CardContent>
           </Card>
         </div>
@@ -177,7 +176,7 @@ export function GymPage({ locale }: { locale: Locale }) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <MuscleGroupChart data={gymVolumeData} />
+              <MuscleGroupChart data={emptyChartData} />
             </CardContent>
           </Card>
           <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl lg:col-span-2">
@@ -240,7 +239,7 @@ export function NutritionPage({ locale }: { locale: Locale }) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ProgressChart data={weeklyNutritionData} variant="bar" height={220} />
+              <ProgressChart data={emptyChartData} variant="bar" height={220} />
             </CardContent>
           </Card>
         </div>

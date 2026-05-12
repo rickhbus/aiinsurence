@@ -1,7 +1,7 @@
 import { safetyNextStep } from "./safety";
 import type { GblCaseContext, GblRecommendation, GblSafetyFlags } from "./types";
 
-export function buildMockGblOutput({
+export function buildDeterministicGblOutput({
   context,
   flags,
 }: {

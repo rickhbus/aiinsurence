@@ -24,16 +24,23 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { demoUser, goals, memoryItems, activityData, gymVolumeData, weeklyNutritionData } from "@/lib/health-app/mock-data";
 import { label, text, ui } from "@/lib/health-app/i18n";
 import type { Locale, LocalizedText, MemoryCategory } from "@/lib/health-app/types";
-import type { HealthMemoryRow } from "@/lib/health-data/types";
+import type { DashboardData, HealthMemoryRow } from "@/lib/health-data/types";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/user-memory";
 import { GoalCard, SafetyDisclaimer } from "./dashboard-cards";
 import { ProgressChart } from "./charts";
 
+const emptyChartData: Array<{ label: string; value: number; secondary?: number }> = [];
+
 export function ProgressPage({ locale }: { locale: Locale }) {
+  const { data } = useRealDashboardData();
+  const weekly = data?.weekly;
+  const activityData = data?.charts.activity ?? emptyChartData;
+  const gymVolumeData = data?.charts.gymVolume ?? emptyChartData;
+  const weeklyNutritionData = data?.charts.nutrition ?? emptyChartData;
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -49,15 +56,19 @@ export function ProgressPage({ locale }: { locale: Locale }) {
         <CardHeader>
           <CardTitle>{label(ui.weeklyReport, locale)}</CardTitle>
           <CardDescription>
-            {locale === "zh-Hant"
-              ? "本週你完成 3 次訓練、跑了 12.3km、4 天蛋白質表現改善，並維持 5 天飲水連續紀錄。最大改善位是睡眠一致性。"
-              : "This week you completed 3 workouts, ran 12.3km, improved protein intake on 4 days, and kept a 5-day water streak. The main improvement area is sleep consistency."}
+            {weekly
+              ? locale === "zh-Hant"
+                ? `本週跑步 ${weekly.running_distance_km}km，健身 ${weekly.gym_sessions} 次，蛋白質達標 ${weekly.protein_consistency_days} 天，飲水達標 ${weekly.water_goal_days} 天。`
+                : `This week: ${weekly.running_distance_km}km running, ${weekly.gym_sessions} gym sessions, ${weekly.protein_consistency_days} protein-consistent days, and ${weekly.water_goal_days} water-goal days.`
+              : locale === "zh-Hant"
+                ? "尚未載入真實週報。新增紀錄後，這裡會顯示你的實際趨勢。"
+                : "No real weekly report is loaded yet. Add records to show your actual trends here."}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-5 lg:grid-cols-3">
-          <TrendCard title={{ zh: "活動", en: "Activity" }} value="64,300" detail={{ zh: "本週步數", en: "steps this week" }} locale={locale} />
-          <TrendCard title={{ zh: "跑步", en: "Running" }} value="12.3 km" detail={{ zh: "穩定建立跑量", en: "steady volume build" }} locale={locale} />
-          <TrendCard title={{ zh: "營養", en: "Nutrition" }} value="108g" detail={{ zh: "平均蛋白質", en: "avg protein" }} locale={locale} />
+          <TrendCard title={{ zh: "活動", en: "Activity" }} value={`${weekly?.workout_days ?? 0}`} detail={{ zh: "本週活動日", en: "active days this week" }} locale={locale} />
+          <TrendCard title={{ zh: "跑步", en: "Running" }} value={`${weekly?.running_distance_km ?? 0} km`} detail={{ zh: "真實跑量", en: "real running volume" }} locale={locale} />
+          <TrendCard title={{ zh: "營養", en: "Nutrition" }} value={`${weekly?.protein_consistency_days ?? 0}/7`} detail={{ zh: "蛋白質達標日", en: "protein-consistent days" }} locale={locale} />
         </CardContent>
       </Card>
 
@@ -69,16 +80,17 @@ export function ProgressPage({ locale }: { locale: Locale }) {
           <CardHeader>
             <CardTitle>{locale === "zh-Hant" ? "AI 總結" : "AI summary"}</CardTitle>
             <CardDescription>
-              {locale === "zh-Hant"
-                ? "你正在建立可持續的節奏。下週先守住睡眠和蛋白質，再微調跑量。"
-                : "You are building a sustainable rhythm. Next week, protect sleep and protein before nudging run volume."}
+              {weekly?.ai_summary ||
+                (locale === "zh-Hant"
+                  ? "有足夠真實紀錄後，週報總結會在這裡顯示。"
+                  : "Weekly summary appears here after enough real records are available.")}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
             {[
-              { zh: "最好表現：飲水與跑步一致性。", en: "Best: hydration and running consistency." },
-              { zh: "主要風險：連續高強度日可能增加膝部不適。", en: "Main risk: repeated hard days may increase knee discomfort." },
-              { zh: "下一步：一個恢復日、一個全身力量日、一個輕鬆跑。", en: "Next: one recovery day, one full-body strength day, one easy run." },
+              { zh: `活動日：${weekly?.workout_days ?? 0}`, en: `Active days: ${weekly?.workout_days ?? 0}` },
+              { zh: `平均健康分：${weekly?.health_score_avg ?? 0}`, en: `Average health score: ${weekly?.health_score_avg ?? 0}` },
+              { zh: "提示：只使用真實紀錄生成週報。", en: "Note: weekly reports are generated only from real records." },
             ].map((item) => (
               <div key={item.en} className="rounded-xl bg-muted/30 p-3 text-sm text-muted-foreground ring-1 ring-border/40">
                 {text(item, locale)}
@@ -92,6 +104,9 @@ export function ProgressPage({ locale }: { locale: Locale }) {
 }
 
 export function GoalsPage({ locale }: { locale: Locale }) {
+  const { data } = useRealDashboardData();
+  const goals = data?.goals ?? [];
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -102,11 +117,15 @@ export function GoalsPage({ locale }: { locale: Locale }) {
         }}
         locale={locale}
       />
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {goals.map((goal) => (
-          <GoalCard key={goal.id} goal={goal} locale={locale} />
-        ))}
-      </div>
+      {goals.length > 0 ? (
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {goals.map((goal) => (
+            <GoalCard key={goal.id} goal={goal} locale={locale} />
+          ))}
+        </div>
+      ) : (
+        <EmptyPanel locale={locale} title={{ zh: "尚未有目標", en: "No goals yet" }} />
+      )}
       <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
         <CardHeader>
           <CardTitle>{locale === "zh-Hant" ? "新增目標" : "New goal"}</CardTitle>
@@ -123,6 +142,9 @@ export function GoalsPage({ locale }: { locale: Locale }) {
 }
 
 export function ProfilePage({ locale }: { locale: Locale }) {
+  const { data } = useRealDashboardData();
+  const profile = data?.profile;
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -137,18 +159,18 @@ export function ProfilePage({ locale }: { locale: Locale }) {
         <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
           <CardHeader>
             <CardTitle>{locale === "zh-Hant" ? "個人設定" : "Profile settings"}</CardTitle>
-            <CardDescription>{locale === "zh-Hant" ? "示範資料可接駁 Supabase profiles。" : "Demo data can be wired to Supabase profiles."}</CardDescription>
+            <CardDescription>{locale === "zh-Hant" ? "只顯示已載入的 Supabase 個人資料。" : "Only loaded Supabase profile data is shown."}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-2">
-            <ProfileField label={{ zh: "名稱", en: "Name" }} value={demoUser.displayName} locale={locale} />
-            <ProfileField label={ui.language} value={text(demoUser.language, locale)} locale={locale} />
-            <ProfileField label={{ zh: "地區", en: "Region" }} value={text(demoUser.location, locale)} locale={locale} />
-            <ProfileField label={{ zh: "主要目標", en: "Primary goal" }} value={text(demoUser.goal, locale)} locale={locale} />
-            <ProfileField label={{ zh: "健身程度", en: "Fitness level" }} value={text(demoUser.fitnessLevel, locale)} locale={locale} />
-            <ProfileField label={{ zh: "照護偏好", en: "Care preference" }} value={text(demoUser.carePreference, locale)} locale={locale} />
+            <ProfileField label={{ zh: "名稱", en: "Name" }} value={profile?.displayName ?? ""} locale={locale} />
+            <ProfileField label={ui.language} value={profile?.preferredLanguage ?? ""} locale={locale} />
+            <ProfileField label={{ zh: "地區", en: "Region" }} value={profile?.location ?? ""} locale={locale} />
+            <ProfileField label={{ zh: "主要目標", en: "Primary goal" }} value={profile?.goal ?? ""} locale={locale} />
+            <ProfileField label={{ zh: "健身程度", en: "Fitness level" }} value={profile?.fitnessLevel ?? ""} locale={locale} />
+            <ProfileField label={{ zh: "照護偏好", en: "Care preference" }} value="" locale={locale} />
             <label className="grid gap-2 text-sm font-medium md:col-span-2">
               {locale === "zh-Hant" ? "醫療備註" : "Medical notes"}
-              <Textarea defaultValue={locale === "zh-Hant" ? "跑步時偶爾膝部不適。這不是診斷。" : "Occasional knee discomfort while running. This is not a diagnosis."} />
+              <Textarea placeholder={locale === "zh-Hant" ? "尚未載入醫療備註" : "No medical notes loaded"} />
             </label>
           </CardContent>
         </Card>
@@ -184,7 +206,9 @@ export function MemoryPage({ locale }: { locale: Locale }) {
           setRemoteMemory(body.memory);
         }
       } catch {
-        // Local/demo mode keeps the mock memory cards visible.
+        if (active) {
+          setRemoteMemory([]);
+        }
       }
     }
 
@@ -212,7 +236,7 @@ export function MemoryPage({ locale }: { locale: Locale }) {
           consentStatus: item.consent_status === "deleted" ? "off" : "saved",
           updatedAt: item.updated_at.slice(0, 10),
         }))
-      : memoryItems;
+      : [];
     const normalizedQuery = query.trim().toLowerCase();
     const filteredItems = mappedItems.filter((item) => {
       const matchesCategory =
@@ -240,6 +264,10 @@ export function MemoryPage({ locale }: { locale: Locale }) {
     insurance: { zh: "保險記憶", en: "Insurance memory" },
     behavior: { zh: "行為記憶", en: "Behavior memory" },
   };
+  const memoryItemCount = Object.values(grouped).reduce(
+    (total, items) => total + items.length,
+    0,
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -275,11 +303,16 @@ export function MemoryPage({ locale }: { locale: Locale }) {
           <Badge variant={remoteMemory ? "default" : "secondary"} className="h-10 justify-center">
             {remoteMemory
               ? locale === "zh-Hant" ? "真實資料" : "Real data"
-              : locale === "zh-Hant" ? "本機示範" : "Local demo"}
+              : locale === "zh-Hant" ? "未載入" : "Not loaded"}
           </Badge>
         </CardContent>
       </Card>
-      {(Object.keys(grouped) as MemoryCategory[]).map((category) => (
+      {memoryItemCount === 0 ? (
+        <EmptyPanel locale={locale} title={{ zh: "尚未有健康記憶", en: "No health memory yet" }} />
+      ) : null}
+      {memoryItemCount > 0 ? (Object.keys(grouped) as MemoryCategory[])
+        .filter((category) => grouped[category].length > 0)
+        .map((category) => (
         <Card key={category} className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
           <CardHeader>
             <CardTitle>{text(categoryLabels[category], locale)}</CardTitle>
@@ -344,7 +377,7 @@ export function MemoryPage({ locale }: { locale: Locale }) {
             ))}
           </CardContent>
         </Card>
-      ))}
+      )) : null}
     </div>
   );
 
@@ -467,6 +500,84 @@ export function AuthLandingPage({ locale }: { locale: Locale }) {
 
 function handleProfileReady(_profile: Profile) {
   return _profile;
+}
+
+function useRealDashboardData() {
+  const [supabase] = useState(() => getSupabaseBrowserClient());
+  const [data, setData] = useState<DashboardData | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadDashboard() {
+      if (!supabase) {
+        setData(null);
+        return;
+      }
+
+      try {
+        const accessToken = await getDashboardAccessToken(supabase);
+
+        if (!accessToken) {
+          if (active) {
+            setData(null);
+          }
+          return;
+        }
+
+        const response = await fetch("/api/dashboard", {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (!response.ok) {
+          if (active) {
+            setData(null);
+          }
+          return;
+        }
+
+        const body = (await response.json()) as DashboardData;
+
+        if (active) {
+          setData(body);
+        }
+      } catch {
+        if (active) {
+          setData(null);
+        }
+      }
+    }
+
+    loadDashboard();
+
+    return () => {
+      active = false;
+    };
+  }, [supabase]);
+
+  return { data };
+}
+
+async function getDashboardAccessToken(
+  supabase: NonNullable<ReturnType<typeof getSupabaseBrowserClient>>,
+) {
+  try {
+    const currentSession = await supabase.auth.getSession();
+    const existingToken = currentSession.data.session?.access_token;
+
+    if (existingToken) {
+      return existingToken;
+    }
+
+    const anonymousSession = await supabase.auth.signInAnonymously();
+
+    return anonymousSession.data.session?.access_token ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export function PrivacySettingsPanel({ locale }: { locale: Locale }) {
@@ -720,6 +831,21 @@ function ChartPanel({
       </CardHeader>
       <CardContent>
         <ProgressChart data={data} variant={variant} height={220} />
+      </CardContent>
+    </Card>
+  );
+}
+
+function EmptyPanel({ title, locale }: { title: LocalizedText; locale: Locale }) {
+  return (
+    <Card className="overflow-hidden border-border/60 bg-card/72 shadow-sm backdrop-blur-xl">
+      <CardContent className="p-5 text-sm leading-6 text-muted-foreground">
+        <strong className="text-foreground">{text(title, locale)}</strong>
+        <span className="mt-1 block">
+          {locale === "zh-Hant"
+            ? "這個區域只會顯示真實 Supabase 資料；未載入時保持空狀態。"
+            : "This area only shows real Supabase data and stays empty when nothing is loaded."}
+        </span>
       </CardContent>
     </Card>
   );

@@ -30,7 +30,7 @@ This runbook covers production 500s, dependency outages, rate-limit events, secr
 ## AI Provider Outage Response
 
 - Confirm provider status, timeout rate, and spend/quota state.
-- Keep deterministic fallback/mock mode active for AI.GBL and Emotion Engine.
+- Keep deterministic provider-free fallback active for AI.GBL and Emotion Engine.
 - Return clear JSON errors for provider-only paths if fallback is not possible.
 - Do not retry aggressively in a way that increases cost or overloads functions.
 

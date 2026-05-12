@@ -38,7 +38,7 @@ Use this runbook for Supabase Postgres backup planning, restore drills, and post
 - `/api/readiness` returns `ready` or a documented `degraded` state.
 - Auth callback URLs work for local, preview, staging, and production domains.
 - Dashboard, history, AI.GBL, Emotion Engine, and memory pages load without raw 500s.
-- AI.GBL and Emotion Engine return deterministic fallback/mock output when provider keys are absent.
+- AI.GBL and Emotion Engine return deterministic provider-free output when provider keys are absent.
 - Synthetic authenticated history reads return only the signed-in user's rows.
 
 ## RLS Verification After Restore
