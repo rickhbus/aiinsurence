@@ -4,11 +4,9 @@ import {
   BarChart3,
   BriefcaseBusiness,
   Brain,
-  CalendarDays,
   ClipboardList,
   Dumbbell,
   HeartPulse,
-  Home,
   ShieldCheck,
   Stethoscope,
   Settings,
@@ -17,7 +15,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PricingCards } from "@/components/business/pricing-cards";
 import { B2BLeadForm } from "@/components/business/b2b-lead-form";
 import { PlanFeatureTable } from "@/components/business/plan-feature-table";
@@ -37,63 +35,44 @@ import { CheckInForm } from "./check-in-form";
 import { AdvancedTodayDashboard } from "./today-dashboard";
 
 export function HealthOsLanding() {
-  const cards = [
-    { href: "/today", title: "今日狀態 / Today", icon: Home, body: "身體、心情、飲食、運動、睡眠和下一步。" },
-    { href: "/check-in", title: "晨晚 check-in", icon: CalendarDays, body: "起床時間、睡眠、能量、心情、壓力。" },
-    { href: "/gym", title: "Gym Workout Coach", icon: Dumbbell, body: "訓練、組數、RPE、恢復和紅旗提示。" },
-    { href: "/doctor", title: "Doctor Visit Prep", icon: Stethoscope, body: "整理時間線、問題和就診摘要。" },
-  ];
-
   return (
-    <main className="min-h-dvh bg-[linear-gradient(160deg,var(--health-bg-start),var(--background)_42%,var(--health-bg-end))] px-4 py-5 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8">
-        <section className="grid min-h-[calc(100dvh-4rem)] content-center gap-8 pb-16 pt-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center">
-          <div className="max-w-3xl">
-            <Badge variant="secondary" className="mb-4">Super Family Doctor / 智健家庭醫生</Badge>
-            <h1 className="text-gradient-health text-4xl font-bold leading-tight tracking-normal sm:text-6xl">
-              智健家庭醫生 / AI Health Companion
+    <main className="min-h-dvh bg-[linear-gradient(160deg,var(--health-bg-start),var(--background)_46%,var(--health-bg-end))] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-xl flex-col justify-center gap-8">
+        <section className="grid gap-7">
+          <div className="grid gap-4">
+            <h1 className="text-5xl font-bold leading-tight tracking-normal text-foreground sm:text-6xl">
+              今日點呀？
             </h1>
-            <p className="mt-5 text-base leading-8 text-muted-foreground sm:text-lg">
-              我可以幫你整理今日身體、情緒、飲食、運動和睡眠狀態，並提供一般生活建議。這不是醫療診斷；如有緊急情況，請立即致電 999 或前往急症室。
+            <p className="text-2xl font-semibold leading-snug text-foreground">
+              撳一個掣，我幫你記低。
             </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Button asChild size="lg"><Link href="/today">進入今日狀態 / Open Today</Link></Button>
-              <Button asChild size="lg" variant="outline"><Link href="/check-in">匿名開始 / Start anonymously</Link></Button>
+            <div className="grid gap-2 text-lg leading-7 text-muted-foreground">
+              <p>How are you today?</p>
+              <p>Tap one button. I&apos;ll save it for you.</p>
             </div>
           </div>
-          <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-xl">
-            <CardHeader>
-              <CardTitle>Today preview</CardTitle>
-              <CardDescription>生活狀態參考，不是健康診斷分數。</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-3">
-              {["Energy 72", "Recovery 64", "Nutrition 68", "Safety green"].map((item) => (
-                <div key={item} className="rounded-xl bg-muted/35 p-4 text-sm font-medium">{item}</div>
-              ))}
-            </CardContent>
-          </Card>
+
+          <Button asChild size="lg" className="min-h-16 rounded-2xl text-xl font-bold">
+            <Link href="/today">開始 / Start</Link>
+          </Button>
+
+          <Link
+            href="/more"
+            className="mx-auto rounded-full px-5 py-3 text-base font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            進階功能 / Advanced
+          </Link>
         </section>
-        <section className="-mt-24 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {cards.map((card) => (
-            <Link key={card.href} href={card.href} className="rounded-2xl">
-              <Card className="h-full border-border/60 bg-card/85 shadow-sm backdrop-blur-xl transition hover:-translate-y-0.5 hover:shadow-md">
-                <CardHeader>
-                  <span className="grid size-10 place-items-center rounded-lg bg-primary text-primary-foreground">
-                    <card.icon aria-hidden="true" />
-                  </span>
-                  <CardTitle>{card.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm leading-6 text-muted-foreground">{card.body}</CardContent>
-              </Card>
-            </Link>
-          ))}
-        </section>
+
+        <p className="text-center text-sm leading-6 text-muted-foreground">
+          緊急情況請立即致電 999 或前往急症室。/ In an emergency, call 999 or go to A&amp;E now.
+        </p>
       </div>
     </main>
   );
 }
 
-export function TodayPage() {
+export function AdvancedTodayPage() {
   return <AdvancedTodayDashboard />;
 }
 

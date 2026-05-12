@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { Brain, ClipboardList, Home, MoreHorizontal } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { BigButton } from "./big-button";
 import { EmergencyButton } from "./emergency-button";
 import { SimpleMoodPicker, type SimpleMood } from "./simple-mood-picker";
 import { SimpleSuggestion, type SimpleSuggestionState } from "./simple-suggestion";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getSupabaseRequestHeaders } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 type SimpleAction = "food" | "water" | "toilet" | "move";
@@ -35,7 +35,6 @@ const bottomItems = [
 export function SimpleToday() {
   const [result, setResult] = useState<SimpleSuggestionState | null>(null);
   const [saving, setSaving] = useState<SavingAction>(null);
-  const supabase = useMemo(() => getSupabaseBrowserClient(), []);
 
   async function recordMood(mood: SimpleMood) {
     const moodConfig = {
@@ -174,15 +173,10 @@ export function SimpleToday() {
 
   async function postWithAnonymousSession(endpoint: string, payload: Record<string, unknown>) {
     try {
-      const headers = new Headers({
+      const headers = await getSupabaseRequestHeaders({
         "Content-Type": "application/json",
         Accept: "application/json",
       });
-      const token = supabase ? await getAccessToken(supabase) : null;
-
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -257,21 +251,4 @@ export function SimpleToday() {
       </nav>
     </main>
   );
-}
-
-async function getAccessToken(supabase: NonNullable<ReturnType<typeof getSupabaseBrowserClient>>) {
-  try {
-    const currentSession = await supabase.auth.getSession();
-    const existingToken = currentSession.data.session?.access_token;
-
-    if (existingToken) {
-      return existingToken;
-    }
-
-    const anonymousSession = await supabase.auth.signInAnonymously();
-
-    return anonymousSession.data.session?.access_token ?? null;
-  } catch {
-    return null;
-  }
 }

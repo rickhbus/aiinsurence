@@ -38,7 +38,7 @@ import {
   MoodPage,
   PricingPage,
   ReportsPage,
-  TodayPage,
+  AdvancedTodayPage,
   ToiletPage,
 } from "@/components/health-os/mvp-pages";
 
@@ -111,9 +111,9 @@ function PageContent({
     case "landing":
       return <HealthOsLanding />;
     case "today":
-      return <TodayPage />;
+      return <AdvancedTodayPage />;
     case "today-advanced":
-      return <TodayPage />;
+      return <AdvancedTodayPage />;
     case "more":
       return <MorePage />;
     case "check-in":

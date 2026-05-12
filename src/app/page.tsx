@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { HealthOsLanding } from "@/components/health-os/mvp-pages";
 
 export default function Home() {
-  redirect("/today");
+  return <HealthOsLanding />;
 }
