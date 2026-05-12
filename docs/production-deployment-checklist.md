@@ -18,8 +18,11 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 - [ ] `NEXT_PUBLIC_SUPABASE_URL` configured.
 - [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` configured.
 - [ ] Server-only AI provider key configured or deterministic fallback mode explicitly accepted.
-- [ ] Shared Redis/Upstash rate-limit store configured or production deferral explicitly accepted.
+- [ ] Shared Redis/Upstash rate-limit store configured for production API traffic.
+- [ ] Production API rate-limit env values reviewed: `PRODUCTION_API_RATE_LIMIT_WINDOW_SECONDS`, `PRODUCTION_API_RATE_LIMIT_PER_WINDOW`, `PRODUCTION_WRITE_API_RATE_LIMIT_PER_WINDOW`, and `PRODUCTION_AI_API_RATE_LIMIT_PER_WINDOW`.
 - [ ] Optional analytics key configured only if analytics is enabled.
+- [ ] `MONITORING_ALERTS_ENABLED=true` and an alert destination are configured.
+- [ ] `SECRETS_ROTATED_AT` and `SECRETS_ROTATION_NEXT_DUE_AT` are set after real provider rotation.
 - [ ] `APP_ENV=production` set only after env validation is green.
 - [ ] No service-role key is exposed through `NEXT_PUBLIC_*`.
 - [ ] Secrets pasted into chat have been rotated after deployment setup is stable.
@@ -82,6 +85,8 @@ Use this before promoting AI Health Guide / 智健導航 to production.
 - [ ] Incident response drill completed or scheduled.
 - [ ] AI spend cap and provider quota reviewed.
 - [ ] Vercel function usage, Supabase pool limits, and Redis/Upstash operation limits reviewed.
+- [ ] `npm run monitor:readiness` can alert on non-ready production readiness.
+- [ ] `/api/readiness` reports `shared_rate_limit_store`, `monitoring_alerts`, and `secret_rotation` as pass.
 - [ ] Documentation still says the app is not proven for 100k DAU until load tests, query plans, monitoring, quota checks, and incident drills pass.
 
 ## Mobile QA

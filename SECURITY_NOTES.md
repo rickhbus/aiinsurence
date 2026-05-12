@@ -16,6 +16,8 @@ This app handles health-adjacent and insurance-adjacent context. Treat the data 
 
 - Supabase client code uses public anon/publishable keys only.
 - Server routes use request IDs and sanitized logging helpers.
+- Production API traffic has a shared Redis/Upstash-backed proxy rate-limit gate that fails closed when the shared store is missing.
+- `/api/readiness` checks monitoring-alert declarations and secret-rotation metadata without exposing secret values.
 - Auth callback redirects are restricted to same-origin relative paths.
 - AI.GBL and Emotion Engine run server-side through route handlers.
 - AI.GBL and Emotion Engine store structured outputs and summaries rather than unrestricted raw prompts.
@@ -26,7 +28,8 @@ This app handles health-adjacent and insurance-adjacent context. Treat the data 
 
 - Run Supabase policy tests against a real staging project.
 - Verify Vercel production env vars contain no service-role public leaks.
-- Add external error monitoring before production traffic.
-- Add WAF/rate-limit review at the Vercel/project edge.
+- Configure external error monitoring and alert destinations before production traffic.
+- Keep WAF review in addition to the shared app-level production API rate limit.
+- Complete real provider secret rotation and set rotation metadata before calling production ready.
 - Run dependency audit and patch non-breaking advisories.
 - Perform load testing before making any 100k DAU readiness claim.

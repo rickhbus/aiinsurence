@@ -130,8 +130,8 @@ export async function checkSubjectRateLimit({
   store?: RateLimitStore;
 }): Promise<LimitResult> {
   const key = buildRateLimitKey(route, subject);
-  const now = Date.now();
   const result = await store.increment(key, windowMs);
+  const now = Date.now();
 
   if (result.count > limit) {
     return {

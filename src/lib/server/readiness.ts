@@ -5,6 +5,7 @@ import {
   getRequiredProductionEnvIssues,
   shouldFailFastForProduction,
 } from "@/lib/env";
+import { hasSharedRateLimitStoreConfig } from "@/lib/server/rate-limit-store";
 
 export type ReadinessStatus = "ready" | "degraded" | "not_ready";
 export type ReadinessCheckStatus = "pass" | "warn" | "fail";
@@ -53,6 +54,8 @@ export async function buildReadinessReport({
     buildRuntimeConfigCheck(env),
     buildAiProviderCheck(env),
     buildRateLimitStoreCheck(env),
+    buildMonitoringAlertCheck(env),
+    buildSecretRotationCheck(env, now),
   ];
 
   if (getClientEnv(env).isSupabaseConfigured) {
@@ -170,15 +173,23 @@ function buildAiProviderCheck(env: Record<string, string | undefined>): Readines
 }
 
 function buildRateLimitStoreCheck(env: Record<string, string | undefined>): ReadinessCheck {
-  const hasRedis =
-    Boolean(env.UPSTASH_REDIS_REST_URL?.trim() && env.UPSTASH_REDIS_REST_TOKEN?.trim()) ||
-    Boolean(env.REDIS_REST_URL?.trim() && env.REDIS_REST_TOKEN?.trim());
+  const production = shouldFailFastForProduction(env);
+  const hasRedis = hasSharedRateLimitStoreConfig(env);
+  const rateLimitDisabled = clean(env.PRODUCTION_API_RATE_LIMIT_ENABLED)?.toLowerCase() === "false";
 
-  if (!hasRedis && shouldFailFastForProduction(env)) {
+  if (production && rateLimitDisabled) {
     return {
       name: "shared_rate_limit_store",
-      status: "warn",
-      message: "Shared Redis/Upstash rate-limit store is not configured; production should explicitly defer or configure it.",
+      status: "fail",
+      message: "Production API rate limiting is disabled; enable it before production traffic.",
+    };
+  }
+
+  if (!hasRedis && production) {
+    return {
+      name: "shared_rate_limit_store",
+      status: "fail",
+      message: "Shared Redis/Upstash rate-limit store is required for production API traffic.",
     };
   }
 
@@ -188,6 +199,78 @@ function buildRateLimitStoreCheck(env: Record<string, string | undefined>): Read
     message: hasRedis
       ? "Shared Redis/Upstash-compatible rate-limit store is configured."
       : "Local/test in-memory rate-limit store is active.",
+  };
+}
+
+function buildMonitoringAlertCheck(env: Record<string, string | undefined>): ReadinessCheck {
+  const production = shouldFailFastForProduction(env);
+  const alertsEnabled = clean(env.MONITORING_ALERTS_ENABLED)?.toLowerCase() === "true";
+  const hasDestination = Boolean(
+    clean(env.MONITORING_ALERT_WEBHOOK_URL) ||
+      clean(env.SENTRY_DSN) ||
+      clean(env.OTEL_EXPORTER_OTLP_ENDPOINT) ||
+      clean(env.VERCEL_LOG_DRAIN_CONFIGURED)?.toLowerCase() === "true",
+  );
+
+  if (production && (!alertsEnabled || !hasDestination)) {
+    return {
+      name: "monitoring_alerts",
+      status: "fail",
+      message: "Production monitoring alerts are not configured or not declared enabled.",
+    };
+  }
+
+  return {
+    name: "monitoring_alerts",
+    status: alertsEnabled && hasDestination ? "pass" : "warn",
+    message: alertsEnabled && hasDestination
+      ? "Production monitoring alert destination is declared."
+      : "Monitoring alerts are not enabled for this environment.",
+  };
+}
+
+function buildSecretRotationCheck(
+  env: Record<string, string | undefined>,
+  now: Date,
+): ReadinessCheck {
+  const production = shouldFailFastForProduction(env);
+  const rotatedAt = parseDate(env.SECRETS_ROTATED_AT);
+  const nextDueAt = parseDate(env.SECRETS_ROTATION_NEXT_DUE_AT);
+
+  if (!rotatedAt || !nextDueAt) {
+    return {
+      name: "secret_rotation",
+      status: production ? "fail" : "warn",
+      message: "Secret rotation metadata is missing or invalid.",
+    };
+  }
+
+  if (rotatedAt.getTime() > now.getTime() + 24 * 60 * 60 * 1000) {
+    return {
+      name: "secret_rotation",
+      status: production ? "fail" : "warn",
+      message: "Secret rotation metadata has an invalid future rotation timestamp.",
+    };
+  }
+
+  if (nextDueAt.getTime() <= now.getTime()) {
+    return {
+      name: "secret_rotation",
+      status: production ? "fail" : "warn",
+      message: "Secret rotation is due or overdue.",
+    };
+  }
+
+  const daysUntilDue = Math.ceil(
+    (nextDueAt.getTime() - now.getTime()) / (24 * 60 * 60 * 1000),
+  );
+
+  return {
+    name: "secret_rotation",
+    status: daysUntilDue <= 14 ? "warn" : "pass",
+    message: daysUntilDue <= 14
+      ? "Secret rotation is due within 14 days."
+      : "Secret rotation metadata is current.",
   };
 }
 
@@ -262,4 +345,22 @@ function summarizeStatus(checks: ReadinessCheck[]): ReadinessStatus {
   }
 
   return "ready";
+}
+
+function parseDate(value: string | undefined) {
+  const cleaned = clean(value);
+
+  if (!cleaned) {
+    return null;
+  }
+
+  const date = new Date(cleaned);
+
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function clean(value: string | undefined) {
+  const trimmed = value?.trim();
+
+  return trimmed ? trimmed : null;
 }

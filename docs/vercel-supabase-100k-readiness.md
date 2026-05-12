@@ -8,7 +8,9 @@ This document is a readiness plan, not proof. AI Health Guide / 智健導航 mus
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` set for preview and production.
 - No service-role key in any `NEXT_PUBLIC_*` variable.
 - AI provider keys are server-only and optional for app boot.
-- Redis/Upstash rate-limit env vars are server-only if configured.
+- Redis/Upstash rate-limit env vars are server-only and required for production API traffic.
+- Monitoring alert destination is configured and declared with `MONITORING_ALERTS_ENABLED=true`.
+- Secret rotation metadata is current after real provider rotation.
 - Secrets pasted into chat have been rotated after deployment setup is stable.
 
 ## Vercel Deployment Checks
@@ -37,8 +39,8 @@ This document is a readiness plan, not proof. AI Health Guide / 智健導航 mus
 
 ## WAF And Rate-Limit Plan
 
-- In-memory limiting is acceptable only for local/test or explicitly deferred previews.
-- Production should configure a shared Redis/Upstash-compatible store or Vercel Firewall/WAF controls.
+- In-memory limiting is acceptable only for local/test.
+- Production API traffic fails closed if the shared Redis/Upstash-compatible store is missing or unreachable.
 - Anonymous AI-adjacent routes must return 429 with `Retry-After`.
 - Authenticated daily AI limits should continue using Supabase-backed `ai_usage_events`.
 
@@ -52,6 +54,7 @@ Recommended dashboards:
 - AI cost/provider reliability: generated/fallback/failed counts, timeout rate, token estimates, spend/quota.
 - Database health: CPU, memory, connection pool, slow queries, table/index bloat, RLS errors.
 - Abuse/rate-limit health: 429 volume by route, top anonymous IP hashes, shared store latency, WAF events.
+- Readiness alert: `npm run monitor:readiness` runs from an external scheduler and alerts on any non-ready status.
 
 ## Load-Test Plan
 
@@ -75,9 +78,9 @@ Recommended dashboards:
 - Staging restore drill has completed.
 - RLS verification has completed after latest migrations.
 - Query-plan diagnostics show indexed access for dashboard, history, AI usage, memory, and summaries.
-- Shared production rate-limit controls are configured or formally accepted as a launch blocker.
+- Shared production rate-limit controls are configured and verified.
 - Monitoring dashboards and alerts are live.
-- Secrets exposed in chat are rotated.
+- Secrets exposed in chat are rotated and readiness rotation metadata is current.
 - Load tests at agreed traffic profiles pass with documented p95 latency and error-rate targets.
 - Incident-response drill has been run or scheduled with owners.
 - Cost caps and provider quotas have been reviewed.

@@ -4,6 +4,7 @@ import {
   MemoryRateLimitStore,
   RedisRateLimitStore,
   getConfiguredRateLimitStore,
+  hasSharedRateLimitStoreConfig,
   resetRateLimitStoresForTests,
 } from "./rate-limit-store";
 
@@ -81,6 +82,17 @@ describe("shared rate-limit store abstraction", () => {
     expect(getConfiguredRateLimitStore({}).name).toBe("memory");
   });
 
+  it("detects shared Redis-compatible store configuration without exposing values", () => {
+    expect(
+      hasSharedRateLimitStoreConfig({
+        UPSTASH_REDIS_REST_URL: "https://redis.example",
+        UPSTASH_REDIS_REST_TOKEN: "server-token",
+      }),
+    ).toBe(true);
+    expect(hasSharedRateLimitStoreConfig({ UPSTASH_REDIS_REST_URL: "https://redis.example" }))
+      .toBe(false);
+  });
+
   it("does not include the raw IP address in shared store keys", async () => {
     const keys: string[] = [];
     const store = {
@@ -113,5 +125,15 @@ describe("shared rate-limit store abstraction", () => {
 
     expect(first.count).toBe(1);
     expect(second.count).toBe(2);
+  });
+
+  it("throws instead of falling back when strict Redis mode is requested", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
+    const fallback = new MemoryRateLimitStore();
+    const store = new RedisRateLimitStore("https://redis.example", "server-token", fallback, {
+      allowMemoryFallback: false,
+    });
+
+    await expect(store.increment("key", 60_000)).rejects.toThrow("network");
   });
 });

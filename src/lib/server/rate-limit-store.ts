@@ -18,6 +18,11 @@ type MemoryEntry = {
 const globalStore = globalThis as typeof globalThis & {
   __healthRateLimitMemoryStore?: MemoryRateLimitStore;
   __healthRateLimitConfiguredStore?: RateLimitStore;
+  __healthRateLimitConfiguredStrictStore?: RateLimitStore;
+};
+
+type RedisRateLimitStoreOptions = {
+  allowMemoryFallback?: boolean;
 };
 
 export class MemoryRateLimitStore implements RateLimitStore {
@@ -47,12 +52,16 @@ export class MemoryRateLimitStore implements RateLimitStore {
 
 export class RedisRateLimitStore implements RateLimitStore {
   name = "redis" as const;
+  private readonly allowMemoryFallback: boolean;
 
   constructor(
     private readonly url: string,
     private readonly token: string,
     private readonly fallback: RateLimitStore = getMemoryRateLimitStore(),
-  ) {}
+    options: RedisRateLimitStoreOptions = {},
+  ) {
+    this.allowMemoryFallback = options.allowMemoryFallback ?? true;
+  }
 
   async increment(key: string, windowMs: number): Promise<RateLimitIncrement> {
     try {
@@ -75,7 +84,7 @@ export class RedisRateLimitStore implements RateLimitStore {
       let ttlMs = windowMs;
 
       if (safeCount === 1) {
-        await fetch(
+        const expireRequest = fetch(
           `${this.url.replace(/\/$/, "")}/pexpire/${encodedKey}/${Math.max(1, windowMs)}`,
           {
             method: "POST",
@@ -84,7 +93,17 @@ export class RedisRateLimitStore implements RateLimitStore {
             },
             cache: "no-store",
           },
-        ).catch(() => undefined);
+        );
+
+        if (this.allowMemoryFallback) {
+          await expireRequest.catch(() => undefined);
+        } else {
+          const expireResponse = await expireRequest;
+
+          if (!expireResponse.ok) {
+            throw new Error(`Redis rate-limit expiry failed: ${expireResponse.status}`);
+          }
+        }
       } else {
         ttlMs = await this.readTtlMs(encodedKey, windowMs);
       }
@@ -93,7 +112,11 @@ export class RedisRateLimitStore implements RateLimitStore {
         count: safeCount,
         resetAt: Date.now() + ttlMs,
       };
-    } catch {
+    } catch (error) {
+      if (!this.allowMemoryFallback) {
+        throw error;
+      }
+
       return this.fallback.increment(key, windowMs);
     }
   }
@@ -130,26 +153,46 @@ export function getMemoryRateLimitStore() {
 
 export function getConfiguredRateLimitStore(
   env: Record<string, string | undefined> = process.env,
+  options: RedisRateLimitStoreOptions = {},
 ) {
   const redisUrl = clean(env.UPSTASH_REDIS_REST_URL) || clean(env.REDIS_REST_URL);
   const redisToken =
     clean(env.UPSTASH_REDIS_REST_TOKEN) || clean(env.REDIS_REST_TOKEN);
+  const allowMemoryFallback = options.allowMemoryFallback ?? true;
 
   if (!redisUrl || !redisToken) {
     return getMemoryRateLimitStore();
   }
 
-  globalStore.__healthRateLimitConfiguredStore ??= new RedisRateLimitStore(
-    redisUrl,
-    redisToken,
-  );
+  if (!allowMemoryFallback) {
+    globalStore.__healthRateLimitConfiguredStrictStore ??= new RedisRateLimitStore(
+      redisUrl,
+      redisToken,
+      getMemoryRateLimitStore(),
+      { allowMemoryFallback: false },
+    );
+
+    return globalStore.__healthRateLimitConfiguredStrictStore;
+  }
+
+  globalStore.__healthRateLimitConfiguredStore ??= new RedisRateLimitStore(redisUrl, redisToken);
 
   return globalStore.__healthRateLimitConfiguredStore;
+}
+
+export function hasSharedRateLimitStoreConfig(
+  env: Record<string, string | undefined> = process.env,
+) {
+  return Boolean(
+    (clean(env.UPSTASH_REDIS_REST_URL) && clean(env.UPSTASH_REDIS_REST_TOKEN)) ||
+      (clean(env.REDIS_REST_URL) && clean(env.REDIS_REST_TOKEN)),
+  );
 }
 
 export function resetRateLimitStoresForTests() {
   globalStore.__healthRateLimitMemoryStore?.clear();
   delete globalStore.__healthRateLimitConfiguredStore;
+  delete globalStore.__healthRateLimitConfiguredStrictStore;
 }
 
 function clean(value: string | undefined) {
