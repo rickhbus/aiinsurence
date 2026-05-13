@@ -1,7 +1,5 @@
-import { AdvancedTodayDashboard } from "@/components/health-os/today-dashboard";
-import { SimpleToday } from "@/components/simple-mode/simple-today";
-import { defaultSimpleMode } from "@/lib/health-app/settings";
+import { HealthAppShell } from "@/components/health-app/app-shell";
 
 export default function TodayRoute() {
-  return defaultSimpleMode ? <SimpleToday /> : <AdvancedTodayDashboard />;
+  return <HealthAppShell currentPage="today" />;
 }

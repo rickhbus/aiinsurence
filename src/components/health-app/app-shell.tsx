@@ -6,14 +6,16 @@ import { cn } from "@/lib/utils";
 import { CoachPage, RightCoachPanel } from "./coach";
 import { DashboardPage } from "./dashboard";
 import { EmotionEnginePage, GblPage, HistoryPage } from "./intelligence";
-import { HealthcarePage, LearnPage, LessonPage } from "./knowledge-healthcare";
+import { HealthcarePage, LessonPage } from "./knowledge-healthcare";
+import { HealthQuestLearnPage } from "@/components/health-quest/learn-page";
+import { HealthQuestProgressPage } from "@/components/health-quest/progress-page";
+import { TodayQuestPage } from "@/components/health-quest/today-quest-page";
 import { MobileBottomNav, Sidebar, TopHeader } from "./navigation";
 import {
   AuthLandingPage,
   GoalsPage,
   MemoryPage,
   ProfilePage,
-  ProgressPage,
   SettingsPage,
 } from "./profile-progress";
 import { OnboardingPage } from "./onboarding";
@@ -53,7 +55,7 @@ export function HealthAppShell({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [coachOpen, setCoachOpen] = useState(true);
   const isFocusedPage = currentPage === "auth" || currentPage === "onboarding";
-  const showRightCoach = currentPage !== "coach" && !isFocusedPage;
+  const showRightCoach = currentPage !== "coach" && currentPage !== "today" && !isFocusedPage;
 
   return (
     <div className="min-h-dvh overflow-x-clip bg-[linear-gradient(160deg,var(--health-bg-start),var(--background)_40%,var(--health-bg-end)_90%,var(--background))]">
@@ -111,7 +113,7 @@ function PageContent({
     case "landing":
       return <HealthOsLanding />;
     case "today":
-      return <AdvancedTodayPage />;
+      return <TodayQuestPage locale={locale} />;
     case "today-advanced":
       return <AdvancedTodayPage />;
     case "more":
@@ -152,7 +154,7 @@ function PageContent({
     case "food-log":
       return <NutritionPage locale={locale} />;
     case "learn":
-      return <LearnPage locale={locale} />;
+      return <HealthQuestLearnPage locale={locale} />;
     case "lesson":
       return <LessonPage locale={locale} slug={lessonSlug} />;
     case "gbl":
@@ -167,7 +169,7 @@ function PageContent({
     case "insurance":
       return <InsurancePrepPage />;
     case "progress":
-      return <ProgressPage locale={locale} />;
+      return <HealthQuestProgressPage locale={locale} />;
     case "goals":
       return <GoalsPage locale={locale} />;
     case "profile":

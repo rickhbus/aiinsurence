@@ -7,6 +7,10 @@ const productionMigration = readFileSync(
   join(migrationDir, "004_production_readiness.sql"),
   "utf8",
 );
+const healthQuestMigration = readFileSync(
+  join(migrationDir, "012_health_quest_gamification.sql"),
+  "utf8",
+);
 const allMigrations = [
   "001_auth_memory.sql",
   "002_mvp_audit_tables.sql",
@@ -15,6 +19,11 @@ const allMigrations = [
   "005_gbl_emotion_engine.sql",
   "006_mobile_health_sync.sql",
   "007_daily_checkins.sql",
+  "008_health_companion_mvp.sql",
+  "009_auth_anonymous_profile_trigger.sql",
+  "010_food_payments_family_doctor.sql",
+  "011_family_alerts_senior_mode.sql",
+  "012_health_quest_gamification.sql",
 ]
   .map((migration) => readFileSync(join(migrationDir, migration), "utf8"))
   .join("\n");
@@ -62,6 +71,11 @@ describe("Supabase production readiness migration", () => {
       "005_gbl_emotion_engine.sql",
       "006_mobile_health_sync.sql",
       "007_daily_checkins.sql",
+      "008_health_companion_mvp.sql",
+      "009_auth_anonymous_profile_trigger.sql",
+      "010_food_payments_family_doctor.sql",
+      "011_family_alerts_senior_mode.sql",
+      "012_health_quest_gamification.sql",
     ];
 
     for (const migration of migrations) {
@@ -122,5 +136,21 @@ describe("Supabase production readiness migration", () => {
     expect(allMigrations).toContain("daily_checkins_user_created_idx");
     expect(allMigrations).toContain("daily_checkins_user_type_created_idx");
     expect(allMigrations).toContain("Not clinical data and not used for insurance eligibility");
+  });
+
+  it("adds Health Quest gamification tables with owner RLS and privacy-safe XP constraints", () => {
+    expect(healthQuestMigration).toContain("create table if not exists public.daily_quests");
+    expect(healthQuestMigration).toContain("create table if not exists public.user_xp_events");
+    expect(healthQuestMigration).toContain("create table if not exists public.streak_freezes");
+    expect(healthQuestMigration).toContain("create table if not exists public.quest_templates");
+    expect(healthQuestMigration).toContain("alter table public.user_streaks");
+    expect(healthQuestMigration).toContain("daily_quests_select_own");
+    expect(healthQuestMigration).toContain("user_xp_events_insert_own");
+    expect(healthQuestMigration).toContain("streak_freezes_own_rows");
+    expect(healthQuestMigration).toContain("quest_templates_public_read");
+    expect(healthQuestMigration).toContain("daily_quests_user_date_idx");
+    expect(healthQuestMigration).toContain("user_xp_events_user_created_idx");
+    expect(healthQuestMigration).toContain("Metadata must not encode raw symptoms");
+    expect(healthQuestMigration).toContain("not diagnosis, treatment, or insurance decisioning");
   });
 });

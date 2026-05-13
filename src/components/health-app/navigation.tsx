@@ -9,6 +9,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ClipboardList,
+  BookOpenCheck,
   Dumbbell,
   HeartPulse,
   Home,
@@ -68,29 +69,35 @@ export const navGroups: NavGroup[] = [
     label: { zh: "今日", en: "Today" },
     icon: Home,
     children: [
-      { label: { zh: "今日", en: "Today" }, href: "/today", page: "today", icon: Home },
+      { label: { zh: "健康任務", en: "Health Quest" }, href: "/today", page: "today", icon: Home },
       { label: { zh: "進階資料", en: "Advanced" }, href: "/today/advanced", page: "today-advanced", icon: BarChart3 },
     ],
   },
   {
-    id: "log",
-    label: { zh: "記錄", en: "Log" },
-    icon: ClipboardList,
+    id: "coach",
+    label: { zh: "教練", en: "Coach" },
+    icon: Brain,
     children: [
-      { label: { zh: "記錄總覽", en: "Log overview" }, href: "/track", page: "track", icon: ClipboardList },
-      { label: { zh: "食物", en: "Food" }, href: "/food", page: "food", icon: Apple },
-      { label: { zh: "飲水", en: "Water" }, href: "/hydration", page: "hydration", icon: Waves },
-      { label: { zh: "廁所", en: "Toilet" }, href: "/toilet", page: "toilet", icon: Waves },
-      { label: { zh: "運動", en: "Movement" }, href: "/gym", page: "gym", icon: Dumbbell },
+      { label: ui.coach, href: "/coach", page: "coach", icon: Brain },
+      { label: { zh: "醫療導航", en: "Care Navigation" }, href: "/healthcare", page: "healthcare", icon: Stethoscope },
     ],
   },
   {
-    id: "ai",
-    label: { zh: "AI", en: "AI" },
-    icon: Brain,
+    id: "progress",
+    label: { zh: "進度", en: "Progress" },
+    icon: BarChart3,
     children: [
-      { label: { zh: "AI 分析", en: "AI Analysis" }, href: "/healthcare", page: "healthcare", icon: Search },
-      { label: ui.coach, href: "/coach", page: "coach", icon: Brain },
+      { label: { zh: "任務進度", en: "Quest Progress" }, href: "/progress", page: "progress", icon: BarChart3 },
+      { label: { zh: "每週建議", en: "Reports" }, href: "/reports", page: "reports", icon: BarChart3 },
+    ],
+  },
+  {
+    id: "learn",
+    label: { zh: "學習", en: "Learn" },
+    icon: BookOpenCheck,
+    children: [
+      { label: { zh: "健康小課", en: "Tiny Lessons" }, href: "/learn", page: "learn", icon: BookOpenCheck },
+      { label: { zh: "保險教育", en: "Insurance Education" }, href: "/insurance", page: "insurance", icon: ShieldCheck },
     ],
   },
   {
@@ -99,14 +106,21 @@ export const navGroups: NavGroup[] = [
     icon: MoreHorizontal,
     children: [
       { label: { zh: "更多", en: "More" }, href: "/more", page: "more", icon: MoreHorizontal },
-      { label: { zh: "每週建議", en: "Reports" }, href: "/reports", page: "reports", icon: BarChart3 },
+      { label: { zh: "快速打卡", en: "Check-in" }, href: "/check-in", page: "check-in", icon: ClipboardList },
+      { label: { zh: "心情", en: "Mood" }, href: "/mood", page: "mood", icon: HeartPulse },
+      { label: { zh: "食物", en: "Food" }, href: "/food", page: "food", icon: Apple },
+      { label: { zh: "飲水", en: "Hydration" }, href: "/hydration", page: "hydration", icon: Waves },
+      { label: { zh: "廁所", en: "Toilet" }, href: "/toilet", page: "toilet", icon: Waves },
+      { label: { zh: "健身", en: "Gym" }, href: "/gym", page: "gym", icon: Dumbbell },
+      { label: { zh: "健身模板", en: "Gym Templates" }, href: "/gym/templates", page: "gym-templates", icon: Dumbbell },
+      { label: { zh: "屋企人", en: "Family" }, href: "/family", page: "family", icon: Users },
       { label: { zh: "醫生準備", en: "Doctor Prep" }, href: "/doctor", page: "doctor", icon: Stethoscope },
-      { label: { zh: "保險準備", en: "Insurance" }, href: "/insurance", page: "insurance", icon: ShieldCheck },
       { label: { zh: "收費", en: "Pricing" }, href: "/pricing", page: "pricing", icon: ShieldCheck },
       { label: { zh: "Business", en: "Business" }, href: "/business", page: "business", icon: Activity },
       { label: { zh: "GBL", en: "GBL" }, href: "/gbl", page: "gbl", icon: Brain },
       { label: { zh: "Emotion Engine", en: "Emotion Engine" }, href: "/emotion", page: "emotion", icon: HeartPulse },
-      { label: { zh: "屋企人", en: "Family" }, href: "/family", page: "family", icon: UserRound },
+      { label: { zh: "分析歷史", en: "History" }, href: "/history", page: "history", icon: ClipboardList },
+      { label: ui.profile, href: "/profile", page: "profile", icon: UserRound },
       { label: ui.settings, href: "/settings", page: "settings", icon: UserRound },
     ],
   },
@@ -114,9 +128,10 @@ export const navGroups: NavGroup[] = [
 
 const bottomNavItems = [
   { label: { zh: "今日", en: "Today" }, href: "/today", icon: Home, activePages: ["today", "today-advanced"] as HealthPage[] },
-  { label: { zh: "記錄", en: "Log" }, href: "/track", icon: ClipboardList, activePages: ["track", "check-in", "mood", "food", "hydration", "toilet", "gym", "gym-templates", "running", "walking", "sports", "body", "sleep", "water", "nutrition", "food-log", "diet-plan"] as HealthPage[] },
-  { label: { zh: "屋企人", en: "Family" }, href: "/family", icon: Users, activePages: ["family"] as HealthPage[] },
-  { label: { zh: "更多", en: "More" }, href: "/more", icon: MoreHorizontal, activePages: ["more", "reports", "doctor", "insurance", "pricing", "business", "gbl", "emotion", "history", "healthcare", "symptom-routing", "learn", "lesson", "progress", "goals", "profile", "memory", "settings"] as HealthPage[] },
+  { label: { zh: "教練", en: "Coach" }, href: "/coach", icon: Brain, activePages: ["coach", "healthcare", "symptom-routing"] as HealthPage[] },
+  { label: { zh: "進度", en: "Progress" }, href: "/progress", icon: BarChart3, activePages: ["progress", "reports", "goals"] as HealthPage[] },
+  { label: { zh: "學習", en: "Learn" }, href: "/learn", icon: BookOpenCheck, activePages: ["learn", "lesson", "insurance"] as HealthPage[] },
+  { label: { zh: "更多", en: "More" }, href: "/more", icon: MoreHorizontal, activePages: ["more", "check-in", "mood", "food", "hydration", "toilet", "gym", "gym-templates", "track", "running", "walking", "sports", "body", "sleep", "water", "nutrition", "food-log", "diet-plan", "family", "doctor", "pricing", "business", "gbl", "emotion", "history", "profile", "memory", "settings"] as HealthPage[] },
 ];
 
 export function Sidebar({
@@ -133,7 +148,7 @@ export function Sidebar({
   const [query, setQuery] = useState("");
   const activeGroup = useMemo(() => findActiveGroup(currentPage), [currentPage]);
   const [openGroups, setOpenGroups] = useState<string[]>(() => {
-    const preferred = activeGroup?.id === "today" ? ["today", "log"] : ["today", activeGroup?.id ?? "log"];
+    const preferred = activeGroup?.id === "today" ? ["today", "coach"] : ["today", activeGroup?.id ?? "coach"];
     return Array.from(new Set(preferred)).slice(0, 2);
   });
   const filteredGroups = filterGroups(navGroups, query, locale);
@@ -364,7 +379,7 @@ export function TopHeader({
 
 export function MobileBottomNav({ currentPage, locale }: { currentPage: HealthPage; locale: Locale }) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 grid min-h-20 grid-cols-4 border-t border-border/40 bg-background/90 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-2xl lg:hidden" aria-label="Mobile bottom navigation">
+    <nav className="fixed inset-x-0 bottom-0 z-40 grid min-h-20 grid-cols-5 border-t border-border/40 bg-background/90 px-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-2xl lg:hidden" aria-label="Mobile bottom navigation">
       {bottomNavItems.map((item) => {
         const active = item.activePages.includes(currentPage);
         return (
@@ -372,7 +387,7 @@ export function MobileBottomNav({ currentPage, locale }: { currentPage: HealthPa
             key={item.href}
             href={item.href}
             className={cn(
-              "flex min-h-12 flex-col items-center justify-center gap-1 rounded-2xl text-[0.68rem] font-medium text-muted-foreground transition-all duration-200",
+              "flex min-h-12 flex-col items-center justify-center gap-1 rounded-2xl text-[0.62rem] font-medium text-muted-foreground transition-all duration-200 min-[380px]:text-[0.68rem]",
               active && "bg-gradient-to-b from-primary to-primary/85 text-primary-foreground shadow-md shadow-primary/25",
             )}
           >
@@ -559,18 +574,37 @@ function groupIncludesPage(group: NavGroup, page: HealthPage) {
 
   return (
     (group.id === "today" && (page === "today" || page === "today-advanced")) ||
-    (group.id === "log" && ["track", "check-in", "mood", "food", "hydration", "toilet", "gym"].includes(page)) ||
-    (group.id === "ai" && page === "coach") ||
+    (group.id === "coach" && ["coach", "healthcare", "symptom-routing"].includes(page)) ||
+    (group.id === "progress" && ["progress", "reports", "goals"].includes(page)) ||
+    (group.id === "learn" && ["learn", "lesson", "insurance"].includes(page)) ||
     (group.id === "more" && [
       "more",
-      "reports",
+      "check-in",
+      "mood",
+      "food",
+      "hydration",
+      "toilet",
+      "gym",
+      "gym-templates",
+      "track",
+      "running",
+      "walking",
+      "sports",
+      "body",
+      "sleep",
+      "water",
+      "nutrition",
+      "food-log",
+      "diet-plan",
+      "family",
       "doctor",
-      "insurance",
       "pricing",
       "business",
       "gbl",
       "emotion",
-      "family",
+      "history",
+      "profile",
+      "memory",
       "settings",
     ].includes(page))
   );

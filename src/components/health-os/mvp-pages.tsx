@@ -92,8 +92,16 @@ export function AdvancedTodayPage() {
 
 export function MorePage() {
   const items: Array<{ href: string; title: string; icon: LucideIcon }> = [
+    { href: "/profile", title: "個人資料 / Profile", icon: Users },
+    { href: "/progress", title: "任務進度 / Quest Progress", icon: BarChart3 },
     { href: "/reports", title: "每週建議 / Weekly Plan", icon: BarChart3 },
     { href: "/today/advanced", title: "進階今日資料 / Advanced Today", icon: BarChart3 },
+    { href: "/mood", title: "心情 / Mood", icon: HeartPulse },
+    { href: "/food", title: "食物 / Food", icon: ClipboardList },
+    { href: "/hydration", title: "飲水 / Hydration", icon: HeartPulse },
+    { href: "/toilet", title: "廁所 / Toilet", icon: HeartPulse },
+    { href: "/gym", title: "健身 / Gym", icon: Dumbbell },
+    { href: "/gym/templates", title: "健身模板 / Gym Templates", icon: Dumbbell },
     { href: "/healthcare", title: "AI 分析 / AI Analysis", icon: Stethoscope },
     { href: "/doctor", title: "醫生準備 / Doctor Prep", icon: Stethoscope },
     { href: "/insurance", title: "保險準備 / Insurance Prep", icon: ShieldCheck },
@@ -101,9 +109,9 @@ export function MorePage() {
     { href: "/business", title: "Business", icon: BriefcaseBusiness },
     { href: "/gbl", title: "GBL", icon: Brain },
     { href: "/emotion", title: "Emotion Engine", icon: HeartPulse },
+    { href: "/history", title: "分析歷史 / History", icon: ClipboardList },
     { href: "/family", title: "屋企人 / Family", icon: Users },
     { href: "/settings", title: "設定 / Settings", icon: Settings },
-    { href: "/privacy-simple", title: "私隱簡介", icon: ShieldCheck },
   ];
 
   return (
@@ -124,6 +132,26 @@ export function MorePage() {
         ))}
       </div>
       <SimpleReminders />
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-xl">
+          <CardHeader><CardTitle>Streak settings / 連續紀錄設定</CardTitle></CardHeader>
+          <CardContent className="text-sm leading-6 text-muted-foreground">
+            Streak freeze and reminder controls will live here. Missed workouts, sickness, pain, fatigue, and recovery days are never treated as failure.
+          </CardContent>
+        </Card>
+        <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-xl">
+          <CardHeader><CardTitle>Reminder settings / 提醒設定</CardTitle></CardHeader>
+          <CardContent className="text-sm leading-6 text-muted-foreground">
+            Optional reminders should support small daily quests without blocking emergency guidance or core safety flows.
+          </CardContent>
+        </Card>
+        <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-xl">
+          <CardHeader><CardTitle>Privacy & safety / 私隱與安全</CardTitle></CardHeader>
+          <CardContent className="text-sm leading-6 text-muted-foreground">
+            Your health logs are not used for insurance eligibility, pricing, coverage, claim outcomes, or care-access decisions.
+          </CardContent>
+        </Card>
+      </div>
     </PageFrame>
   );
 }
