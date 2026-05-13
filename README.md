@@ -2,14 +2,17 @@
 
 Traditional Chinese name: **智健家庭醫生 / 智健導航**.
 
-This is a Hong Kong-focused Daily Health OS for body, mood, food, digestion, gym workouts, care navigation, and insurance preparation. It is anonymous-first, Traditional Chinese-first, and safety-first.
+This is a Hong Kong-focused Daily Health OS for body, mood, food, digestion, movement, care navigation, and insurance preparation. It is anonymous-first, Traditional Chinese-first, and safety-first.
+
+Core loop: **One-tap daily health diary for parents. AI turns the week into simple next steps for family, doctor prep, and insurance education.**
 
 The app is **not** a doctor, insurer, broker, licensed insurance intermediary, therapist, dietitian, or personal trainer. It does not diagnose, prescribe, provide legal or regulated insurance advice, or guarantee treatment, exercise safety, eligibility, coverage, reimbursement, claim approval, or care access.
 
 ## MVP Surface
 
 - `/` senior-first landing and anonymous-first entry.
-- `/today` Senior Mode / Big Button Mode with mood, food, water, toilet, movement, photo journal, call-family, and 999 actions.
+- `/today` Senior Mode / Big Button Mode for simple daily taps only: wake up, eat, drink, mood, exercise, send pics, feel sick, optional toilet, call-family, and 999 actions.
+- `/today/advanced` advanced daily dashboard for users who want richer charts and status details.
 - `/check-in` fast morning/evening check-in.
 - `/mood` Mood & Emotion Coach built on the existing Emotion Engine.
 - `/food` manual food log plus server-side food photo analysis when an AI provider is configured; otherwise it returns a safe provider-unavailable fallback.
@@ -17,10 +20,10 @@ The app is **not** a doctor, insurer, broker, licensed insurance intermediary, t
 - `/toilet` bowel and urine log with red-flag routing.
 - `/gym` workout coach with sessions, exercise sets, RPE, pain flags, recovery guidance, and charts.
 - `/gym/templates` built-in workout templates.
-- `/reports` AI daily/weekly report surface and doctor-summary export readiness.
+- `/reports` Weekly AI Plan / 每週簡單建議 for family, doctor prep, food/supplement education, and insurance preparation.
 - `/family` minimal consent-first family/caregiver groups, invites, daily check-in status, in-app family alerts, and family weekly report preview.
 - `/doctor` doctor visit preparation and appointment planner.
-- `/insurance` insurance preparation education only.
+- `/insurance` insurance preparation education and checklist only; no advice, brokerage, underwriting, eligibility, pricing, coverage, reimbursement, or claim outcome decisions.
 - `/pricing` Stripe Checkout subscription buttons when payment env vars are configured, with mock/free fallback when they are not.
 - `/business` gym/PT/employer/clinic lead capture.
 - Existing `/gbl`, `/emotion`, and `/history` remain available.

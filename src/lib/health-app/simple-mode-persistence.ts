@@ -1,15 +1,18 @@
 export type SimpleModeCheckInAction =
+  | "wake"
   | "food"
   | "water"
   | "toilet"
   | "move"
+  | "sick"
   | "good"
   | "okay"
   | "not-good";
 
 type SimpleDailyCheckInPayload = Record<string, unknown> & {
-  checkin_type: "meal" | "water" | "exercise" | "health_review";
+  checkin_type: "wake_up" | "meal" | "water" | "exercise" | "health_review";
   label: string;
+  note?: string | null;
   metadata?: Record<string, string | number | boolean | null>;
 };
 
@@ -17,6 +20,8 @@ type SaveSimpleModeActionOptions = {
   action: SimpleModeCheckInAction;
   endpoint: string;
   payload: Record<string, unknown>;
+  checkInMetadata?: Record<string, string | number | boolean | null>;
+  checkInNote?: string | null;
   postJson: (endpoint: string, payload: Record<string, unknown>) => Promise<boolean>;
 };
 
@@ -24,9 +29,14 @@ export function getSimpleDailyCheckInPayload(
   action: SimpleModeCheckInAction,
 ): SimpleDailyCheckInPayload {
   const payloads: Record<SimpleModeCheckInAction, SimpleDailyCheckInPayload> = {
+    wake: {
+      checkin_type: "wake_up",
+      label: "起身",
+      metadata: { source: "simple_today", simpleModeAction: action },
+    },
     food: {
       checkin_type: "meal",
-      label: "食咗嘢",
+      label: "食咗",
       metadata: { source: "simple_today", simpleModeAction: action },
     },
     water: {
@@ -41,7 +51,12 @@ export function getSimpleDailyCheckInPayload(
     },
     move: {
       checkin_type: "exercise",
-      label: "郁咗一陣",
+      label: "郁咗",
+      metadata: { source: "simple_today", simpleModeAction: action },
+    },
+    sick: {
+      checkin_type: "health_review",
+      label: "唔舒服",
       metadata: { source: "simple_today", simpleModeAction: action },
     },
     good: {
@@ -72,9 +87,19 @@ export async function saveSimpleModeAction({
   action,
   endpoint,
   payload,
+  checkInMetadata,
+  checkInNote,
   postJson,
 }: SaveSimpleModeActionOptions) {
-  const checkInPayload = getSimpleDailyCheckInPayload(action);
+  const baseCheckInPayload = getSimpleDailyCheckInPayload(action);
+  const checkInPayload = {
+    ...baseCheckInPayload,
+    note: checkInNote ?? baseCheckInPayload.note,
+    metadata: {
+      ...(baseCheckInPayload.metadata ?? {}),
+      ...(checkInMetadata ?? {}),
+    },
+  };
   const [detailSaved, checkInSaved] = await Promise.all([
     postJson(endpoint, payload),
     postJson("/api/daily/checkins", checkInPayload),

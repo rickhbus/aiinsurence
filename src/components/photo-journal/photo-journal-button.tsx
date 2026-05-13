@@ -10,9 +10,11 @@ import type { PhotoJournalAnalysis } from "@/lib/photo-journal";
 
 export function PhotoJournalButton({
   disabled,
+  label = "影相",
   onResult,
 }: {
   disabled?: boolean;
+  label?: string;
   onResult: (result: SimpleSuggestionState) => void;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -104,9 +106,10 @@ export function PhotoJournalButton({
         emoji="📷"
         tone="soft"
         disabled={disabled || busy}
+        aria-label={`${label} / Send pics`}
         onClick={() => inputRef.current?.click()}
       >
-        {busy ? "處理中" : "影相記錄"}
+        {busy ? "處理中" : label}
       </BigButton>
       <input
         ref={inputRef}

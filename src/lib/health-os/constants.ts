@@ -12,6 +12,15 @@ export const NUTRITION_DISCLAIMER =
 export const INSURANCE_EDUCATION_DISCLAIMER =
   "以下只屬保障類別和文件準備教育，不構成保險、法律或理賠建議，亦不保證承保、賠償或索償結果。";
 
+export const SUPPLEMENT_EDUCATION_DISCLAIMER =
+  "你的紀錄可能提示飲食不足或恢復不足。先考慮食物和生活習慣；如想食補充品，請先問醫生或藥劑師。";
+
+export const SUPPLEMENT_EDUCATION_DISCLAIMER_EN =
+  "Your logs may suggest a possible nutrition or recovery gap. Consider food and lifestyle first; ask a doctor or pharmacist before supplements.";
+
+export const INSURANCE_APP_LIMITS =
+  "This app does not provide insurance advice, brokerage, underwriting, eligibility, pricing, coverage, reimbursement, or claim outcome decisions.";
+
 export const EXERCISE_LIBRARY = [
   "Bench press",
   "Dumbbell bench press",

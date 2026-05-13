@@ -25,10 +25,14 @@ export const simpleMoodChoices = [
 ] as const;
 
 export const simpleActionChoices = [
-  { action: "food", emoji: "🍚", label: "食咗嘢" },
+  { action: "wake", emoji: "🌅", label: "起身" },
+  { action: "food", emoji: "🍚", label: "食咗" },
   { action: "water", emoji: "💧", label: "飲咗水" },
+  { action: "mood", emoji: "😊", label: "心情" },
+  { action: "move", emoji: "🚶", label: "郁咗" },
+  { action: "photo", emoji: "📷", label: "影相" },
+  { action: "sick", emoji: "🤒", label: "唔舒服" },
   { action: "toilet", emoji: "🚽", label: "去廁所" },
-  { action: "move", emoji: "🚶", label: "郁咗一陣" },
 ] as const;
 
 export const simpleModeBlockedTerms = [

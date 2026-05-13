@@ -21,6 +21,7 @@ import {
   Stethoscope,
   Sun,
   UserRound,
+  Users,
   Waves,
   type LucideIcon,
 } from "lucide-react";
@@ -98,24 +99,24 @@ export const navGroups: NavGroup[] = [
     icon: MoreHorizontal,
     children: [
       { label: { zh: "更多", en: "More" }, href: "/more", page: "more", icon: MoreHorizontal },
-      { label: { zh: "Reports", en: "Reports" }, href: "/reports", page: "reports", icon: BarChart3 },
-      { label: { zh: "Doctor Prep", en: "Doctor Prep" }, href: "/doctor", page: "doctor", icon: Stethoscope },
-      { label: { zh: "Insurance", en: "Insurance" }, href: "/insurance", page: "insurance", icon: ShieldCheck },
-      { label: { zh: "Pricing", en: "Pricing" }, href: "/pricing", page: "pricing", icon: ShieldCheck },
+      { label: { zh: "每週建議", en: "Reports" }, href: "/reports", page: "reports", icon: BarChart3 },
+      { label: { zh: "醫生準備", en: "Doctor Prep" }, href: "/doctor", page: "doctor", icon: Stethoscope },
+      { label: { zh: "保險準備", en: "Insurance" }, href: "/insurance", page: "insurance", icon: ShieldCheck },
+      { label: { zh: "收費", en: "Pricing" }, href: "/pricing", page: "pricing", icon: ShieldCheck },
       { label: { zh: "Business", en: "Business" }, href: "/business", page: "business", icon: Activity },
       { label: { zh: "GBL", en: "GBL" }, href: "/gbl", page: "gbl", icon: Brain },
       { label: { zh: "Emotion Engine", en: "Emotion Engine" }, href: "/emotion", page: "emotion", icon: HeartPulse },
-      { label: { zh: "Family", en: "Family" }, href: "/family", page: "family", icon: UserRound },
+      { label: { zh: "屋企人", en: "Family" }, href: "/family", page: "family", icon: UserRound },
       { label: ui.settings, href: "/settings", page: "settings", icon: UserRound },
     ],
   },
 ];
 
 const bottomNavItems = [
-  { label: { zh: "今日 / Today", en: "Today" }, href: "/today", icon: Home, page: "today" as HealthPage },
-  { label: { zh: "記錄 / Log", en: "Log" }, href: "/track", icon: ClipboardList, page: "track" as HealthPage },
-  { label: { zh: "AI", en: "AI" }, href: "/coach", icon: Brain, page: "coach" as HealthPage },
-  { label: { zh: "更多 / More", en: "More" }, href: "/more", icon: MoreHorizontal, page: "more" as HealthPage },
+  { label: { zh: "今日", en: "Today" }, href: "/today", icon: Home, activePages: ["today", "today-advanced"] as HealthPage[] },
+  { label: { zh: "記錄", en: "Log" }, href: "/track", icon: ClipboardList, activePages: ["track", "check-in", "mood", "food", "hydration", "toilet", "gym", "gym-templates", "running", "walking", "sports", "body", "sleep", "water", "nutrition", "food-log", "diet-plan"] as HealthPage[] },
+  { label: { zh: "屋企人", en: "Family" }, href: "/family", icon: Users, activePages: ["family"] as HealthPage[] },
+  { label: { zh: "更多", en: "More" }, href: "/more", icon: MoreHorizontal, activePages: ["more", "reports", "doctor", "insurance", "pricing", "business", "gbl", "emotion", "history", "healthcare", "symptom-routing", "learn", "lesson", "progress", "goals", "profile", "memory", "settings"] as HealthPage[] },
 ];
 
 export function Sidebar({
@@ -365,7 +366,7 @@ export function MobileBottomNav({ currentPage, locale }: { currentPage: HealthPa
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 grid min-h-20 grid-cols-4 border-t border-border/40 bg-background/90 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-2xl lg:hidden" aria-label="Mobile bottom navigation">
       {bottomNavItems.map((item) => {
-        const active = isPageInGroup(currentPage, item.page) || currentPage === item.page;
+        const active = item.activePages.includes(currentPage);
         return (
           <Link
             key={item.href}
@@ -549,11 +550,6 @@ function findActiveLabel(currentPage: HealthPage) {
   }
 
   return ui.dashboard;
-}
-
-function isPageInGroup(currentPage: HealthPage, groupPage: HealthPage) {
-  const group = navGroups.find((item) => groupIncludesPage(item, groupPage));
-  return Boolean(group?.children.some((child) => child.page === currentPage));
 }
 
 function groupIncludesPage(group: NavGroup, page: HealthPage) {
