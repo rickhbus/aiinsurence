@@ -36,7 +36,12 @@ import { WorkoutLogForm } from "@/components/gym/workout-log-form";
 import { WorkoutStartCard } from "@/components/gym/workout-start-card";
 import { WorkoutTemplateCard } from "@/components/gym/workout-template-card";
 import { SimpleReminders } from "@/components/reminders/simple-reminders";
-import { WORKOUT_TEMPLATES } from "@/lib/health-os/constants";
+import {
+  INSURANCE_APP_LIMITS,
+  SUPPLEMENT_EDUCATION_DISCLAIMER,
+  SUPPLEMENT_EDUCATION_DISCLAIMER_EN,
+  WORKOUT_TEMPLATES,
+} from "@/lib/health-os/constants";
 import { CheckInForm } from "./check-in-form";
 import { AdvancedTodayDashboard } from "./today-dashboard";
 
@@ -87,16 +92,17 @@ export function AdvancedTodayPage() {
 
 export function MorePage() {
   const items: Array<{ href: string; title: string; icon: LucideIcon }> = [
-    { href: "/reports", title: "Reports", icon: BarChart3 },
+    { href: "/reports", title: "每週建議 / Weekly Plan", icon: BarChart3 },
+    { href: "/today/advanced", title: "進階今日資料 / Advanced Today", icon: BarChart3 },
     { href: "/healthcare", title: "AI 分析 / AI Analysis", icon: Stethoscope },
-    { href: "/doctor", title: "Doctor Prep", icon: Stethoscope },
-    { href: "/insurance", title: "Insurance", icon: ShieldCheck },
-    { href: "/pricing", title: "Pricing", icon: ShieldCheck },
+    { href: "/doctor", title: "醫生準備 / Doctor Prep", icon: Stethoscope },
+    { href: "/insurance", title: "保險準備 / Insurance Prep", icon: ShieldCheck },
+    { href: "/pricing", title: "收費 / Pricing", icon: ShieldCheck },
     { href: "/business", title: "Business", icon: BriefcaseBusiness },
     { href: "/gbl", title: "GBL", icon: Brain },
     { href: "/emotion", title: "Emotion Engine", icon: HeartPulse },
-    { href: "/family", title: "Family", icon: Users },
-    { href: "/settings", title: "Settings", icon: Settings },
+    { href: "/family", title: "屋企人 / Family", icon: Users },
+    { href: "/settings", title: "設定 / Settings", icon: Settings },
     { href: "/privacy-simple", title: "私隱簡介", icon: ShieldCheck },
   ];
 
@@ -188,23 +194,47 @@ export function GymTemplatesPage() {
 }
 
 export function ReportsPage() {
-  const trends = ["Sleep trend", "Mood trend", "Gym adherence", "Food pattern", "Hydration", "Bowel/urine pattern"];
+  const sections = [
+    {
+      title: "今個星期見到咩 / What happened this week",
+      body: "整理每日起身、食咗、飲水、心情、郁動、相片和不適類別，只用來看生活模式和準備下一步。",
+    },
+    {
+      title: "下星期 3 件小事 / 3 small actions next week",
+      body: "固定一個早上打卡時間；每日飲水後再記錄；覆診前整理時間線和問題。",
+    },
+    {
+      title: "飲食 / 補充品教育 / Food & supplement education",
+      body: `${SUPPLEMENT_EDUCATION_DISCLAIMER} ${SUPPLEMENT_EDUCATION_DISCLAIMER_EN}`,
+    },
+    {
+      title: "醫生準備 / Doctor prep",
+      body: "準備一頁時間線、最近一週日常紀錄、紅旗提示、相片和想問醫生的問題。這不是診斷。",
+    },
+    {
+      title: "保險準備 / Insurance preparation",
+      body: "只整理文件和保障類別學習清單，不判斷承保、保障、保費、賠償或索償結果。",
+    },
+  ];
 
   return (
-    <PageFrame title="AI Weekly Reports" description="3 practical actions next week and doctor-visit export readiness">
+    <PageFrame
+      title="Weekly AI Plan / 每週簡單建議"
+      description="One-tap daily diary becomes simple next steps for family, doctor prep, and insurance education."
+    >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {trends.map((trend) => (
-          <Card key={trend} className="border-border/60 bg-card/80 shadow-sm backdrop-blur-xl">
-            <CardHeader><CardTitle>{trend}</CardTitle></CardHeader>
-            <CardContent className="text-sm leading-6 text-muted-foreground">趨勢會由 RLS logs 和 summary tables 生成。</CardContent>
+        {sections.map((section) => (
+          <Card key={section.title} className="border-border/60 bg-card/80 shadow-sm backdrop-blur-xl">
+            <CardHeader><CardTitle className="text-lg">{section.title}</CardTitle></CardHeader>
+            <CardContent className="text-sm leading-6 text-muted-foreground">{section.body}</CardContent>
           </Card>
         ))}
       </div>
       <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-xl">
-        <CardHeader><CardTitle>Doctor summary export</CardTitle></CardHeader>
+        <CardHeader><CardTitle>安全邊界 / Safety boundaries</CardTitle></CardHeader>
         <CardContent className="grid gap-2 text-sm leading-6 text-muted-foreground">
-          <p>包含近期紀錄、紅旗、安全提示、要問醫生的問題和要帶文件。</p>
-          <p>這不是診斷；嚴重或持續症狀請尋求醫護人員協助。</p>
+          <p>這不是醫療、營養、補充品、法律或保險建議；不保證治療、安全運動、承保、保障、賠償或索償結果。</p>
+          <p>緊急情況請立即致電 999 或前往急症室。</p>
         </CardContent>
       </Card>
     </PageFrame>
@@ -246,19 +276,29 @@ export function DoctorPrepPage() {
 }
 
 export function InsurancePrepPage() {
+  const cards = [
+    "保障類別學習 / Coverage categories to learn about",
+    "保單文件清單 / Policy document checklist",
+    "索償文件清單 / Claim document checklist",
+    "醫生報告 / 健康時間線匯出 / Doctor report / health timeline export",
+    "持牌顧問交接 / Licensed adviser handoff",
+    "不可用本 app 做甚麼 / What not to use this app for",
+  ];
+
   return (
-    <PageFrame title="Insurance Preparation" description="Education only, no advice or guarantee">
+    <PageFrame title="Insurance Preparation / 保險準備" description="Education only. No advice, no guarantee.">
       <PreparationGrid
         icon={ShieldCheck}
-        items={[
-          "保障類別教育 / Coverage category education",
-          "保單文件清單 / Policy document checklist",
-          "索償文件清單 / Claim document checklist",
-          "VHIS/category-level explanation where relevant",
-          "持牌顧問交接提示 / Licensed adviser handoff",
-          "不保證承保、賠償或索償結果",
-        ]}
+        items={cards}
       />
+      <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-xl">
+        <CardHeader><CardTitle>Clear limit / 清楚界線</CardTitle></CardHeader>
+        <CardContent className="grid gap-3 text-sm leading-6 text-muted-foreground">
+          <p>{INSURANCE_APP_LIMITS}</p>
+          <p>Mobile health, gym, mood, food, symptom, and daily diary data must not be used for insurance eligibility, pricing, coverage, claim outcomes, or care-access decisions.</p>
+          <p>如有保險、法律、醫療或索償問題，請向持牌或合資格專業人士查詢。</p>
+        </CardContent>
+      </Card>
     </PageFrame>
   );
 }

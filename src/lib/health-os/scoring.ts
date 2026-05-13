@@ -6,7 +6,13 @@ import type {
   MealContext,
   ToiletContext,
 } from "./types";
-import { detectGymSafetyFlags, detectToiletSafety, statusFromFlags } from "./safety";
+import {
+  detectGymSafetyFlags,
+  detectToiletSafety,
+  getSimpleDiscomfortSafety,
+  statusFromFlags,
+  type SimpleDiscomfortCategory,
+} from "./safety";
 
 export function calculateLifestyleScores(context: HealthContext): LifestyleScores {
   const daily = context.dailyLog ?? {};
@@ -95,6 +101,15 @@ export function scoreDigestive(toilet: ToiletContext | null | undefined, hydrati
 
 export function collectSafetyFlags(context: HealthContext) {
   const flags = [...(context.safetyFlags ?? [])];
+  const simpleDiscomfortCategory = parseSimpleDiscomfortCategory(context.dailyLog?.bodyNotes);
+
+  if (simpleDiscomfortCategory) {
+    const simpleSafety = getSimpleDiscomfortSafety(simpleDiscomfortCategory);
+
+    if (simpleSafety.redFlag) {
+      flags.push(`simple_discomfort_${simpleDiscomfortCategory}`);
+    }
+  }
 
   for (const mood of context.moodLogs ?? []) {
     if (mood.safetyFlag) {
@@ -115,6 +130,12 @@ export function collectSafetyFlags(context: HealthContext) {
   }
 
   return Array.from(new Set(flags.filter(Boolean)));
+}
+
+function parseSimpleDiscomfortCategory(value: string | null | undefined): SimpleDiscomfortCategory | null {
+  const match = /^simple_discomfort:(dizzy|chest_pain|stomach_pain|fever|fall|other)$/u.exec(value ?? "");
+
+  return match ? match[1] as SimpleDiscomfortCategory : null;
 }
 
 function normalizeOneToTen(value: number | null | undefined, fallback: number) {

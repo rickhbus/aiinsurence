@@ -33,6 +33,19 @@ const crisisTerms = [
   "暴力",
 ];
 
+export type SimpleDiscomfortCategory =
+  | "dizzy"
+  | "chest_pain"
+  | "stomach_pain"
+  | "fever"
+  | "fall"
+  | "other";
+
+const simpleDiscomfortRedFlagCategories: SimpleDiscomfortCategory[] = [
+  "chest_pain",
+  "fall",
+];
+
 export function detectEmergencyFromText(text: string | null | undefined) {
   const trimmed = text?.trim();
 
@@ -43,6 +56,18 @@ export function detectEmergencyFromText(text: string | null | undefined) {
   const result = analyzeIntake("medical", trimmed);
 
   return result.urgency.level === 1 ? result.matchedSignals : [];
+}
+
+export function getSimpleDiscomfortSafety(category: SimpleDiscomfortCategory) {
+  const redFlag = simpleDiscomfortRedFlagCategories.includes(category);
+
+  return {
+    redFlag,
+    status: redFlag ? "red" as SafetyStatus : "yellow" as SafetyStatus,
+    guidanceZh: redFlag
+      ? "如情況嚴重，請即刻打 999 或去急症室。"
+      : "記低咗。可以休息、飲水，若持續或變差請求醫。",
+  };
 }
 
 export function detectCrisisFromText(text: string | null | undefined) {
@@ -97,7 +122,7 @@ export function detectToiletSafety(toilet: ToiletContext) {
 }
 
 export function statusFromFlags(flags: string[]): SafetyStatus {
-  if (flags.some((flag) => /999|emergency|chest|stroke|self|blood|severe|劇痛|胸痛|中風/iu.test(flag))) {
+  if (flags.some((flag) => /999|emergency|chest|fall|stroke|self|blood|severe|劇痛|胸痛|跌|中風/iu.test(flag))) {
     return "red";
   }
 

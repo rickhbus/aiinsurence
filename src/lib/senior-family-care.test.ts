@@ -5,11 +5,13 @@ import { canCaregiverReadFamilyAlert } from "@/lib/family/alerts";
 import { buildDailyCheckInStatus } from "@/lib/family/check-in-status";
 import { buildFamilyWeeklyReport, getWeekStart } from "@/lib/family/family-weekly-report";
 import { normalizeUserMode } from "@/lib/family/user-mode";
-import { seniorMode, simpleModeBlockedTerms } from "@/lib/health-app/senior-mode";
+import { seniorMode, simpleActionChoices, simpleModeBlockedTerms } from "@/lib/health-app/senior-mode";
 import {
   getSimpleDailyCheckInPayload,
   saveSimpleModeAction,
 } from "@/lib/health-app/simple-mode-persistence";
+import { INSURANCE_APP_LIMITS } from "@/lib/health-os/constants";
+import { buildWeeklyReport } from "@/lib/health-os/weekly-report";
 import { canUseFeature } from "@/lib/payments/entitlement-client";
 import { photoJournalRequiresConfirmation } from "@/lib/photo-journal";
 import { buildReminderInsert, containsMedicationAdvice } from "@/lib/reminders";
@@ -41,10 +43,24 @@ describe("senior and family care product contracts", () => {
       "utf8",
     );
 
+    expect(simpleToday).toContain("今日做咗咩？");
+    expect(simpleActionChoices.map((choice) => choice.label)).toEqual([
+      "起身",
+      "食咗",
+      "飲咗水",
+      "心情",
+      "郁咗",
+      "影相",
+      "唔舒服",
+      "去廁所",
+    ]);
+    expect(simpleToday).toContain("頭暈");
+    expect(simpleToday).toContain("胸口痛");
+    expect(simpleToday).toContain("如情況嚴重，請即刻打 999 或去急症室。");
     expect(simpleToday).toContain("CallFamilyButton");
     expect(simpleToday).toContain("PhotoJournalButton");
     expect(callFamilyButton).toContain("叫屋企人");
-    expect(photoJournalButton).toContain("影相記錄");
+    expect(photoJournalButton).toContain("影相");
     expect(emergencyButton).toContain("緊急 999");
     for (const term of simpleModeBlockedTerms.filter((item) => item !== "Supabase" && item !== "score")) {
       expect(simpleToday).not.toContain(term);
@@ -148,6 +164,20 @@ describe("senior and family care product contracts", () => {
   });
 
   it("keeps simple mode quick check-ins high level", () => {
+    expect(getSimpleDailyCheckInPayload("wake")).toMatchObject({
+      checkin_type: "wake_up",
+      label: "起身",
+      metadata: {
+        source: "simple_today",
+      },
+    });
+    expect(getSimpleDailyCheckInPayload("sick")).toMatchObject({
+      checkin_type: "health_review",
+      label: "唔舒服",
+      metadata: {
+        source: "simple_today",
+      },
+    });
     expect(getSimpleDailyCheckInPayload("not-good")).toMatchObject({
       checkin_type: "health_review",
       label: "唔舒服",
@@ -156,6 +186,29 @@ describe("senior and family care product contracts", () => {
         source: "simple_today",
       },
     });
+  });
+
+  it("keeps weekly and insurance surfaces education-only", () => {
+    const report = buildWeeklyReport([{ locale: "zh-Hant" }]);
+    const reportText = [
+      report.overview,
+      report.nutritionEducation,
+      report.supplementEducation,
+      report.insuranceEducation.join(" "),
+      report.familySummary,
+    ].join(" ");
+    const mvpPages = readFileSync(
+      new URL("../components/health-os/mvp-pages.tsx", import.meta.url),
+      "utf8",
+    );
+
+    expect(mvpPages).toContain("Weekly AI Plan / 每週簡單建議");
+    expect(mvpPages).toContain("Insurance Preparation / 保險準備");
+    expect(mvpPages).toContain("Education only. No advice, no guarantee.");
+    expect(INSURANCE_APP_LIMITS).toBe("This app does not provide insurance advice, brokerage, underwriting, eligibility, pricing, coverage, reimbursement, or claim outcome decisions.");
+    expect(report.supplementEducation).toContain("先考慮食物和生活習慣；如想食補充品，請先問醫生或藥劑師");
+    expect(report.supplementEducation).toContain("Consider food and lifestyle first; ask a doctor or pharmacist before supplements.");
+    expect(reportText).not.toMatch(/\byou need\b|\byou should buy\b|\brecommended policy\b|\bcovered\b|\beligible\b|\bclaim likely approved\b/i);
   });
 
   it("includes Family Care and parent-care pricing copy", () => {

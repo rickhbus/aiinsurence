@@ -182,6 +182,11 @@ export type WeeklyReport = {
   trends: string[];
   warnings: string[];
   nextWeekActions: string[];
+  scheduleActions: string[];
+  nutritionEducation: string;
+  supplementEducation: string;
+  insuranceEducation: string[];
+  familySummary: string;
   doctorPrep: string | null;
   gymAdjustment: string;
   disclaimers: string[];
