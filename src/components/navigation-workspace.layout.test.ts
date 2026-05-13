@@ -31,6 +31,9 @@ describe("shadcn navigation workspace composition", () => {
     expect(component).toContain("致電 999 / Call 999");
     expect(component).toContain("Emergency guidance is not saved");
     expect(component).toContain("AI 醫療導航，不取代醫生診斷");
+    expect(component).toContain("getSupabaseRequestHeaders");
+    expect(component).toContain("headers: sessionHeaders");
+    expect(component).toContain("headers: recommendationHeaders");
     expect(component).not.toContain("human-ai-home.module.css");
     expect(providers).toContain("TooltipProvider");
     expect(providers).toContain("Toaster");

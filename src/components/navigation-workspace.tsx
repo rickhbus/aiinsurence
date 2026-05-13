@@ -83,7 +83,10 @@ import {
   type IntakeMode,
   type Recommendation,
 } from "@/lib/navigation-engine";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  getSupabaseBrowserClient,
+  getSupabaseRequestHeaders,
+} from "@/lib/supabase/client";
 import type { Profile } from "@/lib/user-memory";
 
 type CarePreference = "public" | "private" | "either";
@@ -294,9 +297,10 @@ export function NavigationWorkspace() {
         setMemoryStatus("正在保存... Saving with consent...");
         await ensureUserReady();
 
+        const sessionHeaders = await getJsonAuthHeaders();
         const sessionResponse = await fetch("/api/sessions", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: sessionHeaders,
           body: JSON.stringify({
             input,
             language,
@@ -314,9 +318,10 @@ export function NavigationWorkspace() {
         };
         setSessionId(sessionPayload.sessionId);
 
+        const recommendationHeaders = await getJsonAuthHeaders();
         const recommendationResponse = await fetch("/api/recommendations/save", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: recommendationHeaders,
           body: JSON.stringify({
             sessionId: sessionPayload.sessionId,
             recommendation: result,
@@ -350,9 +355,10 @@ export function NavigationWorkspace() {
         setEscalationStatus("正在建立人工覆核個案... Requesting review...");
         await ensureUserReady();
 
+        const headers = await getJsonAuthHeaders();
         const response = await fetch("/api/escalations", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({
             sessionId,
             recommendation: result,
@@ -403,6 +409,19 @@ export function NavigationWorkspace() {
     setProfile(createdProfile);
 
     return signedInUser;
+  }
+
+  async function getJsonAuthHeaders() {
+    const headers = await getSupabaseRequestHeaders({
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    });
+
+    if (!headers.has("Authorization")) {
+      throw new Error("暫時未能建立保存登入狀態。請稍後再試。");
+    }
+
+    return headers;
   }
 
   return (
