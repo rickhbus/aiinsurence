@@ -273,11 +273,24 @@ export function SimpleToday() {
     headers: Headers,
   ) {
     try {
-      const response = await fetch(endpoint, {
+      const request = {
         method: "POST",
         headers: new Headers(headers),
         body: JSON.stringify(payload),
-      });
+      };
+      const response = await fetch(endpoint, request);
+
+      if (response.status === 401) {
+        const refreshedHeaders = await getSupabaseRequestHeaders(headers, {
+          forceNewSession: true,
+        });
+        const retryResponse = await fetch(endpoint, {
+          ...request,
+          headers: refreshedHeaders,
+        });
+
+        return retryResponse.ok;
+      }
 
       return response.ok;
     } catch {
