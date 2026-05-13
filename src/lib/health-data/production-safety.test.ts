@@ -105,7 +105,65 @@ describe("production health safety foundation", () => {
     });
 
     expect(recommendation.nutrition.title).toContain("蛋白");
+    expect(recommendation.foodGaps[0]?.summary).toContain("可能較少記錄某類食物來源");
     expect(recommendation.safetyNote).toContain("胸痛");
+  });
+
+  it("frames vitamin-style guidance as food-pattern gaps, not deficiency or supplement advice", () => {
+    const recommendation = buildTodayRecommendation({
+      today: {
+        user_id: "user",
+        summary_date: "2026-05-11",
+        calories_total: 600,
+        protein_total: 20,
+        carbs_total: 90,
+        fat_total: 18,
+        water_total_ml: 600,
+        sleep_hours: 7,
+        sleep_quality: 7,
+        running_distance_km: 0,
+        active_minutes: 0,
+        gym_sessions: 0,
+        health_score: 45,
+        activity_score: 0,
+        nutrition_score: 30,
+        sleep_score: 70,
+        hydration_score: 24,
+      },
+      weekly: {
+        user_id: "user",
+        week_start_date: "2026-05-11",
+        running_distance_km: 0,
+        gym_sessions: 0,
+        avg_sleep_hours: 7,
+        protein_consistency_days: 0,
+        water_goal_days: 0,
+        workout_days: 0,
+        health_score_avg: 45,
+        ai_summary: null,
+      },
+      recent: { running: [], gym: [], meals: [], sleep: [], body: [], checkins: [] },
+      profile: {
+        displayName: "匿名使用者",
+        preferredLanguage: "zh-Hant",
+        memoryEnabled: false,
+        goal: "",
+        location: "",
+        fitnessLevel: "",
+      },
+      goals: [],
+      memoryCount: 0,
+      charts: { activity: [], runningDistance: [], water: [], nutrition: [], gymVolume: [] },
+      empty: true,
+      recommendation: {} as DashboardData["recommendation"],
+    });
+    const text = recommendation.foodGaps
+      .flatMap((gap) => [gap.title, gap.summary, gap.reason, gap.action])
+      .join(" ");
+
+    expect(text).toContain("可能較少記錄某類食物來源");
+    expect(text).toContain("化驗");
+    expect(text).not.toMatch(/you are deficient|你缺乏|缺乏維他命|diagnosed with|dosage|劑量|開始服用|停用|claim|guarantee/i);
   });
 
   it("rate-limits unauthenticated fallback requests in memory", () => {

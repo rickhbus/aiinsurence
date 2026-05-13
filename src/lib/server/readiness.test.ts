@@ -105,6 +105,30 @@ describe("readiness report builder", () => {
     );
   });
 
+  it("accepts Vercel KV REST env names for production rate limiting readiness", async () => {
+    const report = await buildReadinessReport({
+      env: {
+        ...baseEnv,
+        UPSTASH_REDIS_REST_URL: "",
+        UPSTASH_REDIS_REST_TOKEN: "",
+        KV_REST_API_URL: "https://kv.example",
+        KV_REST_API_TOKEN: "server-token",
+      },
+      requestId: "kv-rate-limit-ready",
+      now: new Date("2026-05-11T00:00:00.000Z"),
+      supabaseProbe: async () => [],
+    });
+
+    expect(report.checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "shared_rate_limit_store",
+          status: "pass",
+        }),
+      ]),
+    );
+  });
+
   it("fails production readiness when monitoring alerts are missing", async () => {
     const report = await buildReadinessReport({
       env: {

@@ -132,6 +132,17 @@ export function TodayPlanCard({ locale, className, data }: CardProps) {
           detail: { zh: recommendation.nutrition.action, en: recommendation.nutrition.action },
         },
         {
+          icon: Info,
+          title: {
+            zh: `食物空白: ${recommendation.foodGaps?.[0]?.title ?? "繼續記錄"}`,
+            en: `Food gaps: ${recommendation.foodGaps?.[0]?.title ?? "Keep logging"}`,
+          },
+          detail: {
+            zh: recommendation.foodGaps?.[0]?.action ?? "用文字或相片記錄下一餐。",
+            en: recommendation.foodGaps?.[0]?.action ?? "Log the next meal with text or photo.",
+          },
+        },
+        {
           icon: Moon,
           title: { zh: `恢復: ${recommendation.recovery.title}`, en: `Recovery: ${recommendation.recovery.title}` },
           detail: { zh: recommendation.recovery.action, en: recommendation.recovery.action },
@@ -343,6 +354,12 @@ export function AIRecommendationCard({ locale, className, data }: CardProps) {
             : recommendation?.workout.action ?? "Add a real record first, or use care navigation to check warning signs."}
           </p>
         </div>
+        {recommendation?.foodGaps?.[0] ? (
+          <div className="rounded-xl bg-muted/35 p-3 ring-1 ring-border/50">
+            <p className="text-sm font-medium">{locale === "zh-Hant" ? "食物來源提示" : "Food source cue"}</p>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">{recommendation.foodGaps[0].summary}</p>
+          </div>
+        ) : null}
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm leading-6 text-muted-foreground">
           <strong className="text-foreground">{locale === "zh-Hant" ? "安全提示: " : "Safety note: "}</strong>
           {locale === "zh-Hant"
@@ -565,6 +582,7 @@ export function FoodRecommendationCard({
 
 type EverydayAction = {
   type: DailyCheckinRow["checkin_type"];
+  lifeAction: "wake" | "meal" | "water" | "move";
   label: LocalizedText;
   detail: LocalizedText;
   icon: LucideIcon;
@@ -580,18 +598,21 @@ type MobileHealthStatus = {
 const everydayActions: EverydayAction[] = [
   {
     type: "wake_up",
+    lifeAction: "wake",
     label: { zh: "起床", en: "Wake" },
     detail: { zh: "開始今日節奏", en: "Start the day" },
     icon: BedDouble,
   },
   {
     type: "meal",
+    lifeAction: "meal",
     label: { zh: "進食", en: "Eat" },
     detail: { zh: "已完成一餐", en: "Meal done" },
     icon: Apple,
   },
   {
     type: "water",
+    lifeAction: "water",
     label: { zh: "飲水", en: "Drink" },
     detail: { zh: "快速新增 300ml", en: "Add 300ml" },
     icon: Droplets,
@@ -599,6 +620,7 @@ const everydayActions: EverydayAction[] = [
   },
   {
     type: "exercise",
+    lifeAction: "move",
     label: { zh: "運動", en: "Exercise" },
     detail: { zh: "完成活動打卡", en: "Movement done" },
     icon: Dumbbell,
@@ -678,23 +700,20 @@ export function EverydayActionsCard({ locale, className, data }: CardProps) {
         throw new Error("auth unavailable");
       }
 
-      if (action.type === "water") {
-        const waterResult = await postJson("/api/logs/water", { amount_ml: 300 }, token);
-
-        if (!waterResult.ok) {
-          throw new Error("water log failed");
-        }
-      }
-
       const result = await postJson(
-        "/api/daily/checkins",
+        "/api/life-tracker/log",
         {
-          checkin_type: action.type,
-          label: text(action.label, locale),
+          action: action.lifeAction,
           amount: action.payload?.amount ?? null,
-          unit: action.payload?.unit ?? null,
+          unit: action.payload?.unit ?? undefined,
+          note: text(action.label, locale),
           metadata: {
             surface: "dashboard_everyday_loop",
+          },
+          details: {
+            surface: "dashboard_everyday_loop",
+            foodName: action.lifeAction === "meal" ? text(action.label, locale) : undefined,
+            mealType: action.lifeAction === "meal" ? "snack" : undefined,
           },
         },
         token,

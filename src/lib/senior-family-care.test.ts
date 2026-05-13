@@ -7,6 +7,7 @@ import { buildFamilyWeeklyReport, getWeekStart } from "@/lib/family/family-weekl
 import { normalizeUserMode } from "@/lib/family/user-mode";
 import { seniorMode, simpleActionChoices, simpleModeBlockedTerms } from "@/lib/health-app/senior-mode";
 import {
+  getSimpleLifeTrackerPayload,
   getSimpleDailyCheckInPayload,
   saveSimpleModeAction,
 } from "@/lib/health-app/simple-mode-persistence";
@@ -135,7 +136,7 @@ describe("senior and family care product contracts", () => {
     expect(visible).not.toContain("toilet");
   });
 
-  it("keeps simple mode saved when the protected daily check-in succeeds first", async () => {
+  it("routes simple mode quick saves through the canonical life tracker endpoint", async () => {
     const calls: Array<{ endpoint: string; payload: Record<string, unknown> }> = [];
     const result = await saveSimpleModeAction({
       action: "water",
@@ -143,24 +144,34 @@ describe("senior and family care product contracts", () => {
       payload: { waterMl: 250 },
       postJson: async (endpoint, payload) => {
         calls.push({ endpoint, payload });
-        return endpoint === "/api/daily/checkins";
+        return endpoint === "/api/life-tracker/log";
       },
     });
 
     expect(result).toEqual({
       saved: true,
-      detailSaved: false,
+      detailSaved: true,
       checkInSaved: true,
     });
-    expect(calls.map((call) => call.endpoint)).toEqual([
-      "/api/hydration/log",
-      "/api/daily/checkins",
-    ]);
-    expect(calls[1]?.payload).toMatchObject({
-      checkin_type: "water",
-      label: "飲咗水",
-      metadata: { source: "simple_today" },
+    expect(calls.map((call) => call.endpoint)).toEqual(["/api/life-tracker/log"]);
+    expect(calls[0]?.payload).toMatchObject({
+      action: "water",
+      amount: 250,
+      unit: "ml",
     });
+  });
+
+  it("does not map simple movement to fake gym or running detail", () => {
+    const payload = getSimpleLifeTrackerPayload({
+      action: "move",
+      payload: { notes: "郁咗 / I moved" },
+    });
+
+    expect(payload).toMatchObject({
+      action: "move",
+      note: "郁咗 / I moved",
+    });
+    expect(JSON.stringify(payload)).not.toMatch(/gym|running|workout/i);
   });
 
   it("keeps simple mode quick check-ins high level", () => {

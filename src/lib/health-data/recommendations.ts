@@ -1,6 +1,7 @@
 import { generateText } from "ai";
 import { getGuideModel, getGuideRuntimeConfig } from "@/lib/ai/provider";
 import { logWarn } from "@/lib/observability/logger";
+import { toNumber } from "./common";
 import {
   assertUserId,
   throwIfSupabaseError,
@@ -95,6 +96,7 @@ export function buildTodayRecommendation(data: DashboardData): TodayRecommendati
         ? "午餐加入雞蛋、魚、雞肉、豆腐或希臘乳酪。"
         : "保持半碗至一碗主食、足量蔬菜和一掌心蛋白質。",
     },
+    foodGaps: buildFoodGaps(data),
     recovery: {
       title: !hadWakeCheckin ? "起床後先建立節奏" : sleepLow ? "今晚優先睡眠一致性" : needsWater ? "補水節奏" : "保留恢復窗口",
       summary: !hadWakeCheckin
@@ -126,6 +128,49 @@ export function buildTodayRecommendation(data: DashboardData): TodayRecommendati
     },
     safetyNote: "如有胸痛、嚴重呼吸困難、頭暈、尖銳痛楚或症狀惡化，請停止活動並尋求醫療協助。",
   };
+}
+
+export function buildFoodGaps(data: DashboardData): TodayRecommendation["foodGaps"] {
+  const meals = data.recent.meals;
+  const mealText = meals.map((meal) => `${meal.food_name} ${meal.notes ?? ""}`).join(" ");
+  const fiberTotal = meals.reduce((total, meal) => total + toNumber(meal.fiber_g), 0);
+  const hasVegetableOrFruit = /菜|蔬|水果|果|豆|菇|salad|vegetable|fruit|beans|tofu/i.test(mealText);
+  const gaps: TodayRecommendation["foodGaps"] = [];
+  const safetyNote = "這只是食物記錄模式教育，不是營養、維他命或醫療診斷；如擔心營養狀態，請用化驗或醫護／註冊營養師確認。";
+
+  if (data.today.protein_total < 70) {
+    gaps.push({
+      title: "蛋白質食物來源可能較少記錄",
+      summary: "可能較少記錄某類食物來源：魚、蛋、雞肉、豆腐、豆類或乳製品。",
+      reason: `今日蛋白質紀錄約 ${data.today.protein_total}g，這只反映已保存的食物紀錄。`,
+      action: "下一餐可先加入一掌心蛋白質食物，並繼續用相片或文字確認實際吃了甚麼。",
+    });
+  }
+
+  if (meals.length === 0 || (!hasVegetableOrFruit && fiberTotal < 12)) {
+    gaps.push({
+      title: "蔬果、豆類或全穀來源可能較少記錄",
+      summary: "可能較少記錄某類食物來源：深色蔬菜、水果、豆類、菇類或全穀主食。",
+      reason: meals.length === 0
+        ? "今日未有完整餐點紀錄，系統不會推斷你真正吃少了甚麼。"
+        : `今日已記錄纖維約 ${Math.round(fiberTotal)}g，並未見明確蔬果或豆類文字。`,
+      action: "下一餐可加一份蔬菜或水果；如有長期症狀或擔心營養狀態，請用化驗或專業評估確認。",
+    });
+  }
+
+  if (gaps.length === 0) {
+    gaps.push({
+      title: "暫未見明顯食物來源空白",
+      summary: "可能較少記錄某類食物來源的提示會隨更多餐點、相片和文字紀錄更新。",
+      reason: "現有紀錄已有基本蛋白質和植物性食物線索，但仍不是完整營養評估。",
+      action: "保持每餐記錄主食、蛋白質、蔬菜和飲品；需要精準判斷時請用化驗或專業人士確認。",
+    });
+  }
+
+  return gaps.map((gap) => ({
+    ...gap,
+    reason: `${gap.reason} ${safetyNote}`,
+  })).slice(0, 2);
 }
 
 export async function buildCoachResponse({

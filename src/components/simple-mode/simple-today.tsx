@@ -10,10 +10,7 @@ import { EmergencyButton } from "./emergency-button";
 import { SimpleMoodPicker, type SimpleMood } from "./simple-mood-picker";
 import { SimpleSuggestion, type SimpleSuggestionState } from "./simple-suggestion";
 import { simpleActionChoices } from "@/lib/health-app/senior-mode";
-import {
-  saveSimpleModeAction,
-  type SimpleModeCheckInAction,
-} from "@/lib/health-app/simple-mode-persistence";
+import type { SimpleModeCheckInAction } from "@/lib/health-app/simple-mode-persistence";
 import { getSupabaseRequestHeaders } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -117,16 +114,17 @@ export function SimpleToday() {
     }[mood];
 
     setActivePanel(null);
-    await submitSimpleLog(mood, "/api/mood/log", {
-      moodScore: moodConfig.moodScore,
-      stressScore: moodConfig.stressScore,
-      energyScore: moodConfig.energyScore,
-      emotionLabel: moodConfig.emotionLabel,
-      triggerCategory: "unknown",
-      bodyLinks: [],
-      userText: moodConfig.userText,
-      consentToSave: true,
-      language: "zh-Hant",
+    await submitSimpleLog(mood, {
+      action: "mood",
+      details: {
+        moodScore: moodConfig.moodScore,
+        stressScore: moodConfig.stressScore,
+        energyScore: moodConfig.energyScore,
+        emotionLabel: moodConfig.emotionLabel,
+        triggerCategory: "unknown",
+        bodyLinks: [],
+        userText: moodConfig.userText,
+      },
     }, savedAndDrinkWater);
   }
 
@@ -135,16 +133,13 @@ export function SimpleToday() {
     const isoNow = now.toISOString();
     const today = isoNow.slice(0, 10);
     const actionConfig: Record<DirectSimpleAction, {
-      endpoint: string;
       payload: Record<string, unknown>;
       result: SimpleSuggestionState;
     }> = {
       wake: {
-        endpoint: "/api/daily-health/check-in",
         payload: {
-          logDate: today,
-          wakeTime: isoNow,
-          consentToSave: true,
+          action: "wake",
+          occurredAt: isoNow,
         },
         result: {
           confirmation: "早晨，記低咗。",
@@ -152,47 +147,45 @@ export function SimpleToday() {
         },
       },
       water: {
-        endpoint: "/api/hydration/log",
-        payload: { loggedAt: isoNow, waterMl: 250, drinkType: "water" },
+        payload: { action: "water", occurredAt: isoNow, amount: 250, unit: "ml" },
         result: savedAndDrinkWater,
       },
       food: {
-        endpoint: "/api/food/log",
         payload: {
-          mealTime: isoNow,
-          mealType: "snack",
-          description: "食咗 / I ate",
-          consentToSave: true,
+          action: "meal",
+          occurredAt: isoNow,
+          note: "食咗 / I ate",
+          details: {
+            mealType: "snack",
+            foodName: "食咗 / I ate",
+          },
         },
         result: savedAndDrinkWater,
       },
       toilet: {
-        endpoint: "/api/toilet/log",
         payload: {
-          loggedAt: isoNow,
-          bowelMovement: true,
-          urineColor: "unknown",
+          action: "toilet",
+          occurredAt: isoNow,
+          details: {
+            bowelMovement: true,
+            urineColor: "unknown",
+          },
         },
         result: savedAndDrinkWater,
       },
       move: {
-        endpoint: "/api/gym/workouts",
         payload: {
-          workoutDate: today,
-          startedAt: isoNow,
-          endedAt: isoNow,
-          durationMinutes: 10,
-          workoutType: "movement",
-          intensity: 4,
-          notes: "郁咗 / I moved",
-          sets: [],
+          action: "move",
+          occurredAt: isoNow,
+          note: "郁咗 / I moved",
+          details: { date: today },
         },
         result: savedAndDrinkWater,
       },
     };
 
     const config = actionConfig[action];
-    await submitSimpleLog(action, config.endpoint, config.payload, config.result);
+    await submitSimpleLog(action, config.payload, config.result);
   }
 
   async function recordSickCategory(category: SickCategory) {
@@ -206,30 +199,26 @@ export function SimpleToday() {
     setActivePanel(null);
     await submitSimpleLog(
       "sick",
-      "/api/daily-health/check-in",
       {
-        logDate: now.toISOString().slice(0, 10),
-        bodyNotes: `simple_discomfort:${category}`,
-        consentToSave: true,
+        action: "sick",
+        occurredAt: now.toISOString(),
+        details: {
+          discomfortCategory: category,
+          redFlagPrompted: choice.redFlag,
+        },
       },
       {
         confirmation: "記低咗 / Saved",
         suggestion: choice.suggestion,
         tone: choice.redFlag ? "danger" : "warning",
       },
-      {
-        discomfortCategory: category,
-        redFlagPrompted: choice.redFlag,
-      },
     );
   }
 
   async function submitSimpleLog(
     action: SimpleModeCheckInAction,
-    endpoint: string,
     payload: Record<string, unknown>,
     successResult: SimpleSuggestionState,
-    checkInMetadata?: Record<string, string | number | boolean | null>,
   ) {
     setSaving(action);
     let saved = false;
@@ -239,15 +228,7 @@ export function SimpleToday() {
         "Content-Type": "application/json",
         Accept: "application/json",
       });
-      const result = await saveSimpleModeAction({
-        action,
-        endpoint,
-        payload,
-        checkInMetadata,
-        postJson: (postEndpoint, postPayload) =>
-          postWithAnonymousSession(postEndpoint, postPayload, headers),
-      });
-      saved = result.saved;
+      saved = await postWithAnonymousSession("/api/life-tracker/log", payload, headers);
     } catch {
       saved = false;
     } finally {

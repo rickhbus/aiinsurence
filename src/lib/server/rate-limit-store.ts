@@ -155,19 +155,17 @@ export function getConfiguredRateLimitStore(
   env: Record<string, string | undefined> = process.env,
   options: RedisRateLimitStoreOptions = {},
 ) {
-  const redisUrl = clean(env.UPSTASH_REDIS_REST_URL) || clean(env.REDIS_REST_URL);
-  const redisToken =
-    clean(env.UPSTASH_REDIS_REST_TOKEN) || clean(env.REDIS_REST_TOKEN);
+  const config = getSharedRateLimitStoreConfig(env);
   const allowMemoryFallback = options.allowMemoryFallback ?? true;
 
-  if (!redisUrl || !redisToken) {
+  if (!config) {
     return getMemoryRateLimitStore();
   }
 
   if (!allowMemoryFallback) {
     globalStore.__healthRateLimitConfiguredStrictStore ??= new RedisRateLimitStore(
-      redisUrl,
-      redisToken,
+      config.url,
+      config.token,
       getMemoryRateLimitStore(),
       { allowMemoryFallback: false },
     );
@@ -175,7 +173,7 @@ export function getConfiguredRateLimitStore(
     return globalStore.__healthRateLimitConfiguredStrictStore;
   }
 
-  globalStore.__healthRateLimitConfiguredStore ??= new RedisRateLimitStore(redisUrl, redisToken);
+  globalStore.__healthRateLimitConfiguredStore ??= new RedisRateLimitStore(config.url, config.token);
 
   return globalStore.__healthRateLimitConfiguredStore;
 }
@@ -183,10 +181,7 @@ export function getConfiguredRateLimitStore(
 export function hasSharedRateLimitStoreConfig(
   env: Record<string, string | undefined> = process.env,
 ) {
-  return Boolean(
-    (clean(env.UPSTASH_REDIS_REST_URL) && clean(env.UPSTASH_REDIS_REST_TOKEN)) ||
-      (clean(env.REDIS_REST_URL) && clean(env.REDIS_REST_TOKEN)),
-  );
+  return Boolean(getSharedRateLimitStoreConfig(env));
 }
 
 export function resetRateLimitStoresForTests() {
@@ -199,4 +194,17 @@ function clean(value: string | undefined) {
   const trimmed = value?.trim();
 
   return trimmed ? trimmed : null;
+}
+
+function getSharedRateLimitStoreConfig(env: Record<string, string | undefined>) {
+  const url =
+    clean(env.UPSTASH_REDIS_REST_URL) ||
+    clean(env.REDIS_REST_URL) ||
+    clean(env.KV_REST_API_URL);
+  const token =
+    clean(env.UPSTASH_REDIS_REST_TOKEN) ||
+    clean(env.REDIS_REST_TOKEN) ||
+    clean(env.KV_REST_API_TOKEN);
+
+  return url && token ? { url, token } : null;
 }

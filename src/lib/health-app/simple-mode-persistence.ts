@@ -85,29 +85,104 @@ export function getSimpleDailyCheckInPayload(
 
 export async function saveSimpleModeAction({
   action,
-  endpoint,
   payload,
   checkInMetadata,
   checkInNote,
   postJson,
 }: SaveSimpleModeActionOptions) {
-  const baseCheckInPayload = getSimpleDailyCheckInPayload(action);
-  const checkInPayload = {
-    ...baseCheckInPayload,
-    note: checkInNote ?? baseCheckInPayload.note,
-    metadata: {
-      ...(baseCheckInPayload.metadata ?? {}),
-      ...(checkInMetadata ?? {}),
-    },
-  };
-  const [detailSaved, checkInSaved] = await Promise.all([
-    postJson(endpoint, payload),
-    postJson("/api/daily/checkins", checkInPayload),
-  ]);
+  const saved = await postJson(
+    "/api/life-tracker/log",
+    getSimpleLifeTrackerPayload({ action, payload, checkInMetadata, checkInNote }),
+  );
 
   return {
-    saved: detailSaved || checkInSaved,
-    detailSaved,
-    checkInSaved,
+    saved,
+    detailSaved: saved,
+    checkInSaved: saved,
   };
+}
+
+export function getSimpleLifeTrackerPayload({
+  action,
+  payload,
+  checkInMetadata,
+  checkInNote,
+}: Pick<SaveSimpleModeActionOptions, "action" | "payload" | "checkInMetadata" | "checkInNote">) {
+  const occurredAt = stringValue(payload.wakeTime) ?? stringValue(payload.loggedAt) ?? stringValue(payload.startedAt);
+  const details = checkInMetadata ?? {};
+  const base = stripNullable({
+    occurredAt,
+    note: checkInNote ?? stringValue(payload.notes) ?? stringValue(payload.description),
+  });
+
+  switch (action) {
+    case "wake":
+      return { ...base, action: "wake" };
+    case "water":
+      return {
+        ...base,
+        action: "water",
+        amount: numberValue(payload.waterMl) ?? numberValue(payload.amount_ml) ?? 250,
+        unit: "ml",
+      };
+    case "food":
+      return {
+        ...base,
+        action: "meal",
+        details: {
+          ...details,
+          mealType: stringValue(payload.mealType) ?? "snack",
+          foodName: stringValue(payload.description) ?? "食咗 / I ate",
+        },
+      };
+    case "toilet":
+      return {
+        ...base,
+        action: "toilet",
+        details: {
+          ...details,
+          bowelMovement: booleanValue(payload.bowelMovement) ?? true,
+          urineColor: stringValue(payload.urineColor) ?? "unknown",
+        },
+      };
+    case "move":
+      return { ...base, action: "move", details };
+    case "sick":
+      return { ...base, action: "sick", details };
+    case "good":
+    case "okay":
+    case "not-good":
+      return {
+        ...base,
+        action: "mood",
+        details: {
+          ...details,
+          userText: stringValue(payload.userText) ?? getSimpleDailyCheckInPayload(action).label,
+          moodScore: numberValue(payload.moodScore),
+          stressScore: numberValue(payload.stressScore),
+          energyScore: numberValue(payload.energyScore),
+          emotionLabel: stringValue(payload.emotionLabel),
+        },
+      };
+  }
+}
+
+function stringValue(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function numberValue(value: unknown) {
+  const number = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+
+  return Number.isFinite(number) ? number : null;
+}
+
+function booleanValue(value: unknown) {
+  return typeof value === "boolean" ? value : null;
+}
+
+function stripNullable(value: Record<string, unknown>) {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, entry]) => entry !== null && entry !== undefined),
+  );
 }

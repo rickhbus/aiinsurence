@@ -59,6 +59,27 @@ describe("production API rate-limit gate", () => {
     });
   });
 
+  it("accepts Vercel KV REST env names as a shared production store", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ result: 1 })),
+    );
+
+    const response = await enforceProductionApiRateLimit(
+      new Request("https://app.example/api/life-tracker/log", {
+        method: "POST",
+        headers: { "x-forwarded-for": "203.0.113.101" },
+      }),
+      {
+        APP_ENV: "production",
+        KV_REST_API_URL: "https://kv.example",
+        KV_REST_API_TOKEN: "server-token",
+      },
+    );
+
+    expect(response).toBeNull();
+  });
+
   it("returns 429 when the shared Redis bucket exceeds the policy limit", async () => {
     vi.stubGlobal(
       "fetch",

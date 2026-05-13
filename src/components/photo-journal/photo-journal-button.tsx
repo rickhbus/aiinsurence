@@ -76,14 +76,16 @@ export function PhotoJournalButton({
         "Content-Type": "application/json",
         Accept: "application/json",
       });
-      const response = await fetch("/api/photo-journal", {
+      const response = await fetch("/api/life-tracker/log", {
         method: "POST",
         headers,
         body: JSON.stringify({
-          action: "save",
-          category: analysis.category,
-          observationZh: note || analysis.observationZh,
-          userNoteZh: note || null,
+          action: "photo_text",
+          note: note || analysis.observationZh,
+          details: {
+            category: analysis.category,
+            observationZh: note || analysis.observationZh,
+          },
         }),
       });
 

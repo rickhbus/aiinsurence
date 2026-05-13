@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { analyzeIntake } from "@/lib/navigation-engine";
 import { POST as escalationPost } from "./escalations/route";
+import { POST as lifeTrackerPost } from "./life-tracker/log/route";
 import { POST as recommendationPost } from "./recommendations/save/route";
 import { POST as sessionPost } from "./sessions/route";
 
@@ -66,6 +67,37 @@ describe("persistence route safety", () => {
           recommendation,
           consentGranted: true,
         }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+  });
+
+  it("validates life tracker payloads before auth", async () => {
+    const response = await lifeTrackerPost(
+      new Request("http://localhost/api/life-tracker/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "diagnosis" }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+  });
+
+  it("requires configured Supabase auth before life tracker saves", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "");
+
+    const response = await lifeTrackerPost(
+      new Request("http://localhost/api/life-tracker/log", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer anonymous-test-token",
+        },
+        body: JSON.stringify({ action: "water" }),
       }),
     );
 

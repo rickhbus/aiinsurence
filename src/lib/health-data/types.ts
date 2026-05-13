@@ -176,6 +176,7 @@ export type WeeklyHealthSummary = {
 export type TodayRecommendation = {
   workout: RecommendationBlock;
   nutrition: RecommendationBlock;
+  foodGaps: RecommendationBlock[];
   recovery: RecommendationBlock;
   learning: Omit<RecommendationBlock, "reason">;
   safetyNote: string;

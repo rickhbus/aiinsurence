@@ -44,11 +44,8 @@ export function MealLogForm() {
 
       if (consentToSave) {
         await submit({
-          endpoint: "/api/food/log",
-          payload: {
-            ...foodPhotoAnalysisToLogPayload(photoAnalysis, manualPayload, photoFile),
-            consentToSave: true,
-          },
+          endpoint: "/api/life-tracker/log",
+          payload: foodPhotoAnalysisToLifeTrackerPayload(photoAnalysis, manualPayload),
           successZh: "已保存飲食紀錄。",
         });
       }
@@ -57,8 +54,8 @@ export function MealLogForm() {
     }
 
     const body = await submit({
-      endpoint: consentToSave ? "/api/food/log" : "/api/food/analyze",
-      payload: manualPayload,
+      endpoint: consentToSave ? "/api/life-tracker/log" : "/api/food/analyze",
+      payload: consentToSave ? manualPayloadToLifeTrackerPayload(manualPayload) : manualPayload,
       successZh: consentToSave ? "已保存飲食紀錄。" : "已生成飲食摘要。",
     });
 
@@ -144,34 +141,64 @@ function buildManualPayload(data: FormData, mealType: string, consentToSave: boo
   };
 }
 
-function foodPhotoAnalysisToLogPayload(
+function manualPayloadToLifeTrackerPayload(
+  manualPayload: ReturnType<typeof buildManualPayload>,
+) {
+  return {
+    action: "meal",
+    occurredAt: manualPayload.mealTime,
+    note: manualPayload.description,
+    details: {
+      mealType: manualPayload.mealType,
+      foodName: manualPayload.description || "食咗 / I ate",
+      estimatedCalories: manualPayload.estimatedCalories,
+      proteinG: manualPayload.proteinG,
+      carbsG: manualPayload.carbsG,
+      fatG: manualPayload.fatG,
+      fiberG: manualPayload.fiberG,
+      waterMl: manualPayload.waterMl,
+      caffeineMg: manualPayload.caffeineMg,
+      alcoholUnits: manualPayload.alcoholUnits,
+      highSugarFlag: manualPayload.highSugarFlag,
+      highSodiumFlag: manualPayload.highSodiumFlag,
+      description: manualPayload.description,
+    },
+  };
+}
+
+function foodPhotoAnalysisToLifeTrackerPayload(
   photoAnalysis: unknown,
   manualPayload: ReturnType<typeof buildManualPayload>,
-  photoFile: File,
 ) {
   if (!isFoodPhotoAnalysis(photoAnalysis)) {
-    return {
+    return manualPayloadToLifeTrackerPayload({
       ...manualPayload,
-      imagePath: `browser-upload:${photoFile.name}`,
-    };
+      description: manualPayload.description || "相片餐點 / Photo meal",
+    });
   }
 
   return {
-    mealTime: manualPayload.mealTime,
-    mealType: manualPayload.mealType,
-    imagePath: `browser-upload:${photoFile.name}`,
-    description: photoAnalysis.mealName ?? manualPayload.description,
-    estimatedCalories: photoAnalysis.estimatedCalories,
-    proteinG: photoAnalysis.proteinG,
-    carbsG: photoAnalysis.carbsG,
-    fatG: photoAnalysis.fatG,
-    fiberG: photoAnalysis.fiberG,
-    waterMl: photoAnalysis.waterMl,
-    caffeineMg: photoAnalysis.caffeineMg,
-    alcoholUnits: photoAnalysis.alcoholUnits,
-    highSugarFlag: photoAnalysis.highSugarFlag,
-    highSodiumFlag: photoAnalysis.highSodiumFlag,
-    aiSummary: photoAnalysis.summaryZh,
+    action: "photo_text",
+    occurredAt: manualPayload.mealTime,
+    note: photoAnalysis.summaryZh,
+    details: {
+      category: "food",
+      mealType: manualPayload.mealType,
+      foodName: photoAnalysis.mealName ?? manualPayload.description ?? "相片餐點 / Photo meal",
+      mealName: photoAnalysis.mealName,
+      estimatedCalories: photoAnalysis.estimatedCalories,
+      proteinG: photoAnalysis.proteinG,
+      carbsG: photoAnalysis.carbsG,
+      fatG: photoAnalysis.fatG,
+      fiberG: photoAnalysis.fiberG,
+      waterMl: photoAnalysis.waterMl,
+      caffeineMg: photoAnalysis.caffeineMg,
+      alcoholUnits: photoAnalysis.alcoholUnits,
+      highSugarFlag: photoAnalysis.highSugarFlag,
+      highSodiumFlag: photoAnalysis.highSodiumFlag,
+      summaryZh: photoAnalysis.summaryZh,
+      description: manualPayload.description,
+    },
   };
 }
 
