@@ -54,9 +54,14 @@ export function HealthOsLanding() {
             </p>
           </div>
 
-          <Button asChild size="lg" className="min-h-16 rounded-2xl text-xl font-bold">
-            <Link href="/today">開始 / Start</Link>
-          </Button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Button asChild size="lg" className="min-h-16 rounded-2xl text-xl font-bold">
+              <Link href="/today">開始 / Start</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="min-h-16 rounded-2xl text-xl font-bold">
+              <Link href="/healthcare">AI 分析 / AI Analysis</Link>
+            </Button>
+          </div>
 
           <CaregiverOnboarding />
 
@@ -83,6 +88,7 @@ export function AdvancedTodayPage() {
 export function MorePage() {
   const items: Array<{ href: string; title: string; icon: LucideIcon }> = [
     { href: "/reports", title: "Reports", icon: BarChart3 },
+    { href: "/healthcare", title: "AI 分析 / AI Analysis", icon: Stethoscope },
     { href: "/doctor", title: "Doctor Prep", icon: Stethoscope },
     { href: "/insurance", title: "Insurance", icon: ShieldCheck },
     { href: "/pricing", title: "Pricing", icon: ShieldCheck },

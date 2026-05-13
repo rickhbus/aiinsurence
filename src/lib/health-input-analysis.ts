@@ -180,10 +180,14 @@ export function buildHealthInputAnalysisResponse(
         summary: core.safety.action,
       }
     : core.navigation.urgency;
+  const careRoute = core.safety.safetyLocked
+    ? safetyLockedCareRoute(core.language, core.safety.level)
+    : core.navigation.careRoute;
   const navigation: Recommendation = {
     ...core.navigation,
     urgency,
     nextAction,
+    careRoute,
     questions: core.safety.safetyLocked ? [] : core.navigation.questions,
     memoryProposal,
     assistantMessage: assistant.message,
@@ -210,7 +214,7 @@ export function buildHealthInputAnalysisResponse(
         ? core.safety.action
         : urgency.summary,
       nextAction,
-      careRoute: core.navigation.careRoute,
+      careRoute,
     },
     safety: core.safety,
     assistant,
@@ -237,6 +241,21 @@ export function buildHealthInputAnalysisResponse(
       ...core.navigation.audit,
     ],
   };
+}
+
+function safetyLockedCareRoute(
+  language: HealthInputLanguage,
+  level: HealthInputSafetyLevel,
+) {
+  if (level === "crisis") {
+    return language === "zh-Hant"
+      ? "即時安全支援：致電 999、前往急症室，或請可信任的人陪伴你。不要等待 AI 或保險確認。"
+      : "Immediate safety support: call 999, go to A&E, or ask a trusted person to stay with you. Do not wait for AI or insurance confirmation.";
+  }
+
+  return language === "zh-Hant"
+    ? "香港急症室 / A&E 優先；如情況危急，立即致電 999。不要等待 AI 或保險確認。"
+    : "A&E first; call 999 if there is immediate danger. Do not wait for AI or insurance confirmation.";
 }
 
 export function createSafetyLockedAssistant(

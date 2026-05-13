@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, BookOpenCheck, Brain, HelpCircle, ShieldCheck, Stethoscope } from "lucide-react";
+import { AlertTriangle, Apple, BookOpenCheck, Brain, Dumbbell, HelpCircle, ShieldCheck, Stethoscope, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type { FormEvent } from "react";
 import { useState } from "react";
@@ -33,6 +33,38 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { SafetyDisclaimer } from "./dashboard-cards";
+
+const healthAnalysisExamples: Array<{
+  mode: HealthInputAnalysisMode;
+  label: LocalizedText;
+  input: LocalizedText;
+  icon: LucideIcon;
+}> = [
+  {
+    mode: "auto",
+    label: { zh: "胸口痛 + 氣促", en: "Chest pain + breathless" },
+    input: { zh: "我胸口痛，又覺得氣促", en: "I have chest pain and shortness of breath." },
+    icon: AlertTriangle,
+  },
+  {
+    mode: "auto",
+    label: { zh: "跑步後膝痛", en: "Knee pain after running" },
+    input: { zh: "跑步後膝頭痛兩日，沒有腫脹，應該點處理？", en: "My knee has hurt for two days after running, with no swelling. What should I do?" },
+    icon: Dumbbell,
+  },
+  {
+    mode: "auto",
+    label: { zh: "增肌早餐", en: "Muscle gain breakfast" },
+    input: { zh: "我想增肌，早餐應該食咩蛋白質？", en: "I want to gain muscle. What protein should I eat for breakfast?" },
+    icon: Apple,
+  },
+  {
+    mode: "policy",
+    label: { zh: "保單等候期", en: "Policy waiting period" },
+    input: { zh: "我想理解住院保單等候期和索償文件。", en: "I want to understand a hospital policy waiting period and claim documents." },
+    icon: ShieldCheck,
+  },
+];
 
 export function LearnPage({ locale }: { locale: Locale }) {
   const categories = Array.from(new Set(lessons.map((lesson) => text(lesson.category, locale))));
@@ -181,6 +213,12 @@ export function HealthInputAnalyzerForm({ locale }: { locale: Locale }) {
     }
   }
 
+  function applyExample(example: (typeof healthAnalysisExamples)[number]) {
+    setMode(example.mode);
+    setInput(text(example.input, locale));
+    setResult(null);
+  }
+
   return (
     <Card className="overflow-hidden border-border/60 bg-card/78 shadow-sm backdrop-blur-xl">
       <form onSubmit={onSubmit}>
@@ -198,6 +236,24 @@ export function HealthInputAnalyzerForm({ locale }: { locale: Locale }) {
           </div>
         </CardHeader>
         <CardContent className="grid gap-4">
+          <div
+            className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4"
+            aria-label={locale === "zh-Hant" ? "快速分析例子" : "Quick analysis examples"}
+          >
+            {healthAnalysisExamples.map((example) => (
+              <Button
+                key={example.label.en}
+                type="button"
+                variant="outline"
+                className="h-auto min-h-12 justify-start whitespace-normal rounded-xl px-3 py-2 text-left"
+                onClick={() => applyExample(example)}
+              >
+                <example.icon data-icon="inline-start" aria-hidden="true" />
+                {text(example.label, locale)}
+              </Button>
+            ))}
+          </div>
+
           <div className="grid gap-3 md:grid-cols-[220px_minmax(0,1fr)]">
             <Select value={mode} onValueChange={(value) => setMode(value as HealthInputAnalysisMode)}>
               <SelectTrigger className="w-full" aria-label={locale === "zh-Hant" ? "分析模式" : "Analysis mode"}>
@@ -252,6 +308,12 @@ function HealthInputAnalysisResult({
   result: HealthInputAnalysisResponse;
   locale: Locale;
 }) {
+  const safetyLocked = result.safety.safetyLocked;
+  const checklistItems = result.decisionChecklist.slice(0, 4);
+  const boundaryItems = result.safety.disallowedUses
+    .slice(0, 5)
+    .map((item) => formatDisallowedUse(item, locale));
+
   return (
     <div className="grid gap-3">
       <Alert variant={result.safety.safetyLocked ? "destructive" : "default"}>
@@ -261,6 +323,15 @@ function HealthInputAnalysisResult({
           {result.assistant.message}
         </AlertDescription>
       </Alert>
+
+      {safetyLocked ? (
+        <Button asChild variant="destructive" size="lg" className="min-h-12 w-full sm:w-fit">
+          <a href="tel:999">
+            <AlertTriangle data-icon="inline-start" aria-hidden="true" />
+            {locale === "zh-Hant" ? "立即致電 999 / Call 999" : "Call 999 now"}
+          </a>
+        </Button>
+      ) : null}
 
       <div className="flex flex-wrap gap-2">
         <Badge variant="secondary">{result.detectedDomain}</Badge>
@@ -273,6 +344,10 @@ function HealthInputAnalysisResult({
 
       <div className="grid gap-3 md:grid-cols-2">
         <AnalysisBlock
+          title={locale === "zh-Hant" ? "AI 檢查重點" : "What AI checked"}
+          body={formatAnalysisPath(result, locale)}
+        />
+        <AnalysisBlock
           title={locale === "zh-Hant" ? "下一步" : "Next step"}
           body={result.summary.nextAction}
         />
@@ -280,18 +355,30 @@ function HealthInputAnalysisResult({
           title={locale === "zh-Hant" ? "照護方向" : "Care route"}
           body={result.summary.careRoute}
         />
+        <AnalysisBlock
+          title={locale === "zh-Hant" ? "為何這樣分流" : "Why this route"}
+          body={result.summary.userVisibleSummary}
+        />
       </div>
 
-      {result.followUpQuestions.length > 0 ? (
-        <div className="rounded-xl border border-border/50 bg-muted/25 p-3">
-          <p className="mb-2 text-sm font-medium">{locale === "zh-Hant" ? "可補充資料" : "Helpful details"}</p>
-          <ul className="grid gap-1 text-sm leading-6 text-muted-foreground">
-            {result.followUpQuestions.map((question) => (
-              <li key={question}>{question}</li>
-            ))}
-          </ul>
-        </div>
+      {checklistItems.length > 0 ? (
+        <AnalysisList
+          title={locale === "zh-Hant" ? "準備清單" : "Preparation checklist"}
+          items={checklistItems}
+        />
       ) : null}
+
+      {result.followUpQuestions.length > 0 ? (
+        <AnalysisList
+          title={locale === "zh-Hant" ? "可補充資料" : "Helpful details"}
+          items={result.followUpQuestions}
+        />
+      ) : null}
+
+      <AnalysisList
+        title={locale === "zh-Hant" ? "安全邊界" : "Safety boundaries"}
+        items={boundaryItems}
+      />
     </div>
   );
 }
@@ -303,6 +390,54 @@ function AnalysisBlock({ title, body }: { title: string; body: string }) {
       <p className="mt-1 text-sm leading-6 text-muted-foreground">{body}</p>
     </div>
   );
+}
+
+function AnalysisList({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div className="rounded-xl border border-border/50 bg-muted/25 p-3">
+      <p className="mb-2 text-sm font-medium">{title}</p>
+      <ul className="grid list-disc gap-1 pl-5 text-sm leading-6 text-muted-foreground">
+        {items.map((item, index) => (
+          <li key={`${item}-${index}`}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+const analysisDomainLabels: Record<HealthInputAnalysisResponse["detectedDomain"], LocalizedText> = {
+  emergency: { zh: "緊急醫療", en: "emergency care" },
+  self_harm: { zh: "危機安全", en: "crisis safety" },
+  symptom: { zh: "症狀導航", en: "symptom navigation" },
+  insurance: { zh: "保險教育", en: "insurance education" },
+  policy: { zh: "保單 / 索償", en: "policy or claims" },
+  fitness: { zh: "健身與恢復", en: "fitness and recovery" },
+  nutrition: { zh: "營養", en: "nutrition" },
+  general: { zh: "一般健康查詢", en: "general health question" },
+};
+
+function formatAnalysisPath(result: HealthInputAnalysisResponse, locale: Locale) {
+  const domain = text(analysisDomainLabels[result.detectedDomain], locale);
+
+  if (locale === "zh-Hant") {
+    return `已辨識為「${domain}」，先檢查緊急與危機訊號，再用 ${result.intakeMode} 路徑整理下一步。AI 狀態：${result.assistant.ai.status}。`;
+  }
+
+  return `Detected as ${domain}. Urgent and crisis signals were checked first, then the ${result.intakeMode} path organized the next step. AI status: ${result.assistant.ai.status}.`;
+}
+
+function formatDisallowedUse(value: string, locale: Locale) {
+  const labels: Record<string, LocalizedText> = {
+    diagnosis: { zh: "不作診斷", en: "No diagnosis" },
+    prescription: { zh: "不處方藥物", en: "No prescribing" },
+    medical_guarantee: { zh: "不保證醫療結果", en: "No medical guarantees" },
+    insurance_eligibility_or_pricing: { zh: "不判斷保險資格或定價", en: "No insurance eligibility or pricing decisions" },
+    coverage_or_claim_decision: { zh: "不決定保障或索償結果", en: "No coverage or claim decisions" },
+    care_access_decision: { zh: "不決定照護可及性", en: "No care-access decisions" },
+    emotion_based_insurance_decisioning: { zh: "情緒訊號不影響保險決定", en: "Emotion signals do not affect insurance decisions" },
+  };
+
+  return text(labels[value] ?? { zh: value, en: value }, locale);
 }
 
 export function InsurancePage({ locale }: { locale: Locale }) {

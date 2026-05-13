@@ -22,6 +22,7 @@ describe("health input analysis system", () => {
     expect(core.detectedDomain).toBe("emergency");
     expect(response.safety.safetyLocked).toBe(true);
     expect(response.summary.nextAction).toContain("999");
+    expect(response.summary.careRoute).toContain("999");
     expect(response.followUpQuestions).toHaveLength(0);
     expect(response.memoryProposal.canOffer).toBe(false);
   });
@@ -40,6 +41,7 @@ describe("health input analysis system", () => {
     expect(response.summary.urgencyLevel).toBe(1);
     expect(response.navigation.urgency.level).toBe(1);
     expect(response.summary.nextAction).toContain("999");
+    expect(response.summary.careRoute).toContain("可信任");
     expect(response.emotion.safety_flags.selfHarm).toBe(true);
   });
 

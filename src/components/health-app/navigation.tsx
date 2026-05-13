@@ -88,7 +88,8 @@ export const navGroups: NavGroup[] = [
     label: { zh: "AI", en: "AI" },
     icon: Brain,
     children: [
-      { label: { zh: "AI", en: "AI" }, href: "/coach", page: "coach", icon: Brain },
+      { label: { zh: "AI 分析", en: "AI Analysis" }, href: "/healthcare", page: "healthcare", icon: Search },
+      { label: ui.coach, href: "/coach", page: "coach", icon: Brain },
     ],
   },
   {
