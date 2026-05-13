@@ -4,6 +4,7 @@ import {
   assertProductionEnv,
   getClientEnv,
   getEnvIssues,
+  getServerEnv,
 } from "./env";
 
 describe("environment validation", () => {
@@ -61,6 +62,27 @@ describe("environment validation", () => {
         }),
       ]),
     );
+  });
+
+  it("treats AI Gateway auth as configured for DeepSeek", () => {
+    const env = getServerEnv({
+      APP_ENV: "production",
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "publishable-key",
+      AI_PROVIDER: "deepseek",
+      AI_GATEWAY_API_KEY: "gateway-key",
+    });
+
+    expect(env.isAiConfigured).toBe(true);
+    expect(
+      getEnvIssues("production", {
+        APP_ENV: "production",
+        NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "publishable-key",
+        AI_PROVIDER: "deepseek",
+        AI_GATEWAY_API_KEY: "gateway-key",
+      }).some((issue) => issue.key === "DEEPSEEK_API_KEY"),
+    ).toBe(false);
   });
 
   it("rejects service-role shaped values in public env", () => {

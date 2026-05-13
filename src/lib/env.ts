@@ -60,7 +60,7 @@ export function getClientEnv(env: RawEnv = process.env): ClientEnv {
 export function getServerEnv(env: RawEnv = process.env): ServerEnv {
   const client = getClientEnv(env);
   const aiProvider = aiProviderSchema.catch("deepseek").parse(clean(env.AI_PROVIDER));
-  const aiApiKey = getAiProviderKey(aiProvider, env);
+  const aiApiKey = getAiProviderCredential(aiProvider, env);
 
   return {
     ...client,
@@ -114,7 +114,7 @@ export function getEnvIssues(
   if (mode !== "client" && !server.aiApiKey) {
     issues.push({
       key: getAiProviderKeyName(server.aiProvider),
-      message: `AI provider key is not configured for ${server.aiProvider}; provider-backed generation will use deterministic fallback where supported.`,
+      message: `AI provider credential is not configured for ${server.aiProvider}; provider-backed generation will use deterministic fallback where supported.`,
       severity: "warning",
     });
   }
@@ -183,6 +183,16 @@ function getAppEnv(env: RawEnv): AppEnv {
 
 function getAiProviderKey(provider: AiProvider, env: RawEnv) {
   return clean(env[getAiProviderKeyName(provider)]);
+}
+
+function getAiProviderCredential(provider: AiProvider, env: RawEnv) {
+  return getAiProviderKey(provider, env) || (
+    provider === "deepseek" ? getAiGatewayCredential(env) : null
+  );
+}
+
+function getAiGatewayCredential(env: RawEnv) {
+  return clean(env.AI_GATEWAY_API_KEY) || clean(env.VERCEL_OIDC_TOKEN);
 }
 
 function getAiProviderKeyName(provider: AiProvider) {

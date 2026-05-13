@@ -11,11 +11,15 @@ import { EmergencyButton } from "./emergency-button";
 import { SimpleMoodPicker, type SimpleMood } from "./simple-mood-picker";
 import { SimpleSuggestion, type SimpleSuggestionState } from "./simple-suggestion";
 import { simpleActionChoices } from "@/lib/health-app/senior-mode";
+import {
+  saveSimpleModeAction,
+  type SimpleModeCheckInAction,
+} from "@/lib/health-app/simple-mode-persistence";
 import { getSupabaseRequestHeaders } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 type SimpleAction = "food" | "water" | "toilet" | "move";
-type SavingAction = SimpleMood | SimpleAction | null;
+type SavingAction = SimpleModeCheckInAction | null;
 
 const bottomItems = [
   { href: "/today", label: "今日", icon: Home, active: true },
@@ -141,17 +145,34 @@ export function SimpleToday() {
   }
 
   async function submitSimpleLog(
-    action: SavingAction,
+    action: SimpleModeCheckInAction,
     endpoint: string,
     payload: Record<string, unknown>,
     successResult: SimpleSuggestionState,
   ) {
     setSaving(action);
-    const saved = await postWithAnonymousSession(endpoint, payload);
-    setSaving(null);
+    let saved = false;
+
+    try {
+      const headers = await getSupabaseRequestHeaders({
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      });
+      const result = await saveSimpleModeAction({
+        action,
+        endpoint,
+        payload,
+        postJson: (postEndpoint, postPayload) =>
+          postWithAnonymousSession(postEndpoint, postPayload, headers),
+      });
+      saved = result.saved;
+    } catch {
+      saved = false;
+    } finally {
+      setSaving(null);
+    }
 
     if (saved) {
-      void recordDailyCheckIn(action);
       window.dispatchEvent(new Event("health-log-saved"));
       setResult(successResult);
       return;
@@ -164,40 +185,15 @@ export function SimpleToday() {
     });
   }
 
-  async function recordDailyCheckIn(action: SavingAction) {
-    if (!action) {
-      return;
-    }
-
-    const payload = {
-      food: { checkin_type: "meal", label: "食咗嘢" },
-      water: { checkin_type: "water", label: "飲咗水" },
-      toilet: { checkin_type: "health_review", label: "去廁所" },
-      move: { checkin_type: "exercise", label: "郁咗一陣" },
-      good: { checkin_type: "health_review", label: "好" },
-      okay: { checkin_type: "health_review", label: "一般" },
-      "not-good": {
-        checkin_type: "health_review",
-        label: "唔舒服",
-        metadata: { notFeelingWell: true },
-      },
-    }[action];
-
-    if (payload) {
-      await postWithAnonymousSession("/api/daily/checkins", payload);
-    }
-  }
-
-  async function postWithAnonymousSession(endpoint: string, payload: Record<string, unknown>) {
+  async function postWithAnonymousSession(
+    endpoint: string,
+    payload: Record<string, unknown>,
+    headers: Headers,
+  ) {
     try {
-      const headers = await getSupabaseRequestHeaders({
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      });
-
       const response = await fetch(endpoint, {
         method: "POST",
-        headers,
+        headers: new Headers(headers),
         body: JSON.stringify(payload),
       });
 

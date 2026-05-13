@@ -23,11 +23,12 @@ Server-only:
 
 - `SUPABASE_SERVICE_ROLE_KEY` only for future server-only maintenance jobs that truly need it.
 - `DEEPSEEK_API_KEY`, `GROQ_API_KEY`, `OPENAI_API_KEY`
+- `AI_GATEWAY_API_KEY` when DeepSeek is routed through Vercel AI Gateway outside Vercel OIDC.
 - `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `REDIS_REST_URL`, `REDIS_REST_TOKEN`
 - `MONITORING_ALERT_WEBHOOK_URL`
 - `SECRETS_ROTATED_AT`, `SECRETS_ROTATION_NEXT_DUE_AT`
 
-Never prefix service-role keys, provider keys, Redis tokens, auth tokens, or private API keys with `NEXT_PUBLIC_`.
+Never prefix service-role keys, provider keys, Redis tokens, Vercel OIDC tokens, auth tokens, or private API keys with `NEXT_PUBLIC_`.
 
 ## Production Rate Limiting
 

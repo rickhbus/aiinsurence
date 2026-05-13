@@ -8,6 +8,7 @@ AI Health Guide / 智健導航 stores sensitive health-adjacent user data. RLS i
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: browser-safe anon key.
 - `AI_PROVIDER`: `deepseek`, `groq`, or `openai`.
 - Provider key, server-only: `DEEPSEEK_API_KEY`, `GROQ_API_KEY`, or `OPENAI_API_KEY`.
+- For DeepSeek on Vercel, `AI_GATEWAY_API_KEY` or Vercel OIDC may be used instead of `DEEPSEEK_API_KEY`.
 
 Optional:
 

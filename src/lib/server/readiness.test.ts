@@ -41,6 +41,28 @@ describe("readiness report builder", () => {
     );
   });
 
+  it("passes AI provider readiness when DeepSeek can use AI Gateway auth", async () => {
+    const report = await buildReadinessReport({
+      env: {
+        ...baseEnv,
+        AI_PROVIDER: "deepseek",
+        AI_GATEWAY_API_KEY: "gateway-key",
+      },
+      requestId: "gateway-ready",
+      now: new Date("2026-05-11T00:00:00.000Z"),
+      supabaseProbe: async () => [],
+    });
+
+    expect(report.checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "ai_provider",
+          status: "pass",
+        }),
+      ]),
+    );
+  });
+
   it("marks missing required Supabase production config as not_ready", async () => {
     const report = await buildReadinessReport({
       env: { APP_ENV: "production" },

@@ -7,6 +7,7 @@ describe("AI provider config", () => {
       provider: "deepseek",
       model: "deepseek-v4-flash",
       isConfigured: false,
+      connection: "unconfigured",
     });
   });
 
@@ -20,6 +21,35 @@ describe("AI provider config", () => {
       provider: "deepseek",
       model: "deepseek-v4-flash",
       isConfigured: true,
+      connection: "direct",
+    });
+  });
+
+  it("uses Vercel AI Gateway auth for DeepSeek when a direct key is absent", () => {
+    expect(
+      getGuideRuntimeConfig({
+        AI_GATEWAY_API_KEY: "gateway-key",
+        DEEPSEEK_MODEL: "deepseek-v4-flash",
+      }),
+    ).toEqual({
+      provider: "deepseek",
+      model: "deepseek/deepseek-v4-flash",
+      isConfigured: true,
+      connection: "gateway",
+    });
+  });
+
+  it("normalizes gateway-prefixed DeepSeek model ids for direct API calls", () => {
+    expect(
+      getGuideRuntimeConfig({
+        DEEPSEEK_API_KEY: "test-key",
+        AI_MODEL: "deepseek/deepseek-v4-flash",
+      }),
+    ).toEqual({
+      provider: "deepseek",
+      model: "deepseek-v4-flash",
+      isConfigured: true,
+      connection: "direct",
     });
   });
 
@@ -34,6 +64,7 @@ describe("AI provider config", () => {
       provider: "openai",
       model: "gpt-5-mini",
       isConfigured: true,
+      connection: "direct",
     });
   });
 
@@ -47,6 +78,7 @@ describe("AI provider config", () => {
       provider: "deepseek",
       model: "deepseek-chat",
       isConfigured: true,
+      connection: "direct",
     });
   });
 });

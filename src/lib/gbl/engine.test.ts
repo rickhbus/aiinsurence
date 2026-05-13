@@ -4,6 +4,8 @@ import { runGblAnalysis } from "./engine";
 vi.stubEnv("DEEPSEEK_API_KEY", "");
 vi.stubEnv("GROQ_API_KEY", "");
 vi.stubEnv("OPENAI_API_KEY", "");
+vi.stubEnv("AI_GATEWAY_API_KEY", "");
+vi.stubEnv("VERCEL_OIDC_TOKEN", "");
 
 describe("AI.GBL engine", () => {
   it("normalizes insurance analysis with disclaimers and emotion context", async () => {

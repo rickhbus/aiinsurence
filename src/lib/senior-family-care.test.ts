@@ -6,6 +6,10 @@ import { buildDailyCheckInStatus } from "@/lib/family/check-in-status";
 import { buildFamilyWeeklyReport, getWeekStart } from "@/lib/family/family-weekly-report";
 import { normalizeUserMode } from "@/lib/family/user-mode";
 import { seniorMode, simpleModeBlockedTerms } from "@/lib/health-app/senior-mode";
+import {
+  getSimpleDailyCheckInPayload,
+  saveSimpleModeAction,
+} from "@/lib/health-app/simple-mode-persistence";
 import { canUseFeature } from "@/lib/payments/entitlement-client";
 import { photoJournalRequiresConfirmation } from "@/lib/photo-journal";
 import { buildReminderInsert, containsMedicationAdvice } from "@/lib/reminders";
@@ -113,6 +117,45 @@ describe("senior and family care product contracts", () => {
     expect(visible).not.toContain("moodScore");
     expect(visible).not.toContain("congee");
     expect(visible).not.toContain("toilet");
+  });
+
+  it("keeps simple mode saved when the protected daily check-in succeeds first", async () => {
+    const calls: Array<{ endpoint: string; payload: Record<string, unknown> }> = [];
+    const result = await saveSimpleModeAction({
+      action: "water",
+      endpoint: "/api/hydration/log",
+      payload: { waterMl: 250 },
+      postJson: async (endpoint, payload) => {
+        calls.push({ endpoint, payload });
+        return endpoint === "/api/daily/checkins";
+      },
+    });
+
+    expect(result).toEqual({
+      saved: true,
+      detailSaved: false,
+      checkInSaved: true,
+    });
+    expect(calls.map((call) => call.endpoint)).toEqual([
+      "/api/hydration/log",
+      "/api/daily/checkins",
+    ]);
+    expect(calls[1]?.payload).toMatchObject({
+      checkin_type: "water",
+      label: "飲咗水",
+      metadata: { source: "simple_today" },
+    });
+  });
+
+  it("keeps simple mode quick check-ins high level", () => {
+    expect(getSimpleDailyCheckInPayload("not-good")).toMatchObject({
+      checkin_type: "health_review",
+      label: "唔舒服",
+      metadata: {
+        notFeelingWell: true,
+        source: "simple_today",
+      },
+    });
   });
 
   it("includes Family Care and parent-care pricing copy", () => {

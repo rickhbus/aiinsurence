@@ -162,14 +162,14 @@ function buildAiProviderCheck(env: Record<string, string | undefined>): Readines
     return {
       name: "ai_provider",
       status: "warn",
-      message: "AI provider key is absent; deterministic provider-free fallback remains available.",
+      message: "AI provider credential is absent; deterministic provider-free fallback remains available.",
     };
   }
 
   return {
     name: "ai_provider",
     status: "pass",
-    message: "AI provider key is configured for provider-backed generation.",
+    message: "AI provider credential is configured for provider-backed generation.",
   };
 }
 
