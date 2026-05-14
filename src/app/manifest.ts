@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "AI Health Guide / 智健導航",
-    short_name: "智健導航",
+    name: "AI 小健龜智健任務 / AI Turtle Coach Health Quest",
+    short_name: "小健龜",
     description:
-      "A bilingual Hong Kong health, fitness, nutrition, AI coaching, healthcare navigation, and insurance education app with consent-based health memory.",
+      "香港 AI 健康任務、照護導航和保險教育 app，使用 AI 小健龜、小步任務和需同意的健康記憶。",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",

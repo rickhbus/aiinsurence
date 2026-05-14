@@ -60,7 +60,7 @@ export function HealthAppShell({
   const showRightCoach = currentPage !== "coach" && currentPage !== "today" && !isFocusedPage;
 
   return (
-    <div className="min-h-dvh overflow-x-clip bg-[linear-gradient(160deg,var(--health-bg-start),var(--background)_40%,var(--health-bg-end)_90%,var(--background))]">
+    <div className="play-shell-bg min-h-dvh overflow-x-clip">
       <div className="flex min-h-dvh">
         {!isFocusedPage ? (
           <Sidebar

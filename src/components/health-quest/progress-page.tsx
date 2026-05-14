@@ -8,10 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProgressChart } from "@/components/health-app/charts";
 import { text } from "@/lib/health-quest/copy";
+import { turtleCoachIdentity } from "@/lib/health-quest/play-system";
 import type { QuestLocale, QuestProgressSummary } from "@/lib/health-quest/types";
 import { buildQuestProgressSummary } from "@/lib/health-quest/progress";
 import { getSupabaseRequestHeaders } from "@/lib/supabase/client";
 import { WeeklyReviewCard } from "./weekly-review-card";
+import { PlayBadge } from "./play/play-badge";
+import { PlayCard } from "./play/play-card";
+import { PlayMascotPlaceholder } from "./play/play-mascot-placeholder";
 
 type ProgressResponse = {
   progress?: QuestProgressSummary;
@@ -61,16 +65,27 @@ export function HealthQuestProgressPage({ locale }: { locale: QuestLocale }) {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-      <section className="rounded-3xl border border-border/50 bg-card/72 p-5 shadow-sm backdrop-blur-xl sm:p-6">
-        <Badge variant="secondary" className="mb-3">Health Quest / 進度</Badge>
-        <h1 className="text-3xl font-bold tracking-normal sm:text-4xl">
-          {locale === "zh-Hant" ? "健康任務進度" : "Health Quest Progress"}
-        </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-          {locale === "zh-Hant"
-            ? "只顯示私隱安全的完成趨勢，不顯示原始症狀、心情文字或私人備註。"
-            : "Shows privacy-safe completion trends only, not raw symptoms, mood text, or private notes."}
-        </p>
+      <section className="play-island-card rounded-[1.8rem] p-5 sm:p-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <PlayBadge tone="primary">{locale === "zh-Hant" ? "任務進度" : "Quest progress"}</PlayBadge>
+            <h1 className="mt-3 text-3xl font-black tracking-normal sm:text-4xl">
+              {locale === "zh-Hant" ? "健康任務進度" : "Health Quest Progress"}
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+              {locale === "zh-Hant"
+                ? "只顯示私隱安全的完成趨勢，不顯示原始症狀、心情文字或私人備註。"
+                : "Shows privacy-safe completion trends only, not raw symptoms, mood text, or private notes."}
+            </p>
+          </div>
+          <div className="flex items-center gap-3 rounded-[1.4rem] border border-teal-500/20 bg-teal-500/10 p-3">
+            <PlayMascotPlaceholder mood="celebrating" size="md" />
+            <div>
+              <p className="text-sm font-black">{locale === "zh-Hant" ? turtleCoachIdentity.mascot.zh : turtleCoachIdentity.mascot.en}</p>
+              <p className="text-xs text-muted-foreground">{locale === "zh-Hant" ? "只獎勵小步，不判斷健康價值。" : "Tiny steps only, never health worth."}</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <div className="grid gap-3 md:grid-cols-4">
@@ -81,7 +96,7 @@ export function HealthQuestProgressPage({ locale }: { locale: QuestLocale }) {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <Card className="border-border/60 bg-card/82 shadow-sm">
+        <Card className="play-island-card rounded-[1.5rem] border-0">
           <CardHeader>
             <CardTitle>{locale === "zh-Hant" ? "一致性" : "Consistency"}</CardTitle>
           </CardHeader>
@@ -98,11 +113,11 @@ export function HealthQuestProgressPage({ locale }: { locale: QuestLocale }) {
 
       <WeeklyReviewCard locale={locale} />
 
-      <Button asChild className="w-fit">
+      <Button asChild className="play-pressable w-fit rounded-2xl font-black">
         <Link href={progress.weeklyReviewHref}>{locale === "zh-Hant" ? "開啟一週健康回顧" : "Open weekly review"}</Link>
       </Button>
 
-      <Card className="border-border/60 bg-card/82 shadow-sm">
+      <Card className="play-island-card rounded-[1.5rem] border-0">
         <CardContent className="pt-4 text-sm leading-6 text-muted-foreground">
           {text(progress.weeklyReview, locale)}
         </CardContent>
@@ -123,18 +138,18 @@ function MetricCard({
   detail: string;
 }) {
   return (
-    <Card className="border-border/60 bg-card/86 shadow-sm">
-      <CardHeader className="pb-1">
+    <PlayCard className="grid gap-2">
+      <CardHeader className="p-0">
         <CardTitle className="flex items-center gap-2 text-sm">
           <Icon aria-hidden="true" />
           {label}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <p className="text-3xl font-bold tracking-normal">{value}</p>
+      <CardContent className="p-0">
+        <p className="text-3xl font-black tracking-normal">{value}</p>
         <p className="text-xs text-muted-foreground">{detail}</p>
       </CardContent>
-    </Card>
+    </PlayCard>
   );
 }
 
@@ -148,7 +163,7 @@ function ConsistencyCard({
   value: number;
 }) {
   return (
-    <Card className="border-border/60 bg-card/82 shadow-sm">
+    <Card className="play-island-card rounded-[1.35rem] border-0">
       <CardContent className="flex items-center justify-between gap-3 pt-4">
         <span className="flex items-center gap-2 text-sm font-medium">
           <Icon aria-hidden="true" />

@@ -122,6 +122,13 @@ button {
   --health-bg-start: oklch(0.975 0.022 175);
   --health-bg-end: oklch(0.96 0.016 248);
   --health-glow: oklch(0.82 0.09 175 / 38%);
+  --play-lime: oklch(0.82 0.19 132);
+  --play-teal: oklch(0.58 0.15 178);
+  --play-sky: oklch(0.68 0.14 235);
+  --play-amber: oklch(0.79 0.16 78);
+  --play-red: oklch(0.58 0.22 28);
+  --play-pressed-shadow: 0 9px 0 oklch(0.34 0.08 178 / 26%);
+  --play-card-shadow: 0 18px 44px oklch(0.42 0.08 178 / 14%), inset 0 1px 0 oklch(1 0 0 / 72%);
 }
 
 .dark {
@@ -159,6 +166,13 @@ button {
   --health-bg-start: oklch(0.14 0.025 240);
   --health-bg-end: oklch(0.16 0.032 260);
   --health-glow: oklch(0.48 0.12 175 / 20%);
+  --play-lime: oklch(0.78 0.18 132);
+  --play-teal: oklch(0.70 0.13 178);
+  --play-sky: oklch(0.73 0.12 235);
+  --play-amber: oklch(0.82 0.15 78);
+  --play-red: oklch(0.68 0.19 28);
+  --play-pressed-shadow: 0 9px 0 oklch(0.06 0.02 240 / 55%);
+  --play-card-shadow: 0 18px 44px oklch(0.03 0.02 240 / 34%), inset 0 1px 0 oklch(1 0 0 / 8%);
 }
 
 @layer base {
@@ -393,6 +407,86 @@ button {
   -webkit-text-fill-color: transparent;
 }
 
+.play-shell-bg {
+  background:
+    radial-gradient(circle at 12% 8%, oklch(0.82 0.19 132 / 28%), transparent 28rem),
+    radial-gradient(circle at 88% 14%, oklch(0.68 0.14 235 / 18%), transparent 24rem),
+    linear-gradient(160deg, var(--health-bg-start), var(--background) 42%, var(--health-bg-end) 92%, var(--background));
+}
+
+.play-island-card {
+  border: 1px solid oklch(1 0 0 / 72%);
+  background:
+    linear-gradient(180deg, oklch(1 0 0 / 84%), oklch(1 0 0 / 68%)),
+    radial-gradient(circle at 18% 0%, oklch(0.82 0.19 132 / 14%), transparent 18rem);
+  box-shadow: var(--play-card-shadow);
+  backdrop-filter: blur(20px) saturate(1.35);
+}
+
+.dark .play-island-card {
+  border-color: oklch(1 0 0 / 10%);
+  background:
+    linear-gradient(180deg, oklch(0.22 0.032 238 / 84%), oklch(0.16 0.028 248 / 72%)),
+    radial-gradient(circle at 18% 0%, oklch(0.70 0.13 178 / 13%), transparent 18rem);
+}
+
+.play-pressable {
+  box-shadow: var(--play-pressed-shadow);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    filter 0.16s ease;
+}
+
+.play-pressable:hover {
+  filter: saturate(1.05) brightness(1.02);
+  transform: translateY(-1px);
+}
+
+.play-pressable:active {
+  transform: translateY(5px);
+  box-shadow: 0 4px 0 oklch(0.34 0.08 178 / 24%);
+}
+
+.play-stat-pill {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border-radius: 999px;
+  border: 1px solid oklch(1 0 0 / 70%);
+  background: oklch(1 0 0 / 74%);
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: var(--foreground);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 70%), 0 7px 18px oklch(0.42 0.08 178 / 10%);
+  backdrop-filter: blur(16px);
+}
+
+.dark .play-stat-pill {
+  border-color: oklch(1 0 0 / 10%);
+  background: oklch(0.18 0.028 238 / 76%);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 8%), 0 7px 18px oklch(0 0 0 / 24%);
+}
+
+.play-node-track {
+  background:
+    linear-gradient(180deg, oklch(0.82 0.19 132 / 22%), oklch(0.68 0.14 235 / 18%)),
+    repeating-linear-gradient(180deg, transparent 0 18px, oklch(1 0 0 / 62%) 18px 27px);
+}
+
+.play-safety-card {
+  border-color: oklch(0.58 0.22 28 / 28%);
+  background: linear-gradient(180deg, oklch(0.97 0.035 28 / 82%), oklch(1 0 0 / 70%));
+  box-shadow: 0 14px 34px oklch(0.58 0.22 28 / 9%);
+}
+
+.dark .play-safety-card {
+  background: linear-gradient(180deg, oklch(0.24 0.06 28 / 82%), oklch(0.16 0.028 248 / 74%));
+}
+
 .dark .text-gradient-health {
   background: linear-gradient(135deg, oklch(0.72 0.13 175), oklch(0.76 0.10 200));
   -webkit-background-clip: text;
@@ -401,6 +495,10 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   .health-gradient-animated,
   .health-card-enter,
   .health-shimmer,
@@ -409,8 +507,15 @@ button {
   }
 
   .metric-hover:hover,
-  .fab-glow:hover {
+  .fab-glow:hover,
+  .play-pressable:hover,
+  .play-pressable:active {
     transform: none;
+  }
+
+  .play-pressable,
+  .play-stat-pill {
+    transition: none;
   }
 
   .progress-ring-animated circle:last-child {

@@ -11,6 +11,8 @@ import {
   ClipboardList,
   BookOpenCheck,
   Dumbbell,
+  Flame,
+  Gem,
   HeartPulse,
   Home,
   Moon,
@@ -19,6 +21,7 @@ import {
   PanelRightOpen,
   Search,
   ShieldCheck,
+  Sparkles,
   Stethoscope,
   Sun,
   Trophy,
@@ -27,6 +30,7 @@ import {
   Waves,
   type LucideIcon,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import type { Dispatch, SetStateAction } from "react";
@@ -48,6 +52,7 @@ import {
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { GameBottomNav } from "@/components/health-quest/game-bottom-nav";
+import { safeGameStats, turtleCoachIdentity } from "@/lib/health-quest/play-system";
 
 type NavChild = {
   label: LocalizedText;
@@ -78,7 +83,7 @@ export const navGroups: NavGroup[] = [
   },
   {
     id: "coach",
-    label: { zh: "教練", en: "Coach" },
+    label: turtleCoachIdentity.mascot,
     icon: Brain,
     children: [
       { label: ui.coach, href: "/coach", page: "coach", icon: Brain },
@@ -162,20 +167,20 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-sidebar-border/60 bg-sidebar/85 backdrop-blur-2xl transition-[width] duration-300 ease-out lg:flex",
+        "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-white/60 bg-sidebar/88 shadow-[8px_0_30px_rgba(15,118,110,0.08)] backdrop-blur-2xl transition-[width] duration-300 ease-out dark:border-white/10 lg:flex",
         collapsed ? "w-[76px]" : "w-[280px]",
       )}
     >
-      <div className="flex min-h-0 flex-1 flex-col px-3 py-4">
+      <div className="play-shell-bg flex min-h-0 flex-1 flex-col px-3 py-4">
         <div className="mb-4 flex items-center gap-2 px-1">
           <Link href="/today" className="flex min-w-0 flex-1 items-center gap-3">
-            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/75 text-primary-foreground shadow-md shadow-primary/25">
-              <HeartPulse aria-hidden="true" />
+            <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-[1.25rem] border border-white/70 bg-gradient-to-br from-lime-300 via-teal-400 to-sky-300 shadow-md shadow-teal-700/20 dark:border-white/10">
+              <Image src="/turtle-avatar-transparent.png" alt="" aria-hidden="true" width={80} height={80} className="size-11 object-contain drop-shadow-sm" priority />
             </span>
             {!collapsed ? (
               <span className="min-w-0">
-                <strong className="block truncate text-base">{text(ui.appName, locale)}</strong>
-                <span className="block truncate text-xs text-muted-foreground">AI Health Guide</span>
+                <strong className="block truncate text-base">{locale === "zh-Hant" ? "小健龜智健任務" : "Turtle Health Quest"}</strong>
+                <span className="block truncate text-xs text-muted-foreground">{text(turtleCoachIdentity.mascot, locale)}</span>
               </span>
             ) : null}
           </Link>
@@ -215,13 +220,13 @@ export function Sidebar({
           <div className="mb-4 flex flex-col gap-3">
             <label className="relative block">
               <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={locale === "zh-Hant" ? "搜尋功能..." : "Search navigation..."}
-                className="h-9 rounded-2xl bg-background/70 pl-9"
-                aria-label={locale === "zh-Hant" ? "搜尋側欄" : "Search sidebar"}
-              />
+                <Input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder={locale === "zh-Hant" ? "搜尋功能..." : "Search navigation..."}
+                  className="h-10 rounded-2xl border-white/60 bg-background/76 pl-9 font-semibold shadow-inner dark:border-white/10"
+                  aria-label={locale === "zh-Hant" ? "搜尋側欄" : "Search sidebar"}
+                />
             </label>
           </div>
         )}
@@ -242,17 +247,20 @@ export function Sidebar({
           </div>
         </nav>
 
-        <div className={cn("mt-4 rounded-2xl border border-primary/15 bg-primary/5 shadow-sm", collapsed ? "grid place-items-center p-2" : "p-3")}>
-          {!collapsed ? (
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between gap-2">
-                <Badge variant="secondary" className="w-fit">
-                  {locale === "zh-Hant" ? "私隱優先" : "Privacy first"}
-                </Badge>
-                <ShieldCheck aria-hidden="true" className="text-primary" />
-              </div>
-              <p className="text-xs leading-5 text-muted-foreground">
-                {locale === "zh-Hant"
+          <div className={cn("mt-4 rounded-[1.35rem] border border-primary/15 bg-primary/5 shadow-sm", collapsed ? "grid place-items-center p-2" : "p-3")}>
+            {!collapsed ? (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <Badge variant="secondary" className="w-fit rounded-full">
+                    {locale === "zh-Hant" ? "私隱優先" : "Privacy first"}
+                  </Badge>
+                  <Badge variant="outline" className="rounded-full">
+                    <Gem aria-hidden="true" className="size-3.5" />
+                    {safeGameStats.gems}
+                  </Badge>
+                </div>
+                <p className="text-xs leading-5 text-muted-foreground">
+                  {locale === "zh-Hant"
                   ? "健康記憶只會在你同意後保存，並可隨時刪除。"
                   : "Health memory is saved only with consent and can be deleted anytime."}
               </p>
@@ -295,9 +303,9 @@ export function TopHeader({
   const { resolvedTheme, setTheme } = useTheme();
   const activeLabel = findActiveLabel(currentPage);
 
-  return (
-    <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-3 border-b border-border/50 bg-background/75 px-4 backdrop-blur-2xl lg:px-6">
-      <div className="flex min-w-0 items-center gap-3">
+    return (
+      <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-3 border-b border-white/60 bg-background/78 px-4 shadow-[0_10px_30px_rgba(15,118,110,0.08)] backdrop-blur-2xl dark:border-white/10 lg:px-6">
+        <div className="flex min-w-0 items-center gap-3">
         <Button
           variant="ghost"
           size="icon"
@@ -308,16 +316,18 @@ export function TopHeader({
           {sidebarCollapsed ? <ChevronsRight aria-hidden="true" /> : <ChevronsLeft aria-hidden="true" />}
         </Button>
 
-        <div className="min-w-0">
-          <p className="truncate text-xs text-muted-foreground">{text(ui.appNameFull, locale)}</p>
-          <h1 className="truncate text-lg font-semibold tracking-normal sm:text-xl">{text(activeLabel, locale)}</h1>
+          <div className="min-w-0">
+            <p className="truncate text-xs font-black text-teal-700 dark:text-teal-200">{text(turtleCoachIdentity.mascot, locale)}</p>
+            <h1 className="truncate text-lg font-black tracking-normal sm:text-xl">{text(activeLabel, locale)}</h1>
+          </div>
         </div>
-      </div>
 
-      <div className="flex items-center gap-2">
-        <Badge variant="secondary" className="hidden md:inline-flex">
-          {locale === "zh-Hant" ? "記憶: 開啟" : "Memory: on"}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-1.5 md:flex">
+            <HeaderStatPill icon={Flame} label={locale === "zh-Hant" ? "連續" : "Streak"} value={`${safeGameStats.streak}`} />
+            <HeaderStatPill icon={Sparkles} label="XP" value={`${safeGameStats.xp}`} />
+            <HeaderStatPill icon={Gem} label={locale === "zh-Hant" ? "寶石" : "Gems"} value={`${safeGameStats.gems}`} />
+          </div>
         <Select value={locale} onValueChange={(value) => setLocale(value as Locale)}>
           <SelectTrigger className="hidden w-36 sm:flex" aria-label={label(ui.language, locale)}>
             <SelectValue />
@@ -345,19 +355,23 @@ export function TopHeader({
           </TooltipTrigger>
           <TooltipContent>{label(ui.darkMode, locale)}</TooltipContent>
         </Tooltip>
-        {showCoachToggle ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="hidden xl:inline-flex"
-                aria-label={coachOpen ? (locale === "zh-Hant" ? "隱藏 AI 教練" : "Hide AI coach") : (locale === "zh-Hant" ? "顯示 AI 教練" : "Show AI coach")}
-                onClick={onCoachToggle}
-              >
-                {coachOpen ? <PanelRightClose aria-hidden="true" /> : <PanelRightOpen aria-hidden="true" />}
-              </Button>
-            </TooltipTrigger>
+          {showCoachToggle ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="hidden min-h-10 rounded-2xl border-teal-500/25 bg-teal-500/10 px-3 font-black text-teal-700 hover:bg-teal-500/15 dark:text-teal-200 xl:inline-flex"
+                  aria-label={coachOpen ? (locale === "zh-Hant" ? "隱藏 AI 教練" : "Hide AI coach") : (locale === "zh-Hant" ? "顯示 AI 教練" : "Show AI coach")}
+                  onClick={onCoachToggle}
+                >
+                  <span className="grid size-6 overflow-hidden rounded-full bg-white/75">
+                    <Image src="/turtle-avatar-transparent.png" alt="" aria-hidden="true" width={40} height={40} className="size-6 object-contain" />
+                  </span>
+                  {coachOpen ? <PanelRightClose aria-hidden="true" /> : <PanelRightOpen aria-hidden="true" />}
+                  <span>{locale === "zh-Hant" ? "小健龜" : "Coach"}</span>
+                </Button>
+              </TooltipTrigger>
             <TooltipContent>
               {coachOpen ? (locale === "zh-Hant" ? "隱藏 AI 教練" : "Hide AI coach") : (locale === "zh-Hant" ? "顯示 AI 教練" : "Show AI coach")}
             </TooltipContent>
@@ -377,42 +391,73 @@ export function MobileBottomNav({ currentPage, locale }: { currentPage: HealthPa
   return <GameBottomNav currentPage={currentPage} locale={locale} />;
 }
 
+function HeaderStatPill({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Flame;
+  label: string;
+  value: string;
+}) {
+  return (
+    <span className="play-stat-pill">
+      <Icon aria-hidden="true" className="size-3.5 text-teal-600 dark:text-teal-200" />
+      <span className="hidden xl:inline">{label}</span>
+      <strong>{value}</strong>
+    </span>
+  );
+}
+
 export function WelcomeStrip({ locale, data }: { locale: Locale; data?: DashboardData | null }) {
   const guestName = locale === "zh-Hant" ? "匿名使用者" : "anonymous user";
   const emptyValue = locale === "zh-Hant" ? "未設定" : "Not set";
+  const score = data?.today.health_score ?? 0;
+  const level = Math.max(1, Math.ceil(score / 20));
 
   return (
-    <section className="welcome-gradient overflow-hidden rounded-3xl border border-border/50 bg-card/72 p-5 shadow-lg shadow-primary/5 backdrop-blur-xl sm:p-6">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <section className="play-island-card welcome-gradient overflow-hidden rounded-[1.8rem] p-5 sm:p-6">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-muted-foreground">
+          <p className="text-sm font-black text-teal-700 dark:text-teal-200">
             {locale === "zh-Hant"
               ? `早晨，${data?.profile.displayName || guestName}`
               : `Good morning, ${data?.profile.displayName || guestName}`}
           </p>
           <h2 className="text-gradient-health mt-2 text-[clamp(2rem,9vw,3.25rem)] font-bold leading-tight tracking-tight">
-            {locale === "zh-Hant" ? "小習慣，強健康。" : "Small habits, strong health."}
+            {locale === "zh-Hant" ? "今日任務中心" : "Today’s quest hub"}
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
             {locale === "zh-Hant"
-              ? "今天用一個小行動，改善你的活動、飲食、睡眠和健康知識。"
-              : "Use one small action today to improve your activity, food, sleep, and health knowledge."}
+              ? "小健龜會用真實紀錄整理任務、學習和安全下一步。分數只作生活方式教育參考。"
+              : "The Turtle Coach turns real records into quests, lessons, and a safer next step. Scores are lifestyle education only."}
           </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <span className="play-stat-pill"><Trophy aria-hidden="true" className="size-4 text-amber-600" /> Level {level}</span>
+            <span className="play-stat-pill"><Sparkles aria-hidden="true" className="size-4 text-sky-600" /> {score} XP</span>
+            <span className="play-stat-pill"><Flame aria-hidden="true" className="size-4 text-orange-600" /> {data?.weekly.workout_days ?? 0}d</span>
+          </div>
         </div>
-        <div className="flex min-w-0 flex-wrap gap-2 overflow-hidden">
-          <Badge variant="secondary">{data?.profile.goal || emptyValue}</Badge>
-          <Badge variant="secondary">{data?.profile.location || emptyValue}</Badge>
-          <Badge variant="secondary">{data?.profile.fitnessLevel || emptyValue}</Badge>
-          <Badge variant="secondary">
-            {data?.profile.preferredLanguage === "en"
-              ? "Prefers English"
-              : locale === "zh-Hant" ? "偏好繁體中文" : "Prefers Traditional Chinese"}
-          </Badge>
-          <Badge variant="secondary">
-            {data?.profile.memoryEnabled
-              ? locale === "zh-Hant" ? "健康記憶已開啟" : "Memory on"
-              : locale === "zh-Hant" ? "健康記憶未儲存" : "No saved memory"}
-          </Badge>
+        <div className="flex min-w-0 flex-col gap-3 rounded-[1.5rem] border border-white/60 bg-white/58 p-4 shadow-inner dark:border-white/10 dark:bg-white/5">
+          <div className="flex items-center gap-3">
+            <span className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-[1.2rem] bg-gradient-to-br from-lime-300 via-teal-400 to-sky-300">
+              <Image src="/turtle-avatar-transparent.png" alt="" aria-hidden="true" width={96} height={96} className="size-16 object-contain" />
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-black">{text(turtleCoachIdentity.mascot, locale)}</p>
+              <p className="text-xs leading-5 text-muted-foreground">{locale === "zh-Hant" ? "下一步：完成一個小任務" : "Next: finish one tiny quest"}</p>
+            </div>
+          </div>
+          <div className="flex min-w-0 flex-wrap gap-2 overflow-hidden">
+            <Badge variant="secondary" className="rounded-full">{data?.profile.goal || emptyValue}</Badge>
+            <Badge variant="secondary" className="rounded-full">{data?.profile.location || emptyValue}</Badge>
+            <Badge variant="secondary" className="rounded-full">{data?.profile.fitnessLevel || emptyValue}</Badge>
+            <Badge variant="secondary" className="rounded-full">
+              {data?.profile.memoryEnabled
+                ? locale === "zh-Hant" ? "記憶需同意" : "Consent memory"
+                : locale === "zh-Hant" ? "未保存記憶" : "No saved memory"}
+            </Badge>
+          </div>
         </div>
       </div>
     </section>
@@ -459,16 +504,16 @@ function SidebarGroup({
 
   return (
     <section className="rounded-2xl">
-      <button
-        type="button"
-        className={cn(
-          "flex min-h-11 w-full items-center gap-3 rounded-2xl px-3 text-left text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-muted/80 hover:text-foreground",
-          active && "bg-primary/8 text-foreground",
-        )}
+        <button
+          type="button"
+          className={cn(
+            "flex min-h-12 w-full items-center gap-3 rounded-[1.15rem] px-3 text-left text-sm font-black text-muted-foreground transition-all duration-200 hover:bg-white/65 hover:text-foreground hover:shadow-sm dark:hover:bg-white/8",
+            active && "bg-white/75 text-foreground shadow-sm ring-1 ring-teal-500/15 dark:bg-white/10",
+          )}
         aria-expanded={open}
         onClick={onToggle}
       >
-        <span className={cn("grid size-8 shrink-0 place-items-center rounded-xl bg-muted/60 text-muted-foreground transition-all duration-200", active && "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm shadow-primary/20")}>
+          <span className={cn("grid size-9 shrink-0 place-items-center rounded-2xl bg-muted/60 text-muted-foreground transition-all duration-200", active && "bg-gradient-to-br from-lime-400 via-teal-500 to-sky-500 text-white shadow-sm shadow-primary/20")}>
           <group.icon aria-hidden="true" />
         </span>
         <span className="min-w-0 flex-1 truncate">{text(group.label, locale)}</span>
@@ -477,7 +522,7 @@ function SidebarGroup({
       </button>
 
       {open ? (
-        <div className="mt-1 grid gap-1 pl-11">
+          <div className="mt-1 grid gap-1 pl-11">
           {group.children.map((child) => {
             const childActive = currentPage === child.page && !child.href.includes("#");
 
@@ -485,10 +530,10 @@ function SidebarGroup({
               <Link
                 key={child.href + child.label.en}
                 href={child.href}
-                className={cn(
-                  "flex min-h-9 items-center gap-2 rounded-xl px-3 text-xs font-medium text-muted-foreground transition-all duration-200 hover:bg-muted/70 hover:text-foreground",
-                  childActive && "bg-gradient-to-r from-primary to-primary/85 text-primary-foreground shadow-sm shadow-primary/15 hover:from-primary hover:to-primary/85 hover:text-primary-foreground",
-                )}
+                  className={cn(
+                    "flex min-h-10 items-center gap-2 rounded-2xl px-3 text-xs font-black text-muted-foreground transition-all duration-200 hover:bg-white/65 hover:text-foreground dark:hover:bg-white/8",
+                    childActive && "play-pressable bg-gradient-to-r from-lime-400 via-teal-500 to-teal-700 text-white hover:text-white",
+                  )}
               >
                 <span className="min-w-0 flex-1 truncate">{text(child.label, locale)}</span>
                 {child.badge ? (

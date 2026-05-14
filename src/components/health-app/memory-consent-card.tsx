@@ -67,10 +67,10 @@ export function MemoryConsentCard({
   }
 
   return (
-    <Card className="bg-card/85 shadow-sm">
+    <Card className="play-island-card rounded-[1.5rem] border-0 shadow-sm">
       <CardHeader>
         <div className="flex items-start gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
+          <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-amber-300 to-teal-500 text-slate-950 shadow-sm">
             <DatabaseZap aria-hidden="true" />
           </span>
           <div>
@@ -89,7 +89,7 @@ export function MemoryConsentCard({
         {status === "editing" ? (
           <Textarea value={value} onChange={(event) => setValue(event.target.value)} aria-label="Memory text" />
         ) : (
-          <p className="rounded-xl bg-muted/30 p-3 text-sm leading-6 text-muted-foreground ring-1 ring-border/40">{value}</p>
+          <p className="rounded-2xl bg-muted/30 p-3 text-sm leading-6 text-muted-foreground ring-1 ring-border/40">{value}</p>
         )}
         {status === "saved" ? (
           <p className="text-sm text-muted-foreground">
@@ -103,15 +103,15 @@ export function MemoryConsentCard({
         ) : null}
       </CardContent>
       <CardFooter className="flex flex-wrap gap-2">
-        <Button type="button" disabled={status === "saved" || saving} onClick={saveMemory}>
+        <Button type="button" className="play-pressable rounded-2xl font-black" disabled={status === "saved" || saving} onClick={saveMemory}>
           <Check data-icon="inline-start" aria-hidden="true" />
           {saving ? (locale === "zh-Hant" ? "儲存中" : "Saving") : locale === "zh-Hant" ? "儲存" : label(ui.save, locale)}
         </Button>
-        <Button type="button" variant="outline" onClick={() => setStatus("declined")}>
+        <Button type="button" variant="outline" className="rounded-2xl" onClick={() => setStatus("declined")}>
           <X data-icon="inline-start" aria-hidden="true" />
           {locale === "zh-Hant" ? "不儲存" : label(ui.dontSave, locale)}
         </Button>
-        <Button type="button" variant="ghost" onClick={() => setStatus("editing")}>
+        <Button type="button" variant="ghost" className="rounded-2xl" onClick={() => setStatus("editing")}>
           <Edit3 data-icon="inline-start" aria-hidden="true" />
           {label(ui.edit, locale)}
         </Button>

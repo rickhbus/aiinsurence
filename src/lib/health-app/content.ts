@@ -128,6 +128,11 @@ export const lessons: Lesson[] = [
 ];
 
 export const suggestedPrompts: LocalizedText[] = [
+  { zh: "講簡單啲", en: "Make this easier" },
+  { zh: "好似新手咁解釋", en: "Explain like I’m new" },
+  { zh: "幫我準備睇醫生", en: "Doctor prep" },
+  { zh: "保險基本概念", en: "Insurance basics" },
+  { zh: "溫柔模式", en: "Gentle mode" },
   { zh: "推薦今日訓練", en: "Recommend a workout for today" },
   { zh: "減脂應該吃甚麼？", en: "What should I eat for fat loss?" },
   { zh: "建立今週健身計劃", en: "Create a gym plan for this week" },

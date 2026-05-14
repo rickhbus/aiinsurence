@@ -10,7 +10,7 @@ export const ui = {
   appNameFull: { zh: "AI Health Guide / 智健導航", en: "AI Health Guide / 智健導航" },
   dashboard: { zh: "儀表板", en: "Dashboard" },
   todayPlan: { zh: "今日計劃", en: "Today Plan" },
-  coach: { zh: "AI 健康教練", en: "AI Health Coach" },
+  coach: { zh: "AI 小健龜", en: "AI Turtle Coach" },
   track: { zh: "記錄", en: "Track" },
   running: { zh: "跑步", en: "Running" },
   walking: { zh: "步行", en: "Walking" },

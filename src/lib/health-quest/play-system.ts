@@ -2,6 +2,16 @@ import type { LocalizedText, QuestLocale } from "./types";
 
 export const healthQuestPlaySystem = {
   name: "Health Quest Play System",
+  identity: {
+    mascot: { zh: "AI 小健龜", en: "AI Turtle Coach" },
+    app: { zh: "小健龜智健任務", en: "Turtle Health Quest" },
+    league: { zh: "翡翠聯賽", en: "Jade League" },
+  },
+  safeDefaults: {
+    streak: 0,
+    xp: 0,
+    gems: 12,
+  },
   colors: {
     primary: {
       jade: "#109c91",
@@ -44,6 +54,9 @@ export const healthQuestPlaySystem = {
     amber: "shadow-[0_12px_26px_rgba(217,154,34,0.22)]",
   },
 } as const;
+
+export const turtleCoachIdentity = healthQuestPlaySystem.identity;
+export const safeGameStats = healthQuestPlaySystem.safeDefaults;
 
 export type PlayTone =
   | "primary"
@@ -123,4 +136,3 @@ export function questText(value: LocalizedText, locale: QuestLocale) {
 
   return value.zh;
 }
-

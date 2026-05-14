@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Health Guide / 智健導航",
+  title: "AI 小健龜智健任務 / AI Turtle Coach Health Quest",
   description:
-    "A bilingual Hong Kong health, fitness, nutrition, AI coaching, healthcare navigation, and insurance education app with consent-based health memory.",
+    "香港 AI 健康任務、照護導航和保險教育 app，使用 AI 小健龜、小步任務和需同意的健康記憶。 / A Hong Kong health quest, care navigation, and insurance education app with AI Turtle Coach and consent-based memory.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any", type: "image/x-icon" },
@@ -47,6 +47,7 @@ export default function RootLayout({
     <html
       lang="zh-Hant-HK"
       className={`${geistSans.variable} ${geistMono.variable}`}
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
       <body>

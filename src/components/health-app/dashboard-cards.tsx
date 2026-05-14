@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import {
@@ -54,6 +54,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { MacroChart, MuscleGroupChart, ProgressChart, ProgressRing } from "./charts";
+import { PlayBadge } from "@/components/health-quest/play/play-badge";
+import { PlayMascotPlaceholder } from "@/components/health-quest/play/play-mascot-placeholder";
+import { turtleCoachIdentity } from "@/lib/health-quest/play-system";
 
 type CardProps = {
   locale: Locale;
@@ -65,20 +68,24 @@ const emptyMetrics: MetricDatum[] = [];
 
 export function HealthScoreCard({ locale, className, data }: CardProps) {
   const score = data?.today.health_score ?? 0;
+  const level = Math.max(1, Math.ceil(score / 20));
   const activityScore = data?.today.activity_score ?? 0;
   const nutritionScore = data?.today.nutrition_score ?? 0;
   const sleepScore = data?.today.sleep_score ?? 0;
   const hydrationScore = data?.today.hydration_score ?? 0;
 
   return (
-    <DashboardCard className={cn("health-card-glow", className)} icon={HeartPulse} title={{ zh: "健康分數", en: "Health Score" }} locale={locale} index={0}>
+    <DashboardCard className={cn("health-card-glow", className)} icon={HeartPulse} title={{ zh: "每日等級", en: "Daily Level" }} locale={locale} index={0}>
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="scale-90 sm:scale-100">
-          <ProgressRing value={score} label="Health score" animated />
+          <ProgressRing value={score} label="Daily level progress" animated />
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary" className="w-fit">
+            <PlayBadge tone="accent">
+              {locale === "zh-Hant" ? `Level ${level}` : `Level ${level}`}
+            </PlayBadge>
+            <Badge variant="secondary" className="w-fit rounded-full">
               {!data || data.empty
                 ? locale === "zh-Hant" ? "尚未有紀錄" : "No records yet"
                 : locale === "zh-Hant" ? "真實紀錄" : "Real records"}
@@ -99,8 +106,8 @@ export function HealthScoreCard({ locale, className, data }: CardProps) {
           <p className="text-sm leading-6 text-muted-foreground">
             {data
               ? locale === "zh-Hant"
-                ? "分數根據今日活動、飲食、睡眠和飲水摘要計算，只作生活方式教育參考。"
-                : "Score is calculated from today’s activity, nutrition, sleep, and hydration summaries for lifestyle education only."
+                ? "等級進度根據今日活動、飲食、睡眠和飲水摘要計算，只作生活方式教育參考。"
+                : "Level progress is calculated from today’s activity, nutrition, sleep, and hydration summaries for lifestyle education only."
               : locale === "zh-Hant"
                 ? "連接真實紀錄後，這裡會顯示生活方式教育分數。"
                 : "Connect real records to show lifestyle education scoring here."}
@@ -156,16 +163,19 @@ export function TodayPlanCard({ locale, className, data }: CardProps) {
     : [];
 
   return (
-    <DashboardCard className={className} icon={Sparkles} title={ui.todayPlan} locale={locale} index={1}>
+    <DashboardCard className={className} icon={Sparkles} title={{ zh: "今日任務列表", en: "Today Quest List" }} locale={locale} index={1}>
       {items.length > 0 ? (
         <div className="flex flex-col gap-3">
-          {items.map((item) => (
-            <div key={item.title.en} className="group/plan flex items-start gap-3 rounded-xl bg-muted/35 p-3 transition-all duration-200 hover:bg-muted/55 hover:shadow-sm">
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 transition-colors group-hover/plan:bg-primary/15">
+          {items.map((item, index) => (
+            <div key={item.title.en} className="group/plan flex items-start gap-3 rounded-2xl border border-white/60 bg-white/55 p-3 shadow-sm transition-all duration-200 hover:bg-white/75 hover:shadow-md dark:border-white/10 dark:bg-white/5">
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-lime-300 via-teal-500 to-sky-400 text-white ring-4 ring-teal-500/10 transition-colors group-hover/plan:bg-primary/15">
                 <item.icon aria-hidden="true" />
               </span>
               <div className="min-w-0">
-                <p className="font-medium">{text(item.title, locale)}</p>
+                <p className="text-xs font-black uppercase tracking-normal text-teal-700 dark:text-teal-200">
+                  {locale === "zh-Hant" ? `任務 ${index + 1}` : `Quest ${index + 1}`}
+                </p>
+                <p className="font-black">{text(item.title, locale)}</p>
                 <p className="mt-1 text-sm leading-5 text-muted-foreground">{text(item.detail, locale)}</p>
               </div>
             </div>
@@ -324,8 +334,17 @@ export function AIRecommendationCard({ locale, className, data }: CardProps) {
   const recommendation = data?.recommendation;
 
   return (
-    <DashboardCard className={cn("health-card-glow", className)} icon={Brain} title={{ zh: "今日 AI 建議", en: "Today’s AI recommendation" }} locale={locale} href="/coach" index={2}>
+    <DashboardCard className={cn("health-card-glow", className)} icon={Brain} title={turtleCoachIdentity.mascot} locale={locale} href="/coach" index={2}>
       <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-3 rounded-2xl border border-teal-500/20 bg-teal-500/10 p-3">
+          <PlayMascotPlaceholder mood="thinking" size="sm" />
+          <div>
+            <PlayBadge tone="primary">{locale === "zh-Hant" ? "教練卡" : "Coach card"}</PlayBadge>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              {locale === "zh-Hant" ? "短、實用、先看安全。" : "Short, practical, safety first."}
+            </p>
+          </div>
+        </div>
         <h3 className="text-xl font-semibold tracking-normal">
           {recommendation
             ? `${recommendation.workout.title}，${recommendation.nutrition.title}`
@@ -338,16 +357,16 @@ export function AIRecommendationCard({ locale, className, data }: CardProps) {
             ? "新增活動、飲食、睡眠或飲水紀錄後，系統會用真實資料生成建議。"
             : "Add activity, food, sleep, or water records to generate recommendations from real data."}
         </p>
-        <div className="rounded-xl bg-muted/35 p-3 ring-1 ring-border/50">
-          <p className="text-sm font-medium">{label(ui.why, locale)}</p>
+        <div className="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-3">
+          <p className="text-sm font-black">{locale === "zh-Hant" ? "Why this / 點解係咁" : "Why this"}</p>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
             {locale === "zh-Hant"
               ? recommendation?.workout.reason ?? "尚未載入真實紀錄，系統不會推斷原因。"
               : recommendation?.workout.reason ?? "No real records are loaded, so the system will not infer a reason."}
           </p>
         </div>
-        <div className="rounded-xl bg-muted/35 p-3 ring-1 ring-border/50">
-          <p className="text-sm font-medium">{label(ui.action, locale)}</p>
+        <div className="rounded-2xl border border-teal-500/20 bg-teal-500/10 p-3">
+          <p className="text-sm font-black">{locale === "zh-Hant" ? "Next tiny step / 下一個小步" : "Next tiny step"}</p>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
             {locale === "zh-Hant"
               ? recommendation?.workout.action ?? "先新增一筆真實紀錄，或使用醫療導航檢查安全警號。"
@@ -360,7 +379,7 @@ export function AIRecommendationCard({ locale, className, data }: CardProps) {
             <p className="mt-1 text-sm leading-6 text-muted-foreground">{recommendation.foodGaps[0].summary}</p>
           </div>
         ) : null}
-        <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm leading-6 text-muted-foreground">
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-sm leading-6 text-muted-foreground">
           <strong className="text-foreground">{locale === "zh-Hant" ? "安全提示: " : "Safety note: "}</strong>
           {locale === "zh-Hant"
             ? recommendation?.safetyNote ?? "如膝痛加劇、胸痛或嚴重氣促，停止運動並尋求醫療協助。"
@@ -428,23 +447,36 @@ export function EmotionEngineCard({ locale, className }: CardProps) {
 
 export function LearnCard({ locale, lesson = lessons[0], className }: CardProps & { lesson?: Lesson }) {
   return (
-    <DashboardCard className={className} icon={BookOpenCheck} title={{ zh: "每日健康知識", en: "Health lesson of the day" }} locale={locale} index={9}>
+    <DashboardCard className={className} icon={BookOpenCheck} title={{ zh: "小課路線預覽", en: "Lesson Path Teaser" }} locale={locale} href="/learn" index={9}>
       <div className="flex flex-col gap-3">
-        <Badge variant="secondary" className="w-fit">
+        <Badge variant="secondary" className="w-fit rounded-full">
           {text(lesson.category, locale)}
         </Badge>
         <h3 className="text-xl font-semibold tracking-normal">{text(lesson.title, locale)}</h3>
+        <div className="flex items-center gap-2 rounded-2xl bg-muted/30 p-3 ring-1 ring-border/40">
+          {[0, 1, 2, 3].map((node) => (
+            <span
+              key={node}
+              className={cn(
+                "grid size-9 place-items-center rounded-full border-2 text-xs font-black",
+                node < 2 ? "border-emerald-200 bg-emerald-600 text-white" : node === 2 ? "border-lime-200 bg-teal-600 text-white ring-4 ring-lime-400/20" : "border-border bg-muted text-muted-foreground",
+              )}
+            >
+              {node + 1}
+            </span>
+          ))}
+        </div>
         <p className="text-sm leading-6 text-muted-foreground">
           {text(lesson.explanation, locale)} {text(lesson.example, locale)}
         </p>
-        <p className="rounded-xl bg-muted/35 p-3 text-sm leading-6 text-muted-foreground ring-1 ring-border/50">
+        <p className="rounded-2xl bg-muted/35 p-3 text-sm leading-6 text-muted-foreground ring-1 ring-border/50">
           <strong className="text-foreground">{label(ui.action, locale)}: </strong>
           {text(lesson.actionStep, locale)}
         </p>
-        <Button asChild variant="outline" className="w-fit">
-          <Link href={`/learn/${lesson.slug}`}>
+        <Button asChild variant="outline" className="play-pressable w-fit rounded-2xl font-black">
+          <Link href="/learn">
             <BookOpenCheck data-icon="inline-start" aria-hidden="true" />
-            {locale === "zh-Hant" ? "做小測驗" : "Take quiz"}
+            {locale === "zh-Hant" ? "開始小課" : "Start lesson"}
           </Link>
         </Button>
       </div>
@@ -485,12 +517,17 @@ export function WeeklyProgressCard({ locale, className, data }: CardProps) {
   const chartData = dataOrEmpty(data?.charts.activity);
 
   return (
-    <DashboardCard className={className} icon={TrendingUp} title={{ zh: "每週進度", en: "Weekly Progress" }} locale={locale} href="/progress" index={11}>
+    <DashboardCard className={className} icon={TrendingUp} title={{ zh: "連續與聯賽", en: "Streak & League" }} locale={locale} href="/progress" index={11}>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <MiniStat value={`${data?.weekly.running_distance_km ?? 0} km`} label={locale === "zh-Hant" ? "跑步趨勢" : "Running"} />
         <MiniStat value={`${gymVolume.toLocaleString()} kg`} label={locale === "zh-Hant" ? "健身容量" : "Gym volume"} />
         <MiniStat value={`${data?.weekly.protein_consistency_days ?? 0}/7`} label={locale === "zh-Hant" ? "營養一致" : "Nutrition"} />
         <MiniStat value={`${data?.weekly.water_goal_days ?? 0}d`} label={locale === "zh-Hant" ? "飲水連續" : "Water streak"} />
+      </div>
+      <div className="grid gap-2 rounded-2xl border border-amber-400/25 bg-amber-400/10 p-3 sm:grid-cols-3">
+        <PlayBadge tone="accent"><Trophy aria-hidden="true" className="size-4" /> {locale === "zh-Hant" ? "翡翠聯賽" : "Jade League"}</PlayBadge>
+        <PlayBadge tone="primary"><Flame aria-hidden="true" className="size-4" /> {data?.weekly.workout_days ?? 0}d</PlayBadge>
+        <PlayBadge tone="secondary"><Sparkles aria-hidden="true" className="size-4" /> {locale === "zh-Hant" ? "私隱排名" : "Private rank"}</PlayBadge>
       </div>
       <ProgressChart data={chartData} height={150} />
       <div className="rounded-xl bg-muted/35 p-3 text-sm leading-6 text-muted-foreground ring-1 ring-border/50">
@@ -756,8 +793,12 @@ export function EverydayActionsCard({ locale, className, data }: CardProps) {
             <Button
               key={action.type}
               type="button"
-              variant={isDone ? "secondary" : "outline"}
-              className="h-auto min-h-20 flex-col items-start justify-between gap-3 rounded-xl p-3 text-left"
+                variant={isDone ? "secondary" : "outline"}
+                className={cn(
+                  "h-auto min-h-20 flex-col items-start justify-between gap-3 rounded-2xl p-3 text-left font-black",
+                  !isDone && "play-pressable border-teal-500/20 bg-teal-500/10 hover:bg-teal-500/15",
+                  isDone && "border-emerald-500/20 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100",
+                )}
               disabled={loading || !supabase || unavailable || Boolean(savingType)}
               onClick={() => logAction(action)}
             >
@@ -840,7 +881,7 @@ export function EverydayActionsCard({ locale, className, data }: CardProps) {
 
 export function SafetyDisclaimer({ locale, compact = false }: { locale: Locale; compact?: boolean }) {
   return (
-    <div className={cn("rounded-2xl border bg-muted/25 p-4 text-sm leading-6 text-muted-foreground backdrop-blur-sm", compact && "p-3 text-xs")}>
+    <div className={cn("rounded-[1.35rem] border border-red-500/20 bg-red-500/10 p-4 text-sm leading-6 text-muted-foreground backdrop-blur-sm", compact && "p-3 text-xs")}>
       <strong className="text-foreground">{label(ui.safety, locale)}: </strong>
       {locale === "zh-Hant" ? safetyCopy.zh : safetyCopy.en}
     </div>
@@ -880,10 +921,12 @@ export function DashboardCard({
   className?: string;
   index?: number;
 }) {
+  const reduceMotion = useReducedMotion();
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+      animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
       transition={{
         duration: 0.42,
         delay: Math.min(index * 0.06, 0.48),
@@ -891,12 +934,12 @@ export function DashboardCard({
       }}
       className={className}
     >
-      <Card className="group/card relative h-full overflow-hidden border-border/60 bg-card/78 shadow-sm backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-border hover:shadow-lg">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/[0.03] via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover/card:opacity-100" />
+      <Card className="play-island-card group/card relative h-full overflow-hidden rounded-[1.45rem] border-0 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-lime-400/[0.06] via-transparent to-sky-400/[0.06] opacity-0 transition-opacity duration-300 group-hover/card:opacity-100" />
         <CardHeader className="gap-2">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm shadow-primary/20">
+              <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-lime-400 via-teal-500 to-sky-500 text-white shadow-sm shadow-primary/20">
                 <Icon aria-hidden="true" />
               </span>
               <CardTitle className="text-base font-semibold tracking-tight">{text(title, locale)}</CardTitle>

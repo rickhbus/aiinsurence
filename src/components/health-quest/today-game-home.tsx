@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ShieldAlert } from "lucide-react";
+import { Flame, Gem, Gift, ShieldAlert, Sparkles, Trophy } from "lucide-react";
 import { ConfettiBurst } from "./animation/confetti-burst";
 import { GemFlyout } from "./animation/gem-flyout";
 import { XpFlyout } from "./animation/xp-flyout";
@@ -13,11 +13,13 @@ import { TodayTopBar } from "./today-top-bar";
 import { PlayCard } from "./play/play-card";
 import { PlayCelebrationOverlay } from "./play/play-celebration-overlay";
 import { PlayMascotPlaceholder } from "./play/play-mascot-placeholder";
+import { PlayBadge } from "./play/play-badge";
 import { gameCopy, tGame } from "@/lib/health-quest/game-copy";
-import { questText } from "@/lib/health-quest/play-system";
+import { questText, turtleCoachIdentity } from "@/lib/health-quest/play-system";
 import { getChestReward, rewardLabel, shouldUnlockDailyChest } from "@/lib/health-quest/rewards";
 import type { DailyQuest, DailyQuestState, QuestLocale } from "@/lib/health-quest/types";
 import { getSupabaseRequestHeaders } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 
 export function TodayGameHome({
   state,
@@ -72,7 +74,7 @@ export function TodayGameHome({
   }
 
   async function openChest() {
-    if (!chestUnlocked || chestOpened) {
+    if (!chestUnlocked || chestOpened || safetyMode) {
       return;
     }
 
@@ -134,18 +136,72 @@ export function TodayGameHome({
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 pb-24 lg:pb-0">
       <TodayTopBar state={state} locale={locale} gems={gems} />
 
-      <section className="relative overflow-hidden rounded-[1.8rem] border border-teal-500/15 bg-[radial-gradient(circle_at_top_left,rgba(20,184,166,0.16),transparent_35%),linear-gradient(180deg,rgba(255,255,255,0.82),rgba(255,255,255,0.54))] p-4 shadow-[0_18px_45px_rgba(15,118,110,0.12)] backdrop-blur-xl dark:bg-[radial-gradient(circle_at_top_left,rgba(20,184,166,0.18),transparent_35%),linear-gradient(180deg,rgba(15,23,42,0.88),rgba(15,23,42,0.66))] sm:p-6">
-        <div className="flex items-start justify-between gap-4">
+      <section
+        className={cn(
+          "play-island-card relative overflow-hidden rounded-[1.8rem] p-4 sm:p-6",
+          safetyMode && "play-safety-card",
+        )}
+      >
+        <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-lime-400 via-teal-500 to-sky-400" aria-hidden="true" />
+        <div className="grid gap-5 lg:grid-cols-[1fr_280px] lg:items-start">
           <div className="min-w-0">
-            <p className="text-sm font-black text-teal-700 dark:text-teal-200">{tGame("dailyReady", locale)}</p>
-            <h1 className="mt-1 text-3xl font-black tracking-normal sm:text-5xl">
-              {locale === "en" ? "Health Quest" : "智健任務"}
+            <div className="flex flex-wrap items-center gap-2">
+              <PlayBadge tone={safetyMode ? "safety" : state.mode === "recovery" ? "recovery" : "primary"}>
+                {safetyMode ? tGame("safetyFirst", locale) : tGame("dailyReady", locale)}
+              </PlayBadge>
+              <PlayBadge tone="secondary">
+                <Trophy aria-hidden="true" className="size-4" />
+                {locale === "en" ? "Jade League" : "翡翠聯賽"}
+              </PlayBadge>
+            </div>
+            <h1 className="mt-3 text-3xl font-black tracking-normal sm:text-5xl">
+              {locale === "en" ? "Turtle Health Quest" : "小健龜智健任務"}
             </h1>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-              {state.mode === "recovery" ? tGame("recoveryOn", locale) : questText(state.coachNote, locale)}
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              {safetyMode
+                ? state.safetyMessage ? questText(state.safetyMessage, locale) : questText(gameCopy.emergencyHongKong, locale)
+                : state.mode === "recovery" ? tGame("recoveryOn", locale) : questText(state.coachNote, locale)}
             </p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+              <HeroStat icon={Flame} label={locale === "en" ? "Streak" : "連續"} value={`${state.streak.currentStreak}`} />
+              <HeroStat icon={Sparkles} label={locale === "en" ? "Today XP" : "今日 XP"} value={`${state.earnedXpToday}`} />
+              <HeroStat icon={Gem} label={locale === "en" ? "Gems" : "寶石"} value={`${gems}`} />
+            </div>
+            {currentQuest ? (
+              <div className="mt-4 rounded-[1.4rem] border border-teal-500/20 bg-teal-500/10 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <PlayBadge tone={safetyMode ? "safety" : currentQuest.status === "recovery" ? "recovery" : "accent"}>
+                    {locale === "en" ? "Current quest" : "目前任務"}
+                  </PlayBadge>
+                  <PlayBadge tone="secondary">+{currentQuest.xp} XP</PlayBadge>
+                </div>
+                <h2 className="mt-3 text-xl font-black tracking-normal">{questText(currentQuest.title, locale)}</h2>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">{questText(currentQuest.description, locale)}</p>
+              </div>
+            ) : null}
           </div>
-          <PlayMascotPlaceholder mood={safetyMode ? "safety_serious" : state.mode === "recovery" ? "recovery" : "happy"} size="md" />
+          <div className="grid gap-3 rounded-[1.6rem] border border-white/60 bg-white/55 p-4 text-center shadow-inner dark:border-white/10 dark:bg-white/5">
+            <PlayMascotPlaceholder mood={safetyMode ? "safety_serious" : state.mode === "recovery" ? "recovery" : "happy"} size="lg" className="mx-auto" />
+            <div>
+              <p className="text-base font-black">{questText(turtleCoachIdentity.mascot, locale)}</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                {safetyMode
+                  ? locale === "en" ? "Safety first. Rewards can wait." : "安全先行，獎勵可以等。"
+                  : locale === "en" ? "Tiny steps count. No shame days." : "小步都算數，無內疚日。"}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="play-pressable inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-amber-400 px-4 text-sm font-black text-slate-950 disabled:opacity-60"
+              disabled={!chestUnlocked || chestOpened || safetyMode}
+              onClick={openChest}
+            >
+              <Gift data-icon="inline-start" aria-hidden="true" />
+              {chestOpened
+                ? locale === "en" ? "Chest opened" : "寶箱已開"
+                : chestUnlocked ? tGame("chestUnlocked", locale) : locale === "en" ? "Chest after 3 quests" : "完成 3 個開寶箱"}
+            </button>
+          </div>
         </div>
 
         {safetyMode ? (
@@ -207,6 +263,24 @@ function findCurrentQuest(state: DailyQuestState) {
   return state.quests.find((quest) => quest.status === "active" || quest.status === "recovery" || quest.status === "blocked_by_safety") ?? null;
 }
 
+function HeroStat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Flame;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="play-stat-pill justify-start rounded-2xl px-3 py-2">
+      <Icon aria-hidden="true" className="size-4 text-teal-600 dark:text-teal-200" />
+      <span className="text-muted-foreground">{label}</span>
+      <strong className="ml-auto text-base text-foreground">{value}</strong>
+    </div>
+  );
+}
+
 function FloatingDesktopAction({
   quest,
   locale,
@@ -226,7 +300,7 @@ function FloatingDesktopAction({
         type="button"
         disabled={!quest || busy}
         onClick={onClick}
-        className="min-h-14 rounded-2xl bg-teal-600 px-5 text-sm font-black text-white shadow-[0_9px_0_rgba(15,118,110,0.22)] transition active:translate-y-1 active:shadow-[0_4px_0_rgba(15,118,110,0.22)] disabled:opacity-50"
+        className="play-pressable min-h-14 rounded-2xl bg-teal-600 px-5 text-sm font-black text-white disabled:opacity-50"
       >
         {quest ? questText(quest.actionLabel, locale) : tGame("nextTinyStep", locale)}
       </button>
