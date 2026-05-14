@@ -1,17 +1,6 @@
-import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { AppProviders } from "@/components/app-providers";
-import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// src/app/layout.tsx
+// Add Viewport to the existing import:
+// import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
   title: "AI Health Guide / 智健導航",
@@ -31,27 +20,9 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
     other: [{ rel: "mask-icon", url: "/mask-icon.svg", color: "#6FDA0B" }],
   },
-  manifest: "/manifest.webmanifest",
+  manifest: "/site.webmanifest",
 };
 
 export const viewport: Viewport = {
   themeColor: "#6FDA0B",
 };
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html
-      lang="zh-Hant-HK"
-      className={`${geistSans.variable} ${geistMono.variable}`}
-      suppressHydrationWarning
-    >
-      <body>
-        <AppProviders>{children}</AppProviders>
-      </body>
-    </html>
-  );
-}

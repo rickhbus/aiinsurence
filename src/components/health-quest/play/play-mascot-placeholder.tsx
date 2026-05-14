@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import Image from "next/image";
 import { ShieldCheck, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,15 +19,16 @@ export function PlayMascotPlaceholder({
   const reduceMotion = useReducedMotion();
   const serious = mood === "safety_serious";
   const recovery = mood === "recovery" || mood === "gentle";
+  const celebrating = mood === "celebrating";
 
   return (
     <motion.div
-      aria-label="小健龍 Jade Health Dragon"
+      aria-label="小健龜 Turtle Health Guide"
       initial={false}
       animate={reduceMotion || serious ? { y: 0 } : { y: [0, -4, 0] }}
       transition={{ repeat: Infinity, duration: mood === "celebrating" ? 1.1 : 2.6 }}
       className={cn(
-        "relative grid place-items-center rounded-[28%_42%_32%_38%] border-2 bg-gradient-to-br shadow-lg",
+        "relative grid place-items-center overflow-hidden rounded-[28%_42%_32%_38%] border-2 bg-gradient-to-br shadow-lg",
         size === "sm" && "size-14",
         size === "md" && "size-20",
         size === "lg" && "size-28",
@@ -38,15 +40,29 @@ export function PlayMascotPlaceholder({
         className,
       )}
     >
-      <span className="absolute -left-1 top-4 h-4 w-3 rounded-full border border-current/30 bg-current/10" aria-hidden="true" />
-      <span className="absolute -right-1 top-4 h-4 w-3 rounded-full border border-current/30 bg-current/10" aria-hidden="true" />
-      <span className="absolute -top-2 left-5 h-4 w-3 rotate-[-20deg] rounded-t-full bg-current/20" aria-hidden="true" />
-      <span className="absolute -top-2 right-5 h-4 w-3 rotate-[20deg] rounded-t-full bg-current/20" aria-hidden="true" />
-      <span className="grid size-10 place-items-center rounded-full bg-white/75 text-current shadow-inner dark:bg-white/10">
+      <span className="absolute inset-1 rounded-[inherit] bg-white/50 shadow-inner dark:bg-white/10" aria-hidden="true" />
+      <Image
+        src="/turtle-avatar-transparent.png"
+        alt=""
+        aria-hidden="true"
+        width={256}
+        height={256}
+        priority={size === "lg"}
+        className={cn(
+          "relative z-10 h-[88%] w-[88%] object-contain drop-shadow-sm",
+          serious && "saturate-75",
+          recovery && "sepia-[0.18]",
+          celebrating && "scale-105",
+        )}
+      />
+      <span
+        className={cn(
+          "absolute right-1.5 top-1.5 z-20 grid rounded-full bg-white/90 text-current shadow-sm ring-1 ring-current/15 dark:bg-slate-950/80",
+          size === "sm" ? "size-5 [&_svg]:size-3" : "size-7 [&_svg]:size-4",
+        )}
+      >
         {serious ? <ShieldCheck aria-hidden="true" /> : <Sparkles aria-hidden="true" />}
       </span>
-      <span className="absolute bottom-3 left-1/2 h-1.5 w-8 -translate-x-1/2 rounded-full bg-current/35" aria-hidden="true" />
     </motion.div>
   );
 }
-

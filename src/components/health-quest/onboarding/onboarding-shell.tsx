@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, HeartPulse } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -86,6 +86,7 @@ export function OnboardingShell({ locale = "zh-Hant" }: { locale?: QuestLocale }
   const activeLocale = draft.preferredLocale === "bilingual" ? "zh-Hant" : draft.preferredLocale;
   const activeStep = steps[step] ?? steps[0];
   const canFinish = draft.consent.analyticsPrivacyNoticeAcknowledged;
+  const advanceToNextStep = () => setStep((current) => Math.min(steps.length - 1, current + 1));
 
   useEffect(() => {
     try {
@@ -159,6 +160,7 @@ export function OnboardingShell({ locale = "zh-Hant" }: { locale?: QuestLocale }
             draft,
             locale: activeLocale,
             setDraft,
+            onStepComplete: advanceToNextStep,
           })}
         </section>
 
@@ -177,7 +179,7 @@ export function OnboardingShell({ locale = "zh-Hant" }: { locale?: QuestLocale }
             <Button
               type="button"
               className="min-h-12 flex-1 rounded-2xl"
-              onClick={() => setStep((current) => Math.min(steps.length - 1, current + 1))}
+              onClick={advanceToNextStep}
             >
               {activeLocale === "en" ? "Next" : "下一步"}
               <ArrowRight data-icon="inline-end" aria-hidden="true" />
@@ -198,37 +200,60 @@ function renderStep({
   draft,
   locale,
   setDraft,
+  onStepComplete,
 }: {
   stepKey: string;
   draft: OnboardingDraft;
   locale: QuestLocale;
-  setDraft: (draft: OnboardingDraft) => void;
+  setDraft: Dispatch<SetStateAction<OnboardingDraft>>;
+  onStepComplete: () => void;
 }) {
+  const updateDraftAndAdvance = (patch: Partial<OnboardingDraft>) => {
+    setDraft((current) => ({ ...current, ...patch }));
+    onStepComplete();
+  };
+
   switch (stepKey) {
     case "goal":
-      return <GoalStep value={draft.primaryGoal} locale={locale} onChange={(primaryGoal) => setDraft({ ...draft, primaryGoal })} />;
+      return <GoalStep value={draft.primaryGoal} locale={locale} onChange={(primaryGoal) => updateDraftAndAdvance({ primaryGoal })} />;
     case "time":
-      return <TimeStep value={draft.dailyTimeBudget} locale={locale} onChange={(dailyTimeBudget) => setDraft({ ...draft, dailyTimeBudget })} />;
+      return <TimeStep value={draft.dailyTimeBudget} locale={locale} onChange={(dailyTimeBudget) => updateDraftAndAdvance({ dailyTimeBudget })} />;
     case "barrier":
-      return <BarrierStep value={draft.hardestBarrier} locale={locale} onChange={(hardestBarrier) => setDraft({ ...draft, hardestBarrier })} />;
+      return <BarrierStep value={draft.hardestBarrier} locale={locale} onChange={(hardestBarrier) => updateDraftAndAdvance({ hardestBarrier })} />;
     case "reminder":
       return (
         <ReminderStep
           value={draft.preferredQuestTime}
           reminderEnabled={draft.reminderEnabled}
           locale={locale}
-          onTimeChange={(preferredQuestTime) => setDraft({ ...draft, preferredQuestTime })}
-          onReminderChange={(reminderEnabled) => setDraft({ ...draft, reminderEnabled, consent: { ...draft.consent, reminders: reminderEnabled } })}
+          onTimeChange={(preferredQuestTime) => {
+            setDraft((current) => ({ ...current, preferredQuestTime }));
+            onStepComplete();
+          }}
+          onReminderChange={(reminderEnabled) =>
+            setDraft((current) => ({ ...current, reminderEnabled, consent: { ...current.consent, reminders: reminderEnabled } }))
+          }
         />
       );
     case "language":
-      return <LanguageStep value={draft.preferredLocale} locale={locale} onChange={(preferredLocale) => setDraft({ ...draft, preferredLocale: preferredLocale as QuestLocale })} />;
+      return <LanguageStep value={draft.preferredLocale} locale={locale} onChange={(preferredLocale) => updateDraftAndAdvance({ preferredLocale: preferredLocale as QuestLocale })} />;
     case "coach":
-      return <CoachStyleStep value={draft.coachStyle} locale={locale} onChange={(coachStyle) => setDraft({ ...draft, coachStyle })} />;
+      return <CoachStyleStep value={draft.coachStyle} locale={locale} onChange={(coachStyle) => updateDraftAndAdvance({ coachStyle })} />;
     case "path":
-      return <StartingPathStep value={draft.startingPath} locale={locale} onChange={(startingPath) => setDraft({ ...draft, startingPath })} />;
+      return <StartingPathStep value={draft.startingPath} locale={locale} onChange={(startingPath) => updateDraftAndAdvance({ startingPath })} />;
     case "consent":
-      return <ConsentStep consent={draft.consent} locale={locale} onChange={(consent) => setDraft({ ...draft, consent })} />;
+      return (
+        <ConsentStep
+          consent={draft.consent}
+          locale={locale}
+          onChange={(consent) => {
+            setDraft((current) => ({ ...current, consent }));
+            if (!draft.consent.analyticsPrivacyNoticeAcknowledged && consent.analyticsPrivacyNoticeAcknowledged) {
+              onStepComplete();
+            }
+          }}
+        />
+      );
     default:
       return <OnboardingSummary locale={locale} goal={draft.primaryGoal} time={draft.dailyTimeBudget} path={draft.startingPath} />;
   }
