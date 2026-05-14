@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { hasLocalOnboardingCompletion } from "@/lib/health-quest/onboarding";
 import { healthQuestCopy, text } from "@/lib/health-quest/copy";
 import { makeQuestEasier } from "@/lib/health-quest/make-easier";
 import { buildMockDailyQuestState } from "@/lib/health-quest/mock-data";
@@ -41,6 +42,11 @@ export function TodayQuestPage({ locale = "zh-Hant" }: { locale?: QuestLocale })
       }
 
       if (response.status === 428 && body?.needsOnboarding) {
+        if (hasLocalOnboardingCompletion(window.localStorage)) {
+          setState(buildMockDailyQuestState());
+          return;
+        }
+
         router.replace("/onboarding");
         return;
       }

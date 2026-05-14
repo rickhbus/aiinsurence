@@ -3,6 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { healthQuestProfileSchema } from "./profile";
 import { questPreferencesSchema } from "./preferences";
 
+export const HEALTH_QUEST_ONBOARDING_LOCAL_STORAGE_KEY = "health-quest:onboarding-completed-local:v1";
+
 export const onboardingConsentSchema = z.object({
   saveToSupabase: z.boolean().default(true),
   reminders: z.boolean().default(false),
@@ -62,7 +64,31 @@ export function shouldShowHealthQuestOnboarding(profile: { onboardingCompletedAt
   return !profile?.onboardingCompletedAt;
 }
 
-export function buildOnboardingLocalStoragePayload(payload: z.infer<typeof healthQuestOnboardingSchema>) {
+type LocalOnboardingPayloadInput = {
+  profile: {
+    primaryGoal: string;
+    dailyTimeBudget: string;
+    hardestBarrier?: string | null;
+    startingPath: string;
+    preferredLocale: string;
+    coachStyle: string;
+  };
+  preferences: {
+    preferredQuestTime?: string;
+    reminderEnabled?: boolean;
+    reminderTime?: string | null;
+    minimumRequiredQuests?: number;
+    maxDailyQuests?: number;
+    preferredDifficulty?: string;
+  };
+  consent: {
+    reminders: boolean;
+    familySharingLater: boolean;
+    analyticsPrivacyNoticeAcknowledged: boolean;
+  };
+};
+
+export function buildOnboardingLocalStoragePayload(payload: LocalOnboardingPayloadInput) {
   return {
     version: 1,
     savedAt: new Date().toISOString(),
@@ -74,4 +100,34 @@ export function buildOnboardingLocalStoragePayload(payload: z.infer<typeof healt
       analyticsPrivacyNoticeAcknowledged: payload.consent.analyticsPrivacyNoticeAcknowledged,
     },
   };
+}
+
+export function hasLocalOnboardingCompletion(
+  storage: Pick<Storage, "getItem"> | null | undefined,
+) {
+  if (!storage) {
+    return false;
+  }
+
+  try {
+    const raw = storage.getItem(HEALTH_QUEST_ONBOARDING_LOCAL_STORAGE_KEY);
+
+    if (!raw) {
+      return false;
+    }
+
+    const parsed = JSON.parse(raw) as {
+      version?: unknown;
+      profile?: unknown;
+      consent?: { analyticsPrivacyNoticeAcknowledged?: unknown };
+    };
+
+    return (
+      parsed.version === 1 &&
+      Boolean(parsed.profile) &&
+      parsed.consent?.analyticsPrivacyNoticeAcknowledged === true
+    );
+  } catch {
+    return false;
+  }
 }

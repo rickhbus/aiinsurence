@@ -6,6 +6,10 @@ import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, HeartPulse } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  HEALTH_QUEST_ONBOARDING_LOCAL_STORAGE_KEY,
+  buildOnboardingLocalStoragePayload,
+} from "@/lib/health-quest/onboarding";
 import type { QuestLocale } from "@/lib/health-quest/types";
 import { getSupabaseRequestHeaders } from "@/lib/supabase/client";
 import { BarrierStep } from "./barrier-step";
@@ -86,7 +90,16 @@ export function OnboardingShell({ locale = "zh-Hant" }: { locale?: QuestLocale }
   const activeLocale = draft.preferredLocale === "bilingual" ? "zh-Hant" : draft.preferredLocale;
   const activeStep = steps[step] ?? steps[0];
   const canFinish = draft.consent.analyticsPrivacyNoticeAcknowledged;
+  const consentStepIndex = steps.findIndex((item) => item.key === "consent");
   const advanceToNextStep = () => setStep((current) => Math.min(steps.length - 1, current + 1));
+  const guardedAdvanceToNextStep = () => {
+    if (activeStep.key === "consent" && !canFinish) {
+      toast.error(activeLocale === "en" ? "Please acknowledge the privacy-safe analytics notice." : "請先確認私隱安全分析提示。");
+      return;
+    }
+
+    advanceToNextStep();
+  };
 
   useEffect(() => {
     try {
@@ -105,10 +118,13 @@ export function OnboardingShell({ locale = "zh-Hant" }: { locale?: QuestLocale }
   function save() {
     if (!canFinish) {
       toast.error(activeLocale === "en" ? "Please acknowledge the privacy-safe analytics notice." : "請先確認私隱安全分析提示。");
+      setStep(consentStepIndex === -1 ? steps.length - 2 : consentStepIndex);
       return;
     }
 
     startTransition(async () => {
+      const payload = toPayload(draft);
+
       try {
         const headers = await getSupabaseRequestHeaders({
           "Content-Type": "application/json",
@@ -117,7 +133,7 @@ export function OnboardingShell({ locale = "zh-Hant" }: { locale?: QuestLocale }
         const response = await fetch("/api/health-quest/onboarding", {
           method: "POST",
           headers,
-          body: JSON.stringify(toPayload(draft)),
+          body: JSON.stringify(payload),
         });
 
         if (!response.ok) {
@@ -125,9 +141,20 @@ export function OnboardingShell({ locale = "zh-Hant" }: { locale?: QuestLocale }
         }
 
         window.localStorage.removeItem(STORAGE_KEY);
+        window.localStorage.removeItem(HEALTH_QUEST_ONBOARDING_LOCAL_STORAGE_KEY);
         toast.success(activeLocale === "en" ? "Your Health Quest path is ready." : "你嘅健康任務路線準備好啦。");
         router.replace("/today");
       } catch {
+        try {
+          window.localStorage.setItem(
+            HEALTH_QUEST_ONBOARDING_LOCAL_STORAGE_KEY,
+            JSON.stringify(buildOnboardingLocalStoragePayload(payload)),
+          );
+          window.localStorage.removeItem(STORAGE_KEY);
+        } catch {
+          // Local fallback is best effort only.
+        }
+
         toast.message(activeLocale === "en" ? "Saved locally for now." : "暫時保存喺本機。");
         router.replace("/today");
       }
@@ -179,13 +206,13 @@ export function OnboardingShell({ locale = "zh-Hant" }: { locale?: QuestLocale }
             <Button
               type="button"
               className="min-h-12 flex-1 rounded-2xl"
-              onClick={advanceToNextStep}
+              onClick={guardedAdvanceToNextStep}
             >
               {activeLocale === "en" ? "Next" : "下一步"}
               <ArrowRight data-icon="inline-end" aria-hidden="true" />
             </Button>
           ) : (
-            <Button type="button" className="min-h-12 flex-1 rounded-2xl" disabled={isPending || !canFinish} onClick={save}>
+            <Button type="button" className="min-h-12 flex-1 rounded-2xl" disabled={isPending} onClick={save}>
               {isPending ? (activeLocale === "en" ? "Saving" : "保存中") : (activeLocale === "en" ? "Start today" : "開始今日")}
             </Button>
           )}
