@@ -6,6 +6,8 @@ import { ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { text } from "@/lib/health-quest/copy";
+import { insuranceBoundary } from "@/lib/health-quest/insurance-mission";
 import type { QuestLocale } from "@/lib/health-quest/types";
 import { getSupabaseRequestHeaders } from "@/lib/supabase/client";
 import { InsuranceBoundaryBanner } from "./insurance-boundary-banner";
@@ -39,9 +41,9 @@ export function InsuranceMissionPage({ locale = "zh-Hant" }: { locale?: QuestLoc
           <ShieldCheck data-icon="inline-start" aria-hidden="true" />
           Insurance
         </Badge>
-        <h1 className="text-3xl font-bold tracking-normal">{locale === "en" ? "Insurance education mission" : "保險教育任務"}</h1>
+        <h1 className="text-3xl font-bold tracking-normal">{locale === "en" ? "Insurance Question Organizer" : "保險問題整理器"}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          {locale === "en" ? "Organize your insurance questions. This is not insurance advice." : "整理你嘅保險問題。呢個唔係保險建議。"}
+          {text(insuranceBoundary, locale)}
         </p>
       </section>
       <InsuranceBoundaryBanner locale={locale} />
@@ -50,7 +52,7 @@ export function InsuranceMissionPage({ locale = "zh-Hant" }: { locale?: QuestLoc
         <Input value={preparingFor} onChange={(event) => setPreparingFor(event.target.value)} placeholder={locale === "en" ? "Event or question" : "準備處理的事件或問題"} />
         <Input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={locale === "en" ? "Question for insurer, broker, employer, or licensed adviser" : "想問保險公司、經紀、僱主或持牌顧問的問題"} />
       </div>
-      <InsuranceDocumentChecklist />
+      <InsuranceDocumentChecklist locale={locale} />
       <InsuranceEducationCard locale={locale} />
       <Button type="button" className="min-h-12 rounded-2xl" onClick={save}>{locale === "en" ? "Save checklist" : "保存清單"}</Button>
     </div>

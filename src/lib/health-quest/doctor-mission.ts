@@ -9,6 +9,7 @@ export const doctorMissionSteps = [
   "top_questions",
   "export_summary",
 ] as const;
+// TODO: Add main_goal_for_visit after the doctor_prep_answers step_key constraint supports it safely.
 
 export const doctorMissionSchema = z.object({
   missionId: z.string().uuid().optional(),
@@ -20,8 +21,8 @@ export const doctorMissionSchema = z.object({
 });
 
 export const doctorMissionDisclaimer: LocalizedText = {
-  zh: "呢個係面診準備摘要，唔係診斷、治療建議或用藥建議。如有緊急或嚴重症狀，請立即致電 999 或前往急症室。",
-  en: "This is a visit preparation summary, not a diagnosis, treatment advice, or medication advice. For urgent or severe symptoms, call 999 or go to Accident & Emergency now.",
+  zh: "呢度幫你準備同醫護溝通，唔係診斷。如果情況嚴重或緊急，請即時求助：致電 999 或前往急症室。",
+  en: "This helps you prepare for a conversation with a clinician. It is not a diagnosis. If symptoms are severe or urgent, seek emergency help: call 999 or go to Accident & Emergency now.",
 };
 
 export function buildDoctorVisitSummary(answers: Record<string, string>) {

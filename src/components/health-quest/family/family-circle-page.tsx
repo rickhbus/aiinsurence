@@ -57,9 +57,9 @@ export function FamilyCirclePage({ locale = "zh-Hant" }: { locale?: QuestLocale 
           <Users data-icon="inline-start" aria-hidden="true" />
           Family
         </Badge>
-        <h1 className="text-3xl font-bold tracking-normal">{locale === "en" ? "Family Quest Circle" : "家庭任務圈"}</h1>
+        <h1 className="text-3xl font-bold tracking-normal">{locale === "en" ? "Family Support Circle" : "家庭支援圈"}</h1>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          {locale === "en" ? "Consent-first challenges for progress only." : "同意優先，只分享進度的家庭挑戰。"}
+          {locale === "en" ? "Keep loved ones encouraged without exposing private health details." : "鼓勵屋企人保持節奏，但唔公開私人健康細節。"}
         </p>
       </section>
       <FamilyPrivacyExplainer locale={locale} />

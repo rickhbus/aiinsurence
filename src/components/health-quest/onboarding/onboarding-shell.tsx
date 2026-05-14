@@ -55,15 +55,15 @@ const defaultDraft: OnboardingDraft = {
 };
 
 const steps = [
-  { title: { zh: "你最想改善咩？", en: "What do you want to improve?" }, key: "goal" },
-  { title: { zh: "每日可以用幾耐？", en: "How much time each day?" }, key: "time" },
-  { title: { zh: "最大阻力係咩？", en: "What gets in the way?" }, key: "barrier" },
-  { title: { zh: "幾時做任務最舒服？", en: "When should quests fit?" }, key: "reminder" },
-  { title: { zh: "你想用咩語言？", en: "Choose your language" }, key: "language" },
-  { title: { zh: "教練語氣", en: "Coach style" }, key: "coach" },
-  { title: { zh: "起始路線", en: "Starting path" }, key: "path" },
-  { title: { zh: "保存同私隱", en: "Consent and privacy" }, key: "consent" },
-  { title: { zh: "準備開始", en: "Ready to start" }, key: "summary" },
+  { title: { zh: "你想先令邊件事容易啲？", en: "What would you like to make easier first?" }, key: "goal" },
+  { title: { zh: "平日你覺得幾多時間最實際？", en: "On a normal day, how much time feels realistic?" }, key: "time" },
+  { title: { zh: "通常有咩令你做唔到？", en: "What usually gets in the way?" }, key: "barrier" },
+  { title: { zh: "小任務幾時放入你一日最順？", en: "When should tiny quests fit into your day?" }, key: "reminder" },
+  { title: { zh: "你想用咩語言？", en: "Which language should we use?" }, key: "language" },
+  { title: { zh: "你想要邊種教練語氣？", en: "What kind of coach feels helpful?" }, key: "coach" },
+  { title: { zh: "今日由邊條路線開始？", en: "Where should we start today?" }, key: "path" },
+  { title: { zh: "你願意保存邊啲資料？", en: "What are you comfortable saving?" }, key: "consent" },
+  { title: { zh: "你嘅小小路線準備好啦", en: "Your tiny path is ready" }, key: "summary" },
 ];
 
 export function OnboardingShell({ locale = "zh-Hant" }: { locale?: QuestLocale }) {
@@ -111,8 +111,8 @@ export function OnboardingShell({ locale = "zh-Hant" }: { locale?: QuestLocale }
 
   const subtitle = useMemo(() => (
     activeLocale === "en"
-      ? "Choose a few simple actions you can repeat."
-      : "揀幾個你可以持續做到嘅簡單行動。"
+      ? "Health Quest helps people turn health intentions into tiny daily actions — safely, privately, and without pretending to diagnose or replace professional advice."
+      : "Health Quest 幫你將健康目標變成每日做到嘅小行動：安全、私隱優先、不作診斷、不取代專業意見。"
   ), [activeLocale]);
 
   function save() {
@@ -142,7 +142,7 @@ export function OnboardingShell({ locale = "zh-Hant" }: { locale?: QuestLocale }
 
         window.localStorage.removeItem(STORAGE_KEY);
         window.localStorage.removeItem(HEALTH_QUEST_ONBOARDING_LOCAL_STORAGE_KEY);
-        toast.success(activeLocale === "en" ? "Your Health Quest path is ready." : "你嘅健康任務路線準備好啦。");
+        toast.success(activeLocale === "en" ? "Your tiny path is ready." : "你嘅小小路線準備好啦。");
         router.replace("/today");
       } catch {
         try {
@@ -170,7 +170,7 @@ export function OnboardingShell({ locale = "zh-Hant" }: { locale?: QuestLocale }
             Health Quest
           </Badge>
           <h1 className="text-3xl font-bold tracking-normal">
-            {activeLocale === "en" ? "Build your tiny daily health path" : "建立你每日小小健康路線"}
+            {activeLocale === "en" ? "Tiny health quests. Real-life pace. No shame." : "小小健康任務，跟返你生活節奏，無壓力、無羞辱。"}
           </h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">{subtitle}</p>
           <div className="mt-5">

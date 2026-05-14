@@ -10,6 +10,9 @@ import {
 describe("Health Quest onboarding", () => {
   it("validates and saves preference-level answers", () => {
     const parsed = healthQuestOnboardingSchema.parse({
+      hkid: "A123456(7)",
+      policyNumber: "POLICY-PRIVATE",
+      diagnosis: "private",
       profile: {
         primaryGoal: "better_sleep",
         dailyTimeBudget: "two_minutes",
@@ -17,10 +20,14 @@ describe("Health Quest onboarding", () => {
         startingPath: "easy_start",
         preferredLocale: "zh-Hant",
         coachStyle: "gentle",
+        hkid: "A123456(7)",
+        policyNumber: "POLICY-PRIVATE",
+        diagnosis: "private",
       },
       preferences: {
         preferredQuestTime: "morning",
         reminderEnabled: true,
+        rawHealthNotes: "private",
       },
       consent: {
         saveToSupabase: true,
@@ -31,7 +38,9 @@ describe("Health Quest onboarding", () => {
     });
 
     expect(parsed.profile.primaryGoal).toBe("better_sleep");
-    expect(JSON.stringify(parsed)).not.toMatch(/hkid|policy number|diagnosis/i);
+    const payload = JSON.stringify(parsed);
+
+    expect(payload).not.toMatch(/hkid|policy number|policyNumber|diagnosis|rawHealthNotes/i);
   });
 
   it("existing completed profile skips onboarding", () => {

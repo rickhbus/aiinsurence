@@ -21,12 +21,12 @@ export const familyChallengeSchema = z.object({
 export const challengeCopy: Record<FamilyChallengeType, { title: LocalizedText; description: LocalizedText; target: number }> = {
   water_7_day: {
     title: { zh: "7 日飲水挑戰", en: "7-day water challenge" },
-    description: { zh: "家庭總共完成 7 次飲水任務，不分享私人細節。", en: "Complete 7 water quests together without private details." },
+    description: { zh: "家庭總共完成 7 次飲水任務。分享進度，不分享私隱細節。", en: "Complete 7 water quests together. Share progress, not private details." },
     target: 7,
   },
   mood_checkin_week: {
     title: { zh: "心情打卡週", en: "Mood check-in week" },
-    description: { zh: "只分享完成狀態，不分享心情文字。", en: "Share completion status only, not mood text." },
+    description: { zh: "只分享完成進度，不分享心情文字。", en: "Share progress only, not mood text." },
     target: 7,
   },
   family_walk_weekend: {
@@ -36,12 +36,12 @@ export const challengeCopy: Record<FamilyChallengeType, { title: LocalizedText; 
   },
   doctor_prep_checklist: {
     title: { zh: "醫生準備清單", en: "Doctor prep checklist" },
-    description: { zh: "準備問題，不分享症狀原文。", en: "Prepare questions without sharing raw symptom text." },
+    description: { zh: "準備問題，不分享私人健康細節。", en: "Prepare questions without sharing private health details." },
     target: 3,
   },
   three_lessons_together: {
     title: { zh: "一齊完成 3 個小課", en: "Complete 3 lessons together" },
-    description: { zh: "只分享完成進度。", en: "Share progress only." },
+    description: { zh: "分享進度，不分享私隱細節。", en: "Share progress, not private details." },
     target: 3,
   },
 };

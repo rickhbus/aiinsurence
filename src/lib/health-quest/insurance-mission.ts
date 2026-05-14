@@ -10,8 +10,8 @@ export const insuranceMissionSchema = z.object({
 });
 
 export const insuranceBoundary: LocalizedText = {
-  zh: "整理你嘅保險問題。呢個唔係保險建議。我哋不會決定資格、定價、保障、索償結果或醫療服務取用。",
-  en: "Organize your insurance questions. This is not insurance advice. We do not decide eligibility, pricing, coverage, claim outcomes, or care access.",
+  zh: "整理想問保險公司、經紀、僱主或持牌顧問嘅問題。整理問題，不作保險建議。本功能不決定保障、定價、索償、資格或醫療服務取用。",
+  en: "Prepare clear questions for your insurer, broker, employer, or licensed adviser. Organize questions, not insurance advice. This does not decide coverage, pricing, claims, eligibility, or care access.",
 };
 
 const forbiddenGuaranteePattern = /(you are covered|will be approved|claim (should|will) pass|premium|insurer must pay|decides? (your )?eligibility|一定受保|一定批核|索償會成功|保費改善|必須賠|決定資格)/iu;

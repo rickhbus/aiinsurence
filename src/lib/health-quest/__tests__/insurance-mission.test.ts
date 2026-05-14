@@ -6,7 +6,9 @@ import { containsInsuranceGuarantee, insuranceBoundary, sanitizeInsuranceMission
 describe("insurance education mission", () => {
   it("keeps education-only boundary visible", () => {
     expect(insuranceBoundary.en).toContain("not insurance advice");
-    expect(insuranceBoundary.en).toContain("do not decide eligibility");
+    expect(insuranceBoundary.en).toContain("does not decide coverage, pricing, claims, eligibility, or care access");
+    expect(insuranceBoundary.zh).toContain("不作保險建議");
+    expect(insuranceBoundary.zh).toContain("不決定保障、定價、索償、資格或醫療服務取用");
   });
 
   it("removes guarantee and sensitive policy/claim text", () => {

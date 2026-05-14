@@ -146,13 +146,13 @@ describe("Daily Health Quest parity pass contracts", () => {
   it("doctor prep lessons stay non-diagnostic", () => {
     const doctorUnit = lessonTracks.find((track) => track.slug === "doctor-prep");
 
-    expect(JSON.stringify(doctorUnit)).toMatch(/not self-diagnosis|不自行診斷/);
+    expect(JSON.stringify(doctorUnit)).toMatch(/not diagnosis|不作診斷/);
     expect(JSON.stringify(doctorUnit)).not.toMatch(/choose medication|prescribe|diagnose disease/i);
   });
 
   it("family challenges aggregate only safe progress data", () => {
-    expect(JSON.stringify(challengeCopy)).toMatch(/completion status only|完成狀態|完成進度/);
-    expect(JSON.stringify(challengeCopy)).toMatch(/not mood text|without sharing raw symptom text/i);
+    expect(JSON.stringify(challengeCopy)).toMatch(/Share progress|分享進度/);
+    expect(JSON.stringify(challengeCopy)).toMatch(/not mood text|without sharing private health details/i);
     expect(JSON.stringify(challengeCopy)).not.toMatch(/share raw|HKID|phone|claim|policy/i);
   });
 

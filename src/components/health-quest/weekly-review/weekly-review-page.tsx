@@ -53,10 +53,10 @@ export function WeeklyReviewPage({ locale = "zh-Hant" }: { locale?: QuestLocale 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
       <section className="rounded-3xl border border-border/60 bg-card/80 p-5 shadow-sm">
-        <Badge variant="secondary" className="mb-3">Weekly Boss</Badge>
-        <h1 className="text-3xl font-bold tracking-normal">{locale === "en" ? "Weekly Health Review" : "一週健康回顧"}</h1>
+        <Badge variant="secondary" className="mb-3">Weekly Review</Badge>
+        <h1 className="text-3xl font-bold tracking-normal">{locale === "en" ? "This Week, Not Perfect — Just Consistent" : "今週唔求完美，只求持續"}</h1>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          {locale === "en" ? "Consistency, recovery, and tiny next steps. No raw notes or medical scoring." : "一致性、恢復、下一個小步。不顯示原始備註或醫療評分。"}
+          {locale === "en" ? "Review what helped, what got in the way, and what to make easier next week." : "睇返咩有幫助、咩阻住你、下星期邊件事可以再簡化。"}
         </p>
       </section>
       <WeeklyBossCard review={review} locale={locale} />

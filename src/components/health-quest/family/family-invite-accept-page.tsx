@@ -29,9 +29,9 @@ export function FamilyInviteAcceptPage({ token }: { token: string }) {
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
           <ShieldCheck aria-hidden="true" />
         </div>
-        <h1 className="text-2xl font-bold tracking-normal">加入家庭任務圈 / Join Family Quest Circle</h1>
+        <h1 className="text-2xl font-bold tracking-normal">加入家庭支援圈 / Join Family Support Circle</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          只會加入進度分享圈；邀請不包含健康、症狀、醫生、保險或身份資料。 / This invite only joins a progress-sharing circle and does not include health, symptom, doctor, insurance, or identity details.
+          分享進度，不分享私隱細節。邀請不包含健康、症狀、醫生、保險或身份資料。 / Share progress, not private details. This invite does not include health, symptom, doctor, insurance, or identity details.
         </p>
         <Button type="button" className="mt-5 min-h-12 w-full" onClick={acceptInvite} disabled={status === "saving" || status === "accepted"}>
           {status === "accepted" ? <CheckCircle2 data-icon="inline-start" aria-hidden="true" /> : null}

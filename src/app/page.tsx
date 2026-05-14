@@ -1,5 +1,5 @@
-import { HealthOsLanding } from "@/components/health-os/mvp-pages";
+import { QuestHome } from "@/components/health-quest/quest-home";
 
 export default function Home() {
-  return <HealthOsLanding />;
+  return <QuestHome />;
 }

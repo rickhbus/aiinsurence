@@ -19,11 +19,11 @@ import { DoctorMissionStep } from "./doctor-mission-step";
 import { DoctorSummaryPreview } from "./doctor-summary-preview";
 
 const fields = [
-  ["what_changed", { zh: "有咩改變？", en: "What changed?" }],
-  ["when_started", { zh: "幾時開始？", en: "When did it start?" }],
-  ["better_or_worse", { zh: "咩會令佢好啲或差啲？", en: "What makes it better or worse?" }],
-  ["tried", { zh: "你試過咩？", en: "What have you tried?" }],
-  ["top_questions", { zh: "最想問醫生嘅 3 條問題", en: "Top 3 questions for the doctor" }],
+  ["what_changed", { zh: "有咩改變？你最擔心邊一點？", en: "What changed, and what worries you most?" }],
+  ["when_started", { zh: "幾時開始？期間有冇變化？", en: "When did it start, and has it changed over time?" }],
+  ["better_or_worse", { zh: "咩情況會令佢好啲或差啲？", en: "What seems to make it better or worse?" }],
+  ["tried", { zh: "你已經試過啲咩？", en: "What have you already tried?" }],
+  ["top_questions", { zh: "最想問醫護嘅 3 條問題係咩？", en: "What are your top 3 questions for the clinician?" }],
 ] as const;
 
 export function DoctorMissionPage({ locale = "zh-Hant" }: { locale?: QuestLocale }) {

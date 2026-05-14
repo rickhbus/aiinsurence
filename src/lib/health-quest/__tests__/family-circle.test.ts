@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   canShareRawHealthDetails,
   createFamilyInviteToken,
+  familyPermissionSchema,
   getFamilyInviteExpiry,
   hashFamilyInviteToken,
   isPendingInviteAcceptable,
@@ -20,6 +21,11 @@ describe("family circle privacy", () => {
   });
 
   it("does not allow raw details by default", () => {
+    const defaults = familyPermissionSchema.parse({
+      circleId: "00000000-0000-4000-8000-000000000001",
+    });
+
+    expect(defaults.sharingLevel).toBe("streak_only");
     expect(canShareRawHealthDetails("streak_only")).toBe(false);
     expect(canShareRawHealthDetails("doctor_prep_summary")).toBe(true);
   });
@@ -30,6 +36,8 @@ describe("family circle privacy", () => {
       symptomText: "private",
       moodNote: "private",
       diagnosis: "private",
+      rawHealthDetails: "private",
+      claimText: "private",
     });
 
     expect(safe).toEqual({ questsCompleted: 3 });

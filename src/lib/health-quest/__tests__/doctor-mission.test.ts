@@ -18,6 +18,9 @@ describe("doctor prep mission", () => {
     });
 
     expect(summary.disclaimer.en).toContain("not a diagnosis");
+    expect(summary.disclaimer.en).toContain("call 999");
+    expect(summary.disclaimer.zh).toContain("唔係診斷");
+    expect(summary.disclaimer.zh).toContain("999");
     expect(JSON.stringify(summary).toLowerCase()).not.toContain("you have");
     expect(doctorMissionDisclaimer.en).toContain("call 999");
   });

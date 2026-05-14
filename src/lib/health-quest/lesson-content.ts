@@ -53,8 +53,8 @@ const genericBoundary = {
 };
 
 const insuranceBoundary = {
-  zh: "健康任務不會用健康、心情、飲食、症狀、家庭或就診準備資料作保險資格、定價、保障或索償結果。",
-  en: "Health Quest never uses health, mood, food, symptom, family, or doctor-prep data for insurance eligibility, pricing, coverage, or claim outcomes.",
+  zh: "健康任務不會用健康、心情、飲食、症狀、家庭或就診準備資料作保險資格、定價、保障、索償或醫療服務取用決定。",
+  en: "Health Quest never uses health, mood, food, symptom, family, or doctor-prep data for insurance eligibility, pricing, coverage, claims, or care-access decisions.",
 };
 
 export const lessonTracks: LessonTrackContent[] = [
@@ -131,8 +131,8 @@ export const lessonTracks: LessonTrackContent[] = [
     slug: "food-awareness",
     zhTitle: "Food Awareness",
     enTitle: "Food Awareness",
-    zhDescription: "記錄食咗，不做飲食羞辱。",
-    enDescription: "Mark that you ate without food shame.",
+    zhDescription: "留意飲食模式，不計卡路里、不羞辱。",
+    enDescription: "Notice eating patterns with no calorie shame.",
     icon: "apple",
     unlocksQuestType: "meal",
     lessonTitles: [
@@ -148,8 +148,8 @@ export const lessonTracks: LessonTrackContent[] = [
     slug: "movement-starter",
     zhTitle: "Movement Starter",
     enTitle: "Movement Starter",
-    zhDescription: "30 秒郁動都可以係開始。",
-    enDescription: "Thirty seconds of movement can be a start.",
+    zhDescription: "輕量郁動，恢復日都算數。",
+    enDescription: "Move gently. Recovery days count.",
     icon: "dumbbell",
     unlocksQuestType: "movement",
     lessonTitles: [
@@ -163,10 +163,10 @@ export const lessonTracks: LessonTrackContent[] = [
   buildUnit({
     unitNumber: 7,
     slug: "doctor-prep",
-    zhTitle: "Doctor Prep",
+    zhTitle: "就診準備",
     enTitle: "Doctor Prep",
-    zhDescription: "準備問題，不自行診斷。",
-    enDescription: "Prepare questions, not self-diagnosis.",
+    zhDescription: "準備問題，不作診斷。",
+    enDescription: "Prepare questions, not diagnosis.",
     icon: "stethoscope",
     unlocksQuestType: "doctor_prep",
     lessonTitles: [
@@ -180,10 +180,10 @@ export const lessonTracks: LessonTrackContent[] = [
   buildUnit({
     unitNumber: 8,
     slug: "family-care",
-    zhTitle: "Family Care",
-    enTitle: "Family Care",
-    zhDescription: "家庭挑戰只分享安全進度。",
-    enDescription: "Family challenges share safe progress only.",
+    zhTitle: "家庭照顧基礎",
+    enTitle: "Family Care Basics",
+    zhDescription: "分享進度，不分享私隱細節。",
+    enDescription: "Share progress, not private details.",
     icon: "users",
     unlocksQuestType: "health_review",
     lessonTitles: [
@@ -197,17 +197,17 @@ export const lessonTracks: LessonTrackContent[] = [
   buildUnit({
     unitNumber: 9,
     slug: "insurance-education",
-    zhTitle: "Insurance Education",
+    zhTitle: "保險教育",
     enTitle: "Insurance Education",
-    zhDescription: "學習保險問題界線，不作資格或索償保證。",
-    enDescription: "Learn insurance boundaries without eligibility or claim guarantees.",
+    zhDescription: "整理問題，不作保險建議。",
+    enDescription: "Organize questions, not advice.",
     icon: "shield-check",
     unlocksQuestType: "learn",
     lessonTitles: [
       ["保險界線", "Insurance boundaries"],
       ["不作核保分數", "No underwriting score"],
       ["問題清單", "Question checklist"],
-      ["保障不保證", "No coverage guarantee"],
+      ["保障問題清單", "Coverage question checklist"],
       ["保險複習", "Insurance review"],
     ],
   }),
@@ -376,4 +376,3 @@ function buildQuestions(title: LocalizedText, unlocksQuestType: QuestType): Less
 function slugify(value: string) {
   return value.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
-

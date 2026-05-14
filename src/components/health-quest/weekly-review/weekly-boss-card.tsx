@@ -13,7 +13,7 @@ export function WeeklyBossCard({ review, locale }: { review: WeeklyHealthQuestRe
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Trophy aria-hidden="true" />
-          {locale === "en" ? "Weekly Health Review" : "一週健康回顧"}
+          {locale === "en" ? "This Week, Not Perfect — Just Consistent" : "今週唔求完美，只求持續"}
         </CardTitle>
       </CardHeader>
       <CardContent className="grid gap-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
