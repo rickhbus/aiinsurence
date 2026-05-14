@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     const weeklyXp = xpEvents.reduce((total, event) => total + Math.max(0, event.amount), 0);
     const leagueName = getLeagueForXp(weeklyXp);
 
-    await auth.supabase
+    const membership = await auth.supabase
       .from("health_quest_league_memberships")
       .upsert({
         user_id: auth.user.id,
@@ -29,6 +29,10 @@ export async function GET(request: Request) {
         xp: weeklyXp,
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id,week_start" });
+
+    if (membership.error) {
+      throw new Error(membership.error.message);
+    }
 
     const { data, error } = await auth.supabase
       .from("health_quest_league_memberships")
@@ -58,4 +62,3 @@ export async function GET(request: Request) {
     return jsonWithRequestId({ error: "Health Leagues are temporarily unavailable." }, { status: 500 }, requestId);
   }
 }
-

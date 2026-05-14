@@ -67,7 +67,7 @@ export function buildLeagueStandings(members: LeagueMember[]): LeagueStanding[] 
 
 export function anonymizeLeagueName(userId: string, displayName?: string | null) {
   const clean = displayName?.trim();
-  if (clean) {
+  if (clean && /^Health Player [A-Z0-9]{4}$/i.test(clean)) {
     return clean.slice(0, 32);
   }
 
@@ -75,19 +75,24 @@ export function anonymizeLeagueName(userId: string, displayName?: string | null)
   return `Health Player ${suffix}`;
 }
 
+export function anonymizeLeagueMemberId(userId: string) {
+  const suffix = userId.replace(/-/g, "").slice(-8).toLowerCase() || "00000000";
+  return `league-${suffix}`;
+}
+
 export function sanitizeLeagueMember(row: Record<string, unknown>): LeagueMember {
+  const rawUserId = String(row.user_id ?? "");
   const xp = Number(row.xp ?? 0);
   const leagueName = healthLeagueNames.includes(row.league_name as HealthLeagueName)
     ? row.league_name as HealthLeagueName
     : getLeagueForXp(xp);
 
   return {
-    userId: String(row.user_id ?? ""),
-    displayName: anonymizeLeagueName(String(row.user_id ?? ""), typeof row.display_name === "string" ? row.display_name : null),
+    userId: anonymizeLeagueMemberId(rawUserId),
+    displayName: anonymizeLeagueName(rawUserId, typeof row.display_name === "string" ? row.display_name : null),
     leagueName,
     weekStart: String(row.week_start ?? getWeekStart()),
     xp: Math.max(0, Math.round(xp)),
     rank: typeof row.rank === "number" ? row.rank : null,
   };
 }
-

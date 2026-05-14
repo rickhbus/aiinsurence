@@ -11,6 +11,18 @@ const rewardRequestSchema = z.object({
   localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 
+type ClaimedRewardRow = {
+  wallet_gems: number;
+  wallet_lifetime_gems: number;
+  reward_id: string;
+  reward_event_type: string;
+  reward_amount: number;
+  reward_source: string;
+  reward_event_key: string;
+  reward_created_at: string;
+  duplicate: boolean;
+};
+
 export async function GET(request: Request) {
   const requestId = getRequestId(request);
   const auth = await getAuthenticatedSupabase(request);
@@ -43,13 +55,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const wallet = await loadOrCreateWallet(auth.supabase, auth.user.id);
     const reward = parsed.data.action === "open_daily_chest"
       ? buildChestRewardEvent(parsed.data.localDate, auth.user.id)
       : getDailyBonusReward(parsed.data.localDate);
-    const event = await insertRewardEvent({
+    const claim = await claimRewardEvent({
       supabase: auth.supabase,
-      userId: auth.user.id,
       eventType: reward.eventType,
       amount: reward.amount,
       source: reward.source,
@@ -57,13 +67,11 @@ export async function POST(request: Request) {
       metadata: reward.metadata,
     });
 
-    if (event.duplicate) {
-      return jsonWithRequestId({ wallet, reward: event.row, duplicate: true }, undefined, requestId);
-    }
-
-    const updatedWallet = await updateWallet(auth.supabase, auth.user.id, wallet.gems + reward.amount, wallet.lifetimeGems + reward.amount);
-
-    return jsonWithRequestId({ wallet: updatedWallet, reward: event.row, duplicate: false }, undefined, requestId);
+    return jsonWithRequestId({
+      wallet: claim.wallet,
+      reward: claim.reward,
+      duplicate: claim.duplicate,
+    }, undefined, requestId);
   } catch {
     return jsonWithRequestId({ error: "Reward could not be saved." }, { status: 500 }, requestId);
   }
@@ -86,27 +94,8 @@ async function loadOrCreateWallet(supabase: SupabaseClient, userId: string) {
   };
 }
 
-async function updateWallet(supabase: SupabaseClient, userId: string, gems: number, lifetimeGems: number) {
-  const { data, error } = await supabase
-    .from("health_quest_wallets")
-    .update({ gems, lifetime_gems: lifetimeGems, updated_at: new Date().toISOString() })
-    .eq("user_id", userId)
-    .select("gems,lifetime_gems")
-    .single();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return {
-    gems: Number(data.gems ?? 0),
-    lifetimeGems: Number(data.lifetime_gems ?? 0),
-  };
-}
-
-async function insertRewardEvent({
+async function claimRewardEvent({
   supabase,
-  userId,
   eventType,
   amount,
   source,
@@ -114,44 +103,43 @@ async function insertRewardEvent({
   metadata,
 }: {
   supabase: SupabaseClient;
-  userId: string;
   eventType: string;
   amount: number;
   source: string;
   eventKey: string;
   metadata?: Record<string, unknown>;
 }) {
-  const insert = await supabase
-    .from("health_quest_reward_events")
-    .insert({
-      user_id: userId,
-      event_type: eventType,
-      amount,
-      source,
-      event_key: eventKey,
-      metadata: sanitizeRewardMetadata(metadata ?? {}),
-    })
-    .select("id,event_type,amount,source,event_key,created_at")
-    .single();
+  const { data, error } = await supabase.rpc("claim_health_quest_reward", {
+    p_event_type: eventType,
+    p_amount: amount,
+    p_source: source,
+    p_event_key: eventKey,
+    p_metadata: sanitizeRewardMetadata(metadata ?? {}),
+  });
 
-  if (!insert.error) {
-    return { duplicate: false, row: insert.data };
+  if (error) {
+    throw new Error(error.message);
   }
 
-  if (insert.error.code !== "23505") {
-    throw new Error(insert.error.message);
+  const row = Array.isArray(data) ? data[0] as ClaimedRewardRow | undefined : data as ClaimedRewardRow | undefined;
+
+  if (!row) {
+    throw new Error("Reward claim returned no row");
   }
 
-  const existing = await supabase
-    .from("health_quest_reward_events")
-    .select("id,event_type,amount,source,event_key,created_at")
-    .eq("user_id", userId)
-    .eq("event_key", eventKey)
-    .maybeSingle();
-
-  if (existing.error) {
-    throw new Error(existing.error.message);
-  }
-
-  return { duplicate: true, row: existing.data };
+  return {
+    wallet: {
+      gems: Number(row.wallet_gems ?? 0),
+      lifetimeGems: Number(row.wallet_lifetime_gems ?? 0),
+    },
+    reward: {
+      id: row.reward_id,
+      event_type: row.reward_event_type,
+      amount: Number(row.reward_amount ?? 0),
+      source: row.reward_source,
+      event_key: row.reward_event_key,
+      created_at: row.reward_created_at,
+    },
+    duplicate: Boolean(row.duplicate),
+  };
 }

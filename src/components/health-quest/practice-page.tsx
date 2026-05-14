@@ -13,6 +13,8 @@ import { getSupabaseRequestHeaders } from "@/lib/supabase/client";
 type PracticeResponse = {
   items?: ReviewItem[];
   xp?: number;
+  completed?: boolean;
+  completedNow?: boolean;
 };
 
 const practiceLabels: Record<string, { zh: string; en: string }> = {
@@ -57,16 +59,24 @@ export function PracticePage({ locale }: { locale: QuestLocale }) {
     startTransition(async () => {
       try {
         const headers = await getSupabaseRequestHeaders({ "Content-Type": "application/json", Accept: "application/json" });
-        await fetch("/api/health-quest/practice", {
+        const response = await fetch("/api/health-quest/practice", {
           method: "POST",
           headers,
           body: JSON.stringify({ itemId: item.id, itemType: item.itemType }),
         });
-      } catch {
-        // Local state still gives demo feedback.
-      } finally {
+        const body = (await response.json().catch(() => null)) as PracticeResponse | null;
+
+        if (!response.ok || !body?.completed) {
+          throw new Error("Practice was not saved");
+        }
+
         setCompleted((current) => Array.from(new Set([...current, item.id])));
-        toast.success(locale === "en" ? "Practice complete. +5 XP" : "練習完成。+5 XP");
+        toast.success(body.completedNow
+          ? (locale === "en" ? `Practice complete. +${body.xp ?? 5} XP` : `練習完成。+${body.xp ?? 5} XP`)
+          : (locale === "en" ? "Already completed today." : "今日已完成。"));
+      } catch {
+        setCompleted((current) => Array.from(new Set([...current, item.id])));
+        toast.message(locale === "en" ? "Practice preview completed on this device." : "練習預覽已在此裝置完成。");
       }
     });
   }

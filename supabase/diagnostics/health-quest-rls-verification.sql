@@ -33,6 +33,22 @@ select count(*) = 0 as user_a_cannot_read_user_b_doctor_missions
 from public.doctor_prep_missions
 where user_id = :'user_b';
 
+select count(*) = 0 as user_a_cannot_read_user_b_reward_wallet
+from public.health_quest_wallets
+where user_id = :'user_b';
+
+select count(*) = 0 as user_a_cannot_read_user_b_reward_events
+from public.health_quest_reward_events
+where user_id = :'user_b';
+
+select count(*) = 0 as user_a_cannot_read_user_b_review_items
+from public.health_quest_review_items
+where user_id = :'user_b';
+
+select count(*) = 0 as league_rows_are_not_global_readable
+from public.health_quest_league_memberships
+where user_id = :'user_b';
+
 select count(*) = 0 as analytics_events_are_not_client_readable
 from public.health_quest_analytics_events;
 
@@ -48,5 +64,11 @@ where active = true;
 select count(*) >= 1 as quest_templates_public_readable
 from public.quest_templates
 where active = true;
+
+select count(*) = 1 as reward_claim_rpc_available_to_authenticated
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public'
+  and p.proname = 'claim_health_quest_reward';
 
 rollback;

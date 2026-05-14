@@ -34,6 +34,24 @@
 - Opening the review twice does not award duplicate XP.
 - Review copy says it is not a medical score, diagnosis, or treatment advice.
 
+## Rewards QA
+
+- Opening the same daily chest twice returns the existing reward event and does not credit gems twice.
+- Claiming the first-quest bonus twice returns the existing reward event and does not credit gems twice.
+- Reward metadata contains only cosmetic/reward fields and no health, policy, claim, prompt, token, phone, HKID, or payment data.
+
+## Practice QA
+
+- Due practice items are persisted in `health_quest_review_items`, not only local UI state.
+- Completing the same practice item twice returns `completedNow: false` and awards `0` additional XP.
+- Completing a lesson schedules a future review item without storing raw answer text.
+
+## Leagues QA
+
+- League API responses expose anonymous member ids and anonymous names only.
+- League standings show XP, rank, zone, league, and week only.
+- League standings do not expose raw auth user ids, symptoms, mood text, meals, body data, doctor notes, insurance info, policy text, or claim text.
+
 ## Family QA
 
 - Pending invites store token hashes only.
@@ -77,4 +95,4 @@
 ## RLS QA
 
 - Run `supabase/diagnostics/health-quest-rls-verification.sql` in staging with disposable users.
-- Confirm user-owned rows are isolated and public lesson/template rows remain read-only.
+- Confirm user-owned rows are isolated, reward wallets/events are own-row only, practice review items are own-row only, league rows are not globally readable, and public lesson/template rows remain read-only.

@@ -7,6 +7,10 @@
 - User A cannot read User B `user_health_quest_profiles`.
 - User A cannot read User B `user_lesson_progress`.
 - User A cannot read User B `doctor_prep_missions` or `doctor_prep_answers`.
+- User A cannot read User B `health_quest_wallets`.
+- User A cannot read User B `health_quest_reward_events`.
+- User A cannot read User B `health_quest_review_items`.
+- League membership reads are scoped to the user's own week/league, not globally readable to every authenticated user.
 - Family permissions are visible only to the owner/member scope allowed by family-circle policies.
 - `health_quest_analytics_events` is client insert-only and not client-readable.
 - `lesson_tracks` and `lesson_nodes` are public read-only.
@@ -32,6 +36,10 @@ Run only in local/staging with disposable users. The script checks counts and po
 - `user_lesson_progress_own_rows`
 - `doctor_prep_missions_own_rows`
 - `doctor_prep_answers_own_rows`
+- `health_quest_wallets_own_rows`
+- `health_quest_reward_events_own_rows`
+- `health_quest_review_items_own_rows`
+- `health_quest_league_memberships_read_same_week_league`
 - `health_quest_family_*`
 - `health_quest_analytics_insert_own`
 
@@ -40,5 +48,7 @@ Run only in local/staging with disposable users. The script checks counts and po
 1. Create two disposable Supabase Auth users.
 2. Insert one Health Quest row per table for each user.
 3. Query as User A and confirm User B rows return zero rows.
-4. Confirm lesson and quest-template reads work without exposing user data.
-5. Confirm analytics insert succeeds for authenticated users and select returns no rows.
+4. Confirm reward wallet/event and practice review rows are own-row only.
+5. Confirm league rows do not return all authenticated users globally; only the user's same week/league set may be visible.
+6. Confirm lesson and quest-template reads work without exposing user data.
+7. Confirm analytics insert succeeds for authenticated users and select returns no rows.

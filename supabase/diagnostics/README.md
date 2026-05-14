@@ -3,6 +3,7 @@
 Use these read-only diagnostics in staging before production traffic increases:
 
 - `rls-validation.sql` checks RLS status and policy coverage for user-owned tables.
+- `health-quest-rls-verification.sql` checks Health Quest cross-user isolation, reward/practice/league privacy, public lesson/template reads, and the reward-claim RPC presence.
 - `index-validation.sql` checks expected indexes for bounded user-owned access paths.
 - `query-plan-validation.sql` contains index presence checks plus `EXPLAIN ANALYZE` templates for common access paths.
 

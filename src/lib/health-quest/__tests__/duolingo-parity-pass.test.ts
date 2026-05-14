@@ -6,7 +6,7 @@ import { purchaseCosmetic } from "../cosmetics";
 import { deriveEnergyHearts } from "../energy-hearts";
 import { challengeCopy } from "../family-challenges";
 import { gameCopy } from "../game-copy";
-import { buildLeagueStandings } from "../leagues";
+import { buildLeagueStandings, sanitizeLeagueMember } from "../leagues";
 import { lessonTracks } from "../lesson-content";
 import { shouldShowPlusUpsell } from "../plus-copy";
 import { buildPracticeSessionEventKey, getDefaultPracticeItems, scheduleReviewFromLesson } from "../review-scheduler";
@@ -75,13 +75,23 @@ describe("Daily Health Quest parity pass contracts", () => {
   });
 
   it("league standings contain XP-only privacy-safe fields", () => {
+    const sanitized = sanitizeLeagueMember({
+      user_id: "01234567-89ab-cdef-0123-456789abcdef",
+      display_name: "Ricky 91234567",
+      league_name: "Bronze",
+      week_start: "2026-05-11",
+      xp: 80,
+    });
     const standings = buildLeagueStandings([
       { userId: "u1", displayName: "Health Player 0001", leagueName: "Bronze", weekStart: "2026-05-11", xp: 40 },
-      { userId: "u2", displayName: "Health Player 0002", leagueName: "Bronze", weekStart: "2026-05-11", xp: 80 },
+      sanitized,
     ]);
 
     expect(standings[0]).toMatchObject({ xp: 80, rank: 1 });
+    expect(standings[0].userId).toBe("league-89abcdef");
+    expect(standings[0].displayName).toBe("Health Player CDEF");
     expect(JSON.stringify(standings)).not.toMatch(/mood|symptom|food|weight|calorie|doctor|insurance|claim|policy/i);
+    expect(JSON.stringify(standings)).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|91234567/i);
   });
 
   it("lesson tree has lockable units with practice review and boss nodes", () => {

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { trackHealthQuestEvent } from "@/lib/health-quest/analytics";
 import { getLessonBySlug } from "@/lib/health-quest/lessons";
+import { scheduleReviewFromLesson } from "@/lib/health-quest/review-scheduler";
 import { insertXPEvent } from "@/lib/health-quest/storage";
 import type { XPEvent } from "@/lib/health-quest/types";
 import { buildLessonEventKey } from "@/lib/health-quest/xp";
@@ -67,6 +68,7 @@ export async function POST(request: Request) {
     const completedNow = existing.data?.status !== "completed";
 
     if (completedNow) {
+      const completedAt = new Date().toISOString();
       const { error } = await auth.supabase
         .from("user_lesson_progress")
         .upsert({
@@ -74,12 +76,31 @@ export async function POST(request: Request) {
           lesson_id: lessonRow.data.id,
           status: "completed",
           score: 1,
-          completed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          completed_at: completedAt,
+          updated_at: completedAt,
         }, { onConflict: "user_id,lesson_id" });
 
       if (error) {
         throw new Error(error.message);
+      }
+
+      const reviewItem = scheduleReviewFromLesson({
+        userId: auth.user.id,
+        lessonSlug: parsed.data.lessonSlug,
+        completedAt,
+      });
+      const review = await auth.supabase
+        .from("health_quest_review_items")
+        .upsert({
+          user_id: auth.user.id,
+          item_type: reviewItem.itemType,
+          source_id: reviewItem.sourceId,
+          due_at: reviewItem.dueAt,
+          metadata: reviewItem.metadata,
+        }, { onConflict: "user_id,item_type,source_id" });
+
+      if (review.error) {
+        throw new Error(review.error.message);
       }
 
       const event: XPEvent = {
