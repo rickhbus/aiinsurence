@@ -65,6 +65,35 @@ type NavGroup = {
   badge?: LocalizedText;
 };
 
+const navCopy = {
+  collapseSidebar: { zh: "收合側欄", en: "Collapse sidebar" },
+  expandSidebar: { zh: "展開側欄", en: "Expand sidebar" },
+  searchNavigationPlaceholder: { zh: "搜尋功能...", en: "Search navigation..." },
+  searchSidebar: { zh: "搜尋側欄", en: "Search sidebar" },
+  mainNavigation: { zh: "主要導覽", en: "Main navigation" },
+  privacyFirst: { zh: "私隱優先", en: "Privacy first" },
+  privacyFirstDescription: {
+    zh: "健康記憶只會在你同意後保存，並可隨時刪除。",
+    en: "Health memory is saved only with consent and can be deleted anytime.",
+  },
+  memoryOn: { zh: "記憶: 開啟", en: "Memory: on" },
+  hideAiCoach: { zh: "隱藏 AI 教練", en: "Hide AI coach" },
+  showAiCoach: { zh: "顯示 AI 教練", en: "Show AI coach" },
+  anonymousUser: { zh: "匿名使用者", en: "anonymous user" },
+  notSet: { zh: "未設定", en: "Not set" },
+  greeting: { zh: "早晨，{name}", en: "Good morning, {name}" },
+  welcomeTitle: { zh: "小習慣，強健康。", en: "Small habits, strong health." },
+  welcomeBody: {
+    zh: "今天用一個小行動，改善你的活動、飲食、睡眠和健康知識。",
+    en: "Use one small action today to improve your activity, food, sleep, and health knowledge.",
+  },
+  prefersEnglish: { zh: "偏好英文", en: "Prefers English" },
+  prefersTraditionalChinese: { zh: "偏好繁體中文", en: "Prefers Traditional Chinese" },
+  healthMemoryOn: { zh: "健康記憶已開啟", en: "Memory on" },
+  noSavedMemory: { zh: "健康記憶未儲存", en: "No saved memory" },
+  business: { zh: "商務", en: "Business" },
+};
+
 export const navGroups: NavGroup[] = [
   {
     id: "today",
@@ -82,7 +111,7 @@ export const navGroups: NavGroup[] = [
     icon: Brain,
     children: [
       { label: ui.coach, href: "/coach", page: "coach", icon: Brain },
-      { label: { zh: "醫療導航", en: "Care Navigation" }, href: "/healthcare", page: "healthcare", icon: Stethoscope },
+      { label: ui.healthcare, href: "/healthcare", page: "healthcare", icon: Stethoscope },
     ],
   },
   {
@@ -101,7 +130,7 @@ export const navGroups: NavGroup[] = [
     icon: BookOpenCheck,
     children: [
       { label: { zh: "健康小課", en: "Tiny Lessons" }, href: "/learn", page: "learn", icon: BookOpenCheck },
-      { label: { zh: "保險教育", en: "Insurance Education" }, href: "/insurance", page: "insurance", icon: ShieldCheck },
+      { label: ui.insurance, href: "/insurance", page: "insurance", icon: ShieldCheck },
     ],
   },
   {
@@ -120,9 +149,9 @@ export const navGroups: NavGroup[] = [
       { label: { zh: "屋企人", en: "Family" }, href: "/family", page: "family", icon: Users },
       { label: { zh: "醫生準備", en: "Doctor Prep" }, href: "/doctor", page: "doctor", icon: Stethoscope },
       { label: { zh: "收費", en: "Pricing" }, href: "/pricing", page: "pricing", icon: ShieldCheck },
-      { label: { zh: "Business", en: "Business" }, href: "/business", page: "business", icon: Activity },
-      { label: { zh: "GBL", en: "GBL" }, href: "/gbl", page: "gbl", icon: Brain },
-      { label: { zh: "Emotion Engine", en: "Emotion Engine" }, href: "/emotion", page: "emotion", icon: HeartPulse },
+      { label: navCopy.business, href: "/business", page: "business", icon: Activity },
+      { label: ui.gbl, href: "/gbl", page: "gbl", icon: Brain },
+      { label: ui.emotionEngine, href: "/emotion", page: "emotion", icon: HeartPulse },
       { label: { zh: "分析歷史", en: "History" }, href: "/history", page: "history", icon: ClipboardList },
       { label: ui.profile, href: "/profile", page: "profile", icon: UserRound },
       { label: ui.settings, href: "/settings", page: "settings", icon: UserRound },
@@ -185,13 +214,13 @@ export function Sidebar({
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label={locale === "zh-Hant" ? "收合側欄" : "Collapse sidebar"}
+                  aria-label={text(navCopy.collapseSidebar, locale)}
                   onClick={() => onCollapsedChange?.(true)}
                 >
                   <ChevronsLeft aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{locale === "zh-Hant" ? "收合側欄" : "Collapse sidebar"}</TooltipContent>
+              <TooltipContent>{text(navCopy.collapseSidebar, locale)}</TooltipContent>
             </Tooltip>
           ) : null}
         </div>
@@ -203,13 +232,13 @@ export function Sidebar({
                 variant="outline"
                 size="icon-lg"
                 className="mx-auto mb-4"
-                aria-label={locale === "zh-Hant" ? "展開側欄" : "Expand sidebar"}
+                aria-label={text(navCopy.expandSidebar, locale)}
                 onClick={() => onCollapsedChange?.(false)}
               >
                 <ChevronsRight aria-hidden="true" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">{locale === "zh-Hant" ? "展開側欄" : "Expand sidebar"}</TooltipContent>
+            <TooltipContent side="right">{text(navCopy.expandSidebar, locale)}</TooltipContent>
           </Tooltip>
         ) : (
           <div className="mb-4 flex flex-col gap-3">
@@ -218,15 +247,15 @@ export function Sidebar({
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder={locale === "zh-Hant" ? "搜尋功能..." : "Search navigation..."}
+                placeholder={text(navCopy.searchNavigationPlaceholder, locale)}
                 className="h-9 rounded-2xl bg-background/70 pl-9"
-                aria-label={locale === "zh-Hant" ? "搜尋側欄" : "Search sidebar"}
+                aria-label={text(navCopy.searchSidebar, locale)}
               />
             </label>
           </div>
         )}
 
-        <nav className="min-h-0 flex-1 overflow-y-auto pr-1" aria-label="Main navigation">
+        <nav className="min-h-0 flex-1 overflow-y-auto pr-1" aria-label={text(navCopy.mainNavigation, locale)}>
           <div className={cn("flex flex-col", collapsed ? "gap-2" : "gap-2")}>
             {filteredGroups.map((group) => (
               <SidebarGroup
@@ -247,23 +276,21 @@ export function Sidebar({
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between gap-2">
                 <Badge variant="secondary" className="w-fit">
-                  {locale === "zh-Hant" ? "私隱優先" : "Privacy first"}
+                  {text(navCopy.privacyFirst, locale)}
                 </Badge>
                 <ShieldCheck aria-hidden="true" className="text-primary" />
               </div>
               <p className="text-xs leading-5 text-muted-foreground">
-                {locale === "zh-Hant"
-                  ? "健康記憶只會在你同意後保存，並可隨時刪除。"
-                  : "Health memory is saved only with consent and can be deleted anytime."}
+                {text(navCopy.privacyFirstDescription, locale)}
               </p>
             </div>
           ) : (
             <Tooltip>
               <TooltipTrigger asChild>
-                <ShieldCheck aria-label="Privacy first" className="text-primary" />
+                <ShieldCheck aria-label={text(navCopy.privacyFirst, locale)} className="text-primary" />
               </TooltipTrigger>
               <TooltipContent side="right">
-                {locale === "zh-Hant" ? "私隱優先" : "Privacy first"}
+                {text(navCopy.privacyFirst, locale)}
               </TooltipContent>
             </Tooltip>
           )}
@@ -302,7 +329,7 @@ export function TopHeader({
           variant="ghost"
           size="icon"
           className="hidden lg:inline-flex"
-          aria-label={sidebarCollapsed ? (locale === "zh-Hant" ? "展開側欄" : "Expand sidebar") : (locale === "zh-Hant" ? "收合側欄" : "Collapse sidebar")}
+          aria-label={sidebarCollapsed ? text(navCopy.expandSidebar, locale) : text(navCopy.collapseSidebar, locale)}
           onClick={onSidebarToggle}
         >
           {sidebarCollapsed ? <ChevronsRight aria-hidden="true" /> : <ChevronsLeft aria-hidden="true" />}
@@ -316,7 +343,7 @@ export function TopHeader({
 
       <div className="flex items-center gap-2">
         <Badge variant="secondary" className="hidden md:inline-flex">
-          {locale === "zh-Hant" ? "記憶: 開啟" : "Memory: on"}
+          {text(navCopy.memoryOn, locale)}
         </Badge>
         <Select value={locale} onValueChange={(value) => setLocale(value as Locale)}>
           <SelectTrigger className="hidden w-36 sm:flex" aria-label={label(ui.language, locale)}>
@@ -352,14 +379,14 @@ export function TopHeader({
                 variant="outline"
                 size="icon"
                 className="hidden xl:inline-flex"
-                aria-label={coachOpen ? (locale === "zh-Hant" ? "隱藏 AI 教練" : "Hide AI coach") : (locale === "zh-Hant" ? "顯示 AI 教練" : "Show AI coach")}
+                aria-label={coachOpen ? text(navCopy.hideAiCoach, locale) : text(navCopy.showAiCoach, locale)}
                 onClick={onCoachToggle}
               >
                 {coachOpen ? <PanelRightClose aria-hidden="true" /> : <PanelRightOpen aria-hidden="true" />}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {coachOpen ? (locale === "zh-Hant" ? "隱藏 AI 教練" : "Hide AI coach") : (locale === "zh-Hant" ? "顯示 AI 教練" : "Show AI coach")}
+              {coachOpen ? text(navCopy.hideAiCoach, locale) : text(navCopy.showAiCoach, locale)}
             </TooltipContent>
           </Tooltip>
         ) : null}
@@ -378,25 +405,21 @@ export function MobileBottomNav({ currentPage, locale }: { currentPage: HealthPa
 }
 
 export function WelcomeStrip({ locale, data }: { locale: Locale; data?: DashboardData | null }) {
-  const guestName = locale === "zh-Hant" ? "匿名使用者" : "anonymous user";
-  const emptyValue = locale === "zh-Hant" ? "未設定" : "Not set";
+  const guestName = text(navCopy.anonymousUser, locale);
+  const emptyValue = text(navCopy.notSet, locale);
+  const displayName = data?.profile.displayName || guestName;
+  const greeting = text(navCopy.greeting, locale).replace("{name}", displayName);
 
   return (
     <section className="welcome-gradient overflow-hidden rounded-3xl border border-border/50 bg-card/72 p-5 shadow-lg shadow-primary/5 backdrop-blur-xl sm:p-6">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-muted-foreground">
-            {locale === "zh-Hant"
-              ? `早晨，${data?.profile.displayName || guestName}`
-              : `Good morning, ${data?.profile.displayName || guestName}`}
-          </p>
+          <p className="text-sm font-medium text-muted-foreground">{greeting}</p>
           <h2 className="text-gradient-health mt-2 text-[clamp(2rem,9vw,3.25rem)] font-bold leading-tight tracking-tight">
-            {locale === "zh-Hant" ? "小習慣，強健康。" : "Small habits, strong health."}
+            {text(navCopy.welcomeTitle, locale)}
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
-            {locale === "zh-Hant"
-              ? "今天用一個小行動，改善你的活動、飲食、睡眠和健康知識。"
-              : "Use one small action today to improve your activity, food, sleep, and health knowledge."}
+            {text(navCopy.welcomeBody, locale)}
           </p>
         </div>
         <div className="flex min-w-0 flex-wrap gap-2 overflow-hidden">
@@ -405,13 +428,13 @@ export function WelcomeStrip({ locale, data }: { locale: Locale; data?: Dashboar
           <Badge variant="secondary">{data?.profile.fitnessLevel || emptyValue}</Badge>
           <Badge variant="secondary">
             {data?.profile.preferredLanguage === "en"
-              ? "Prefers English"
-              : locale === "zh-Hant" ? "偏好繁體中文" : "Prefers Traditional Chinese"}
+              ? text(navCopy.prefersEnglish, locale)
+              : text(navCopy.prefersTraditionalChinese, locale)}
           </Badge>
           <Badge variant="secondary">
             {data?.profile.memoryEnabled
-              ? locale === "zh-Hant" ? "健康記憶已開啟" : "Memory on"
-              : locale === "zh-Hant" ? "健康記憶未儲存" : "No saved memory"}
+              ? text(navCopy.healthMemoryOn, locale)
+              : text(navCopy.noSavedMemory, locale)}
           </Badge>
         </div>
       </div>
