@@ -9,13 +9,15 @@ import { EmotionEnginePage, GblPage, HistoryPage } from "./intelligence";
 import { HealthcarePage, LessonPage } from "./knowledge-healthcare";
 import { HealthQuestLearnPage } from "@/components/health-quest/learn-page";
 import { HealthQuestProgressPage } from "@/components/health-quest/progress-page";
+import { LeaguePage } from "@/components/health-quest/leagues/league-page";
+import { PracticePage } from "@/components/health-quest/practice-page";
+import { HealthQuestProfilePage } from "@/components/health-quest/profile/profile-page";
 import { TodayQuestPage } from "@/components/health-quest/today-quest-page";
 import { MobileBottomNav, Sidebar, TopHeader } from "./navigation";
 import {
   AuthLandingPage,
   GoalsPage,
   MemoryPage,
-  ProfilePage,
   SettingsPage,
 } from "./profile-progress";
 import { OnboardingPage } from "./onboarding";
@@ -116,6 +118,10 @@ function PageContent({
       return <TodayQuestPage locale={locale} />;
     case "today-advanced":
       return <AdvancedTodayPage />;
+    case "practice":
+      return <PracticePage locale={locale} />;
+    case "leagues":
+      return <LeaguePage locale={locale} />;
     case "more":
       return <MorePage />;
     case "check-in":
@@ -173,7 +179,7 @@ function PageContent({
     case "goals":
       return <GoalsPage locale={locale} />;
     case "profile":
-      return <ProfilePage locale={locale} />;
+      return <HealthQuestProfilePage locale={locale} />;
     case "memory":
       return <MemoryPage locale={locale} />;
     case "settings":

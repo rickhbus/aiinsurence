@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildDoctorVisitSummary, containsEmergencyRedFlag, doctorMissionDisclaimer } from "../doctor-mission";
+import {
+  buildDoctorVisitPlainText,
+  buildDoctorVisitPrintableHtml,
+  buildDoctorVisitSummary,
+  containsEmergencyRedFlag,
+  doctorMissionDisclaimer,
+} from "../doctor-mission";
 
 describe("doctor prep mission", () => {
   it("exports preparation summary with disclaimer and no diagnosis claim", () => {
@@ -18,5 +24,18 @@ describe("doctor prep mission", () => {
 
   it("detects urgent red flags before normal mission flow", () => {
     expect(containsEmergencyRedFlag("severe breathing difficulty")).toBe(true);
+  });
+
+  it("builds print and copy exports without diagnosis or treatment claims", () => {
+    const answers = {
+      what_changed: "Main concern",
+      top_questions: "What should I ask?",
+    };
+    const html = buildDoctorVisitPrintableHtml(answers);
+    const plainText = buildDoctorVisitPlainText(answers);
+
+    expect(html).toContain("Print / Save as PDF");
+    expect(plainText).toContain("not a diagnosis");
+    expect(`${html}\n${plainText}`).not.toMatch(/diagnosed with|take this medication|treatment plan/iu);
   });
 });

@@ -15,6 +15,7 @@ import { FamilyPrivacyExplainer } from "./family-privacy-explainer";
 
 export function FamilyCirclePage({ locale = "zh-Hant" }: { locale?: QuestLocale }) {
   const [circleId, setCircleId] = useState<string | null>(null);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
 
   async function createCircle() {
     try {
@@ -39,11 +40,13 @@ export function FamilyCirclePage({ locale = "zh-Hant" }: { locale?: QuestLocale 
     }
 
     const headers = await getSupabaseRequestHeaders({ "Content-Type": "application/json", Accept: "application/json" });
-    await fetch("/api/health-quest/family-circle/invite", {
+    const response = await fetch("/api/health-quest/family-circle/invite", {
       method: "POST",
       headers,
       body: JSON.stringify({ circleId, email }),
     }).catch(() => undefined);
+    const body = response?.ok ? await response.json().catch(() => null) : null;
+    setInviteUrl(body?.invite?.inviteUrl ?? null);
     toast.success(locale === "en" ? "Invite saved." : "邀請已保存。");
   }
 
@@ -64,6 +67,12 @@ export function FamilyCirclePage({ locale = "zh-Hant" }: { locale?: QuestLocale 
         <Button type="button" onClick={createCircle}>{locale === "en" ? "Create circle" : "建立家庭圈"}</Button>
         <FamilyInviteDialog locale={locale} onInvite={invite} />
       </div>
+      {inviteUrl ? (
+        <div className="rounded-2xl border border-border/60 bg-card/80 p-4 text-sm leading-6 text-muted-foreground">
+          <p>{locale === "en" ? "Email delivery is not configured yet. Share this invite link manually; it contains no health details." : "電郵發送尚未設定。請手動分享邀請連結；連結不包含健康資料。"}</p>
+          <code className="mt-2 block overflow-x-auto rounded-lg bg-muted p-3 text-xs text-foreground">{inviteUrl}</code>
+        </div>
+      ) : null}
       <div className="grid gap-4 md:grid-cols-2">
         <FamilyMemberCard name="You" detail={locale === "en" ? "streak-only sharing" : "只分享連續紀錄"} />
         <FamilyPermissionCard level="streak_only" locale={locale} />

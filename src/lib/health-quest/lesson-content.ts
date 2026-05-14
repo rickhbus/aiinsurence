@@ -1,22 +1,46 @@
 import type { LocalizedText, QuestType } from "./types";
 
+export type LessonQuestionType =
+  | "multiple_choice"
+  | "true_false"
+  | "tap_cards"
+  | "order_steps"
+  | "reflection_tap"
+  | "scenario_choice";
+
+export type LessonQuestion = {
+  id: string;
+  type: LessonQuestionType;
+  question: LocalizedText;
+  answers: Array<{ id: string; text: LocalizedText }>;
+  correctAnswerId: string;
+  explanation: LocalizedText;
+};
+
 export type LessonQuiz = {
   question: LocalizedText;
   answers: Array<{ id: string; text: LocalizedText }>;
   correctAnswerId: string;
 };
 
+export type LessonNodeKind = "lesson" | "practice" | "review" | "boss";
+export type LessonNodeState = "locked" | "current" | "completed" | "perfect" | "review_due";
+
 export type LessonNodeContent = {
   slug: string;
   title: LocalizedText;
+  kind: LessonNodeKind;
   cards: LocalizedText[];
   quiz: LessonQuiz;
+  questions: LessonQuestion[];
   xp: number;
+  orderIndex: number;
   unlocksQuestType?: QuestType;
 };
 
 export type LessonTrackContent = {
   slug: string;
+  unitNumber: number;
   title: LocalizedText;
   description: LocalizedText;
   icon: string;
@@ -24,48 +48,169 @@ export type LessonTrackContent = {
 };
 
 const genericBoundary = {
-  zh: "如情況嚴重、持續或令你擔心，請尋求醫護協助；緊急情況請致電 999 或前往急症室。",
-  en: "If anything is severe, persistent, or worrying, seek medical help; for emergencies call 999 or go to Accident & Emergency.",
+  zh: "如情況嚴重、持續或令你擔心，請尋求醫護協助；緊急情況請立即致電 999 或前往急症室。",
+  en: "If anything is severe, persistent, or worrying, seek medical help; for emergencies call 999 or go to Accident & Emergency now.",
+};
+
+const insuranceBoundary = {
+  zh: "健康任務不會用健康、心情、飲食、症狀、家庭或就診準備資料作保險資格、定價、保障或索償結果。",
+  en: "Health Quest never uses health, mood, food, symptom, family, or doctor-prep data for insurance eligibility, pricing, coverage, or claim outcomes.",
 };
 
 export const lessonTracks: LessonTrackContent[] = [
-  {
-    slug: "hydration-basics",
-    title: { zh: "補水基礎", en: "Hydration Basics" },
-    description: { zh: "由一杯水開始。", en: "Start with one glass." },
-    icon: "droplets",
-    lessons: [
-      {
-        slug: "start-with-one-glass",
-        title: { zh: "由一杯水開始", en: "Start with one glass" },
-        cards: [
-          { zh: "每個人需要嘅水分都唔同，但細小習慣更容易持續。", en: "Hydration needs vary, but tiny routines are easier to repeat." },
-          { zh: "簡單開始：起身後或食飯時飲一杯水。", en: "A simple start is one glass after waking or with meals." },
-          { zh: "如果有嚴重頭暈、神志不清、暈倒或嚴重脫水症狀，請尋求醫護協助。", en: "If you feel severe dizziness, confusion, fainting, or severe dehydration symptoms, seek medical help." },
-        ],
-        quiz: {
-          question: { zh: "邊個係溫和嘅補水習慣？", en: "Which is a gentle hydration habit?" },
-          answers: [
-            { id: "a", text: { zh: "強迫自己飲極大量水", en: "Force extreme water intake" } },
-            { id: "b", text: { zh: "起身後飲一杯水", en: "Drink one glass after waking" } },
-            { id: "c", text: { zh: "成日忽略口渴", en: "Ignore thirst all day" } },
-          ],
-          correctAnswerId: "b",
-        },
-        xp: 5,
-        unlocksQuestType: "water",
-      },
+  buildUnit({
+    unitNumber: 1,
+    slug: "start-strong",
+    zhTitle: "Start Strong",
+    enTitle: "Start Strong",
+    zhDescription: "由一個 30 秒健康小步開始。",
+    enDescription: "Start with one 30-second health step.",
+    icon: "sparkles",
+    unlocksQuestType: "health_review",
+    lessonTitles: [
+      ["第一個小步", "First tiny step"],
+      ["安全先行", "Safety first"],
+      ["恢復都算數", "Recovery counts"],
+      ["私隱小提醒", "Privacy basics"],
+      ["每日完成感", "Daily completion"],
     ],
-  },
-  track("sleep-reset", "睡眠重置", "Sleep Reset", "一個睡前小步。", "One tiny wind-down step.", "sleep_prep"),
-  track("stress-reset", "壓力重置", "Stress Reset", "一般生活支援，不是診斷。", "General support, not diagnosis.", "mood"),
-  track("mood-awareness", "心情覺察", "Mood Awareness", "用表情符號開始。", "Start with one emoji.", "mood"),
-  track("food-awareness", "飲食覺察", "Food Awareness", "不羞辱、不計分。", "No shame, no moral scoring.", "meal"),
-  track("movement-starter", "郁動入門", "Movement Starter", "恢復都算數。", "Recovery counts too.", "movement"),
-  track("gym-safety", "健身安全", "Gym Safety", "不聲稱運動一定安全。", "No claim that exercise is medically safe.", "recovery"),
-  track("doctor-visit-prep", "就診準備", "Doctor Visit Prep", "準備問題，不作診斷。", "Prepare questions, not diagnosis.", "doctor_prep"),
-  track("insurance-education", "保險教育", "Insurance Education", "整理問題，不作建議。", "Organize questions, not advice.", "learn"),
-  track("family-care-basics", "家庭照顧基礎", "Family Care Basics", "分享進度，不分享私隱。", "Share progress, not private details.", "health_review"),
+  }),
+  buildUnit({
+    unitNumber: 2,
+    slug: "water-energy",
+    zhTitle: "Water & Energy",
+    enTitle: "Water & Energy",
+    zhDescription: "用一杯水和能量提示建立節奏。",
+    enDescription: "Build rhythm with one glass and energy cues.",
+    icon: "droplets",
+    unlocksQuestType: "water",
+    lessonTitles: [
+      ["由一杯水開始", "Start with one glass"],
+      ["留意口渴訊號", "Notice thirst cues"],
+      ["能量心心", "Energy hearts"],
+      ["低能量路線", "Low-energy path"],
+      ["補水複習", "Hydration review"],
+    ],
+  }),
+  buildUnit({
+    unitNumber: 3,
+    slug: "mood-basics",
+    zhTitle: "Mood Basics",
+    enTitle: "Mood Basics",
+    zhDescription: "心情是提示，不是診斷。",
+    enDescription: "Mood is a signal, not a diagnosis.",
+    icon: "smile",
+    unlocksQuestType: "mood",
+    lessonTitles: [
+      ["一撳心情", "One-tap mood"],
+      ["壓力不是分數", "Stress is not a score"],
+      ["溫和反思", "Gentle reflection"],
+      ["危機先處理", "Crisis comes first"],
+      ["心情私隱", "Mood privacy"],
+    ],
+  }),
+  buildUnit({
+    unitNumber: 4,
+    slug: "sleep-reset",
+    zhTitle: "Sleep Reset",
+    enTitle: "Sleep Reset",
+    zhDescription: "用睡前小步幫自己降速。",
+    enDescription: "Use a tiny wind-down step.",
+    icon: "moon",
+    unlocksQuestType: "sleep_prep",
+    lessonTitles: [
+      ["睡前 30 秒", "30-second wind-down"],
+      ["明天再做", "Tomorrow is okay"],
+      ["疲倦不羞恥", "Tired is not shameful"],
+      ["睡眠安全界線", "Sleep safety boundaries"],
+      ["睡眠複習", "Sleep review"],
+    ],
+  }),
+  buildUnit({
+    unitNumber: 5,
+    slug: "food-awareness",
+    zhTitle: "Food Awareness",
+    enTitle: "Food Awareness",
+    zhDescription: "記錄食咗，不做飲食羞辱。",
+    enDescription: "Mark that you ate without food shame.",
+    icon: "apple",
+    unlocksQuestType: "meal",
+    lessonTitles: [
+      ["食咗就算數", "Eating counts"],
+      ["不計道德分", "No moral scoring"],
+      ["私隱餐點", "Private meals"],
+      ["家庭分享界線", "Family sharing boundary"],
+      ["飲食複習", "Food review"],
+    ],
+  }),
+  buildUnit({
+    unitNumber: 6,
+    slug: "movement-starter",
+    zhTitle: "Movement Starter",
+    enTitle: "Movement Starter",
+    zhDescription: "30 秒郁動都可以係開始。",
+    enDescription: "Thirty seconds of movement can be a start.",
+    icon: "dumbbell",
+    unlocksQuestType: "movement",
+    lessonTitles: [
+      ["站起 30 秒", "Stand for 30 seconds"],
+      ["痛楚要停", "Pain means pause"],
+      ["恢復日", "Recovery day"],
+      ["安全活動", "Safe movement"],
+      ["活動複習", "Movement review"],
+    ],
+  }),
+  buildUnit({
+    unitNumber: 7,
+    slug: "doctor-prep",
+    zhTitle: "Doctor Prep",
+    enTitle: "Doctor Prep",
+    zhDescription: "準備問題，不自行診斷。",
+    enDescription: "Prepare questions, not self-diagnosis.",
+    icon: "stethoscope",
+    unlocksQuestType: "doctor_prep",
+    lessonTitles: [
+      ["寫一條問題", "Write one question"],
+      ["帶備資料", "Bring context"],
+      ["紅旗先行", "Red flags first"],
+      ["不作診斷", "Not diagnosis"],
+      ["就診複習", "Doctor prep review"],
+    ],
+  }),
+  buildUnit({
+    unitNumber: 8,
+    slug: "family-care",
+    zhTitle: "Family Care",
+    enTitle: "Family Care",
+    zhDescription: "家庭挑戰只分享安全進度。",
+    enDescription: "Family challenges share safe progress only.",
+    icon: "users",
+    unlocksQuestType: "health_review",
+    lessonTitles: [
+      ["家庭圈", "Family circle"],
+      ["只分享完成", "Share completion only"],
+      ["照顧者摘要", "Caregiver summary"],
+      ["私隱同意", "Consent first"],
+      ["家庭複習", "Family review"],
+    ],
+  }),
+  buildUnit({
+    unitNumber: 9,
+    slug: "insurance-education",
+    zhTitle: "Insurance Education",
+    enTitle: "Insurance Education",
+    zhDescription: "學習保險問題界線，不作資格或索償保證。",
+    enDescription: "Learn insurance boundaries without eligibility or claim guarantees.",
+    icon: "shield-check",
+    unlocksQuestType: "learn",
+    lessonTitles: [
+      ["保險界線", "Insurance boundaries"],
+      ["不作核保分數", "No underwriting score"],
+      ["問題清單", "Question checklist"],
+      ["保障不保證", "No coverage guarantee"],
+      ["保險複習", "Insurance review"],
+    ],
+  }),
 ];
 
 export function findLessonTrack(trackSlug: string) {
@@ -81,40 +226,154 @@ export function findLesson(trackSlug: string, lessonSlug?: string) {
   return track.lessons.find((lesson) => lesson.slug === (lessonSlug ?? track.lessons[0]?.slug)) ?? null;
 }
 
-function track(
-  slug: string,
-  zhTitle: string,
-  enTitle: string,
-  zhDescription: string,
-  enDescription: string,
-  unlocksQuestType: QuestType,
-): LessonTrackContent {
+function buildUnit({
+  unitNumber,
+  slug,
+  zhTitle,
+  enTitle,
+  zhDescription,
+  enDescription,
+  icon,
+  unlocksQuestType,
+  lessonTitles,
+}: {
+  unitNumber: number;
+  slug: string;
+  zhTitle: string;
+  enTitle: string;
+  zhDescription: string;
+  enDescription: string;
+  icon: string;
+  unlocksQuestType: QuestType;
+  lessonTitles: Array<[string, string]>;
+}): LessonTrackContent {
+  const baseLessons = lessonTitles.map(([zh, en], index) => lessonNode({
+    slug: slugify(en),
+    title: { zh, en },
+    unitDescription: { zh: zhDescription, en: enDescription },
+    kind: "lesson",
+    orderIndex: index,
+    unlocksQuestType,
+  }));
+  const practice = lessonNode({
+    slug: "practice",
+    title: { zh: "練習", en: "Practice" },
+    unitDescription: { zh: zhDescription, en: enDescription },
+    kind: "practice",
+    orderIndex: 5,
+    unlocksQuestType,
+  });
+  const review = lessonNode({
+    slug: "review",
+    title: { zh: "複習", en: "Review" },
+    unitDescription: { zh: zhDescription, en: enDescription },
+    kind: "review",
+    orderIndex: 6,
+    unlocksQuestType,
+  });
+  const boss = lessonNode({
+    slug: "boss",
+    title: { zh: "Boss 回顧", en: "Boss review" },
+    unitDescription: { zh: zhDescription, en: enDescription },
+    kind: "boss",
+    orderIndex: 7,
+    unlocksQuestType,
+    xp: 15,
+  });
+
   return {
     slug,
+    unitNumber,
     title: { zh: zhTitle, en: enTitle },
     description: { zh: zhDescription, en: enDescription },
-    icon: "book",
-    lessons: [
-      {
-        slug: "tiny-start",
-        title: { zh: "最細開始", en: "Tiny start" },
-        cards: [
-          { zh: zhDescription, en: enDescription },
-          { zh: "今日只需要一個可以重複的小行動。", en: "Today only needs one repeatable tiny action." },
-          genericBoundary,
-        ],
-        quiz: {
-          question: { zh: "健康任務最重視咩？", en: "What does Health Quest reward most?" },
-          answers: [
-            { id: "a", text: { zh: "完美健康", en: "Perfect health" } },
-            { id: "b", text: { zh: "一致性和安全小步", en: "Consistency and safe tiny steps" } },
-            { id: "c", text: { zh: "忽略休息日", en: "Ignoring recovery days" } },
-          ],
-          correctAnswerId: "b",
-        },
-        xp: 5,
-        unlocksQuestType,
-      },
-    ],
+    icon,
+    lessons: [...baseLessons, practice, review, boss],
   };
 }
+
+function lessonNode({
+  slug,
+  title,
+  unitDescription,
+  kind,
+  orderIndex,
+  unlocksQuestType,
+  xp = kind === "boss" ? 15 : kind === "review" ? 10 : 5,
+}: {
+  slug: string;
+  title: LocalizedText;
+  unitDescription: LocalizedText;
+  kind: LessonNodeKind;
+  orderIndex: number;
+  unlocksQuestType: QuestType;
+  xp?: number;
+}): LessonNodeContent {
+  const questions = buildQuestions(title, unlocksQuestType);
+
+  return {
+    slug,
+    title,
+    kind,
+    cards: [
+      unitDescription,
+      { zh: "今日只需要一個可以重複的小行動。", en: "Today only needs one repeatable tiny action." },
+      unlocksQuestType === "learn" ? insuranceBoundary : genericBoundary,
+    ],
+    quiz: {
+      question: questions[0].question,
+      answers: questions[0].answers,
+      correctAnswerId: questions[0].correctAnswerId,
+    },
+    questions,
+    xp,
+    orderIndex,
+    unlocksQuestType,
+  };
+}
+
+function buildQuestions(title: LocalizedText, unlocksQuestType: QuestType): LessonQuestion[] {
+  const safetyQuestion: LessonQuestion = {
+    id: "safe-choice",
+    type: unlocksQuestType === "doctor_prep" ? "scenario_choice" : "multiple_choice",
+    question: { zh: `${title.zh} 最安全嘅做法係？`, en: `What is the safest way to use ${title.en}?` },
+    answers: [
+      { id: "a", text: { zh: "追求完美，一次做晒", en: "Aim for perfect and do everything at once" } },
+      { id: "b", text: { zh: "揀一個溫和小步，唔舒服就停", en: "Pick one gentle step and pause if unwell" } },
+      { id: "c", text: { zh: "用結果判斷自己健康好壞", en: "Use the result to judge health worth" } },
+    ],
+    correctAnswerId: "b",
+    explanation: { zh: "健康任務獎勵安全、可重複的小步。", en: "Health Quest rewards safe, repeatable tiny steps." },
+  };
+
+  const boundaryQuestion: LessonQuestion = unlocksQuestType === "learn"
+    ? {
+      id: "insurance-boundary",
+      type: "true_false",
+      question: { zh: "健康任務 XP 會改善保險資格或索償結果。", en: "Health Quest XP improves insurance eligibility or claim outcomes." },
+      answers: [
+        { id: "true", text: { zh: "正確", en: "True" } },
+        { id: "false", text: { zh: "不正確", en: "False" } },
+      ],
+      correctAnswerId: "false",
+      explanation: insuranceBoundary,
+    }
+    : {
+      id: "urgent-boundary",
+      type: "scenario_choice",
+      question: { zh: "如果出現緊急或危急情況，應該點做？", en: "What should happen in an urgent or emergency situation?" },
+      answers: [
+        { id: "a", text: { zh: "先完成任務攞 XP", en: "Complete quests for XP first" } },
+        { id: "b", text: { zh: "立即致電 999 或前往急症室", en: "Call 999 or go to Accident & Emergency now" } },
+        { id: "c", text: { zh: "等 AI 確認先行動", en: "Wait for AI confirmation first" } },
+      ],
+      correctAnswerId: "b",
+      explanation: genericBoundary,
+    };
+
+  return [safetyQuestion, boundaryQuestion];
+}
+
+function slugify(value: string) {
+  return value.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+

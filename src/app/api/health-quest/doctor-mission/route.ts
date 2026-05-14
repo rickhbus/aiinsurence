@@ -1,4 +1,5 @@
-import { doctorMissionSchema } from "@/lib/health-quest/doctor-mission";
+import { containsEmergencyRedFlag, doctorMissionSchema } from "@/lib/health-quest/doctor-mission";
+import { urgentSafetyMessage } from "@/lib/health-quest/safety-gates";
 import { getAuthenticatedSupabase, readValidatedJson } from "@/lib/server/persistence-auth";
 import { getRequestId, jsonWithRequestId } from "@/lib/server/request-context";
 
@@ -41,6 +42,19 @@ export async function POST(request: Request) {
   }
 
   try {
+    const combinedAnswers = parsed.data.answers.map((answer) => answer.answerText).join(" ");
+
+    if (containsEmergencyRedFlag(combinedAnswers)) {
+      return jsonWithRequestId(
+        {
+          error: "Safety guidance must come before doctor-prep saving.",
+          safetyMessage: urgentSafetyMessage(),
+        },
+        { status: 409 },
+        requestId,
+      );
+    }
+
     const { data: mission, error } = await auth.supabase
       .from("doctor_prep_missions")
       .upsert({

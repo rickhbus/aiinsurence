@@ -51,6 +51,8 @@ export type HealthPage =
   | "landing"
   | "today"
   | "today-advanced"
+  | "practice"
+  | "leagues"
   | "more"
   | "check-in"
   | "mood"

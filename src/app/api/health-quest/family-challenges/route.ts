@@ -45,6 +45,21 @@ export async function POST(request: Request) {
     return auth.response;
   }
 
+  const owner = await auth.supabase
+    .from("health_quest_family_circles")
+    .select("id")
+    .eq("id", parsed.data.circleId)
+    .eq("owner_user_id", auth.user.id)
+    .maybeSingle();
+
+  if (!owner.data) {
+    return jsonWithRequestId(
+      { error: "Only the circle owner can create challenges." },
+      { status: 403 },
+      requestId,
+    );
+  }
+
   const copy = buildFamilyChallenge(parsed.data.challengeType);
   const { data, error } = await auth.supabase
     .from("health_quest_family_challenges")

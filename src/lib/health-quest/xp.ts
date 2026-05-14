@@ -42,7 +42,34 @@ export function buildXPEvent({
     amount: getCompletionXp(quest),
     reason: `quest_completed:${quest.type}`,
     createdAt: now,
+    eventKey: buildQuestCompletionEventKey(quest.id),
   };
+}
+
+export function buildQuestCompletionEventKey(questId: string) {
+  return sanitizeEventKey(`quest:${questId}`);
+}
+
+export function buildWeeklyReviewEventKey(weekStart: string) {
+  return sanitizeEventKey(`weekly_review:${toIsoWeekKey(weekStart)}`);
+}
+
+export function buildLessonEventKey(lessonId: string) {
+  return sanitizeEventKey(`lesson:${lessonId}`);
+}
+
+export function buildStreakFreezeEventKey({
+  plan,
+  activeDays,
+  threshold,
+}: {
+  plan: string;
+  activeDays: number;
+  threshold: number;
+}) {
+  const bucket = Math.max(0, Math.floor(activeDays / Math.max(1, threshold)));
+
+  return sanitizeEventKey(`streak_freeze:${plan}:${bucket}`);
 }
 
 export function sumEarnedXpToday(quests: DailyQuest[], xpEvents: XPEvent[] = []) {
@@ -81,4 +108,21 @@ function normalizeMetadataValue(value: unknown): string | number | boolean | nul
 
 function clampXp(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function sanitizeEventKey(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9:_-]/g, "_")
+    .slice(0, 160);
+}
+
+function toIsoWeekKey(localDate: string) {
+  const date = new Date(`${localDate}T00:00:00.000Z`);
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+
+  return `${date.getUTCFullYear()}-w${String(week).padStart(2, "0")}`;
 }

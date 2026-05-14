@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { canShareRawHealthDetails, privacySafeFamilyActivity, stripUnsafeFamilyPayload } from "../family-circle";
+import {
+  canShareRawHealthDetails,
+  createFamilyInviteToken,
+  getFamilyInviteExpiry,
+  hashFamilyInviteToken,
+  isPendingInviteAcceptable,
+  privacySafeFamilyActivity,
+  stripUnsafeFamilyPayload,
+} from "../family-circle";
 
 describe("family circle privacy", () => {
   it("defaults to streak-only progress copy", () => {
@@ -25,5 +33,36 @@ describe("family circle privacy", () => {
     });
 
     expect(safe).toEqual({ questsCompleted: 3 });
+  });
+
+  it("stores only hashed invite tokens", () => {
+    const token = createFamilyInviteToken();
+    const hash = hashFamilyInviteToken(token);
+
+    expect(token).not.toBe(hash);
+    expect(hash).toMatch(/^[a-f0-9]{64}$/u);
+  });
+
+  it("rejects expired or revoked invites", () => {
+    const now = new Date("2026-05-14T00:00:00.000Z");
+
+    expect(isPendingInviteAcceptable({
+      status: "pending",
+      expires_at: getFamilyInviteExpiry(now, 1),
+      revoked_at: null,
+      accepted_at: null,
+    }, now)).toBe(true);
+    expect(isPendingInviteAcceptable({
+      status: "pending",
+      expires_at: "2026-05-13T00:00:00.000Z",
+      revoked_at: null,
+      accepted_at: null,
+    }, now)).toBe(false);
+    expect(isPendingInviteAcceptable({
+      status: "pending",
+      expires_at: getFamilyInviteExpiry(now, 1),
+      revoked_at: "2026-05-14T01:00:00.000Z",
+      accepted_at: null,
+    }, now)).toBe(false);
   });
 });

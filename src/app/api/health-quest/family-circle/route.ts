@@ -50,18 +50,22 @@ export async function POST(request: Request) {
       throw new Error(error.message);
     }
 
-    await auth.supabase.from("health_quest_family_members").insert({
+    const member = await auth.supabase.from("health_quest_family_members").insert({
       circle_id: circle.id,
       user_id: auth.user.id,
       display_name: "You",
       role: "owner",
       status: "active",
     });
-    await auth.supabase.from("health_quest_family_permissions").insert({
+    const permissions = await auth.supabase.from("health_quest_family_permissions").insert({
       circle_id: circle.id,
       user_id: auth.user.id,
       sharing_level: "streak_only",
     });
+
+    if (member.error || permissions.error) {
+      throw new Error(member.error?.message ?? permissions.error?.message ?? "Family circle setup failed");
+    }
 
     return jsonWithRequestId({ circle }, undefined, requestId);
   } catch {

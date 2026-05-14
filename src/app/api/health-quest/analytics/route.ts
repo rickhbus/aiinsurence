@@ -1,5 +1,5 @@
 import { analyticsEventSchema, trackHealthQuestEvent } from "@/lib/health-quest/analytics";
-import { getAuthenticatedSupabase, getOptionalAuthenticatedSupabase, readValidatedJson } from "@/lib/server/persistence-auth";
+import { getOptionalAuthenticatedSupabase, readValidatedJson } from "@/lib/server/persistence-auth";
 import { getRequestId, jsonWithRequestId } from "@/lib/server/request-context";
 
 export const dynamic = "force-dynamic";
@@ -14,22 +14,22 @@ export async function POST(request: Request) {
 
   const optional = await getOptionalAuthenticatedSupabase(request);
 
-  if (!optional.supabase) {
-    const auth = await getAuthenticatedSupabase(request);
-    if (!auth.ok) {
-      return auth.response;
-    }
+  if (!optional.supabase || !optional.user) {
+    return jsonWithRequestId(
+      {
+        saved: false,
+        reason: "authenticated_session_required_for_persistence",
+      },
+      { status: 202 },
+      requestId,
+    );
   }
 
   try {
     const supabase = optional.supabase;
 
-    if (!supabase) {
-      return jsonWithRequestId({ error: "Analytics persistence is unavailable." }, { status: 503 }, requestId);
-    }
-
     await trackHealthQuestEvent(supabase, {
-      userId: optional.user?.id ?? null,
+      userId: optional.user.id,
       anonymousId: parsed.data.anonymousId ?? null,
       eventName: parsed.data.eventName,
       properties: parsed.data.properties,

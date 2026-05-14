@@ -11,6 +11,10 @@ const healthQuestMigration = readFileSync(
   join(migrationDir, "012_health_quest_gamification.sql"),
   "utf8",
 );
+const healthQuestHardeningMigration = readFileSync(
+  join(migrationDir, "020_health_quest_production_hardening.sql"),
+  "utf8",
+);
 const allMigrations = [
   "001_auth_memory.sql",
   "002_mvp_audit_tables.sql",
@@ -24,6 +28,14 @@ const allMigrations = [
   "010_food_payments_family_doctor.sql",
   "011_family_alerts_senior_mode.sql",
   "012_health_quest_gamification.sql",
+  "013_health_quest_onboarding.sql",
+  "014_health_quest_streak_freeze_economy.sql",
+  "015_health_quest_lessons.sql",
+  "016_health_quest_family_challenges.sql",
+  "017_health_quest_analytics.sql",
+  "018_health_quest_doctor_missions.sql",
+  "019_health_quest_preferences_and_reminders.sql",
+  "020_health_quest_production_hardening.sql",
 ]
   .map((migration) => readFileSync(join(migrationDir, migration), "utf8"))
   .join("\n");
@@ -76,6 +88,14 @@ describe("Supabase production readiness migration", () => {
       "010_food_payments_family_doctor.sql",
       "011_family_alerts_senior_mode.sql",
       "012_health_quest_gamification.sql",
+      "013_health_quest_onboarding.sql",
+      "014_health_quest_streak_freeze_economy.sql",
+      "015_health_quest_lessons.sql",
+      "016_health_quest_family_challenges.sql",
+      "017_health_quest_analytics.sql",
+      "018_health_quest_doctor_missions.sql",
+      "019_health_quest_preferences_and_reminders.sql",
+      "020_health_quest_production_hardening.sql",
     ];
 
     for (const migration of migrations) {
@@ -152,5 +172,56 @@ describe("Supabase production readiness migration", () => {
     expect(healthQuestMigration).toContain("user_xp_events_user_created_idx");
     expect(healthQuestMigration).toContain("Metadata must not encode raw symptoms");
     expect(healthQuestMigration).toContain("not diagnosis, treatment, or insurance decisioning");
+  });
+
+  it("applies Health Quest migrations 013 through 020 in order with additive production hardening", () => {
+    for (const migration of [
+      "013_health_quest_onboarding.sql",
+      "014_health_quest_streak_freeze_economy.sql",
+      "015_health_quest_lessons.sql",
+      "016_health_quest_family_challenges.sql",
+      "017_health_quest_analytics.sql",
+      "018_health_quest_doctor_missions.sql",
+      "019_health_quest_preferences_and_reminders.sql",
+      "020_health_quest_production_hardening.sql",
+    ]) {
+      expect(() => readFileSync(join(migrationDir, migration), "utf8")).not.toThrow();
+    }
+
+    expect(healthQuestHardeningMigration).toContain("add column if not exists event_key");
+    expect(healthQuestHardeningMigration).toContain("user_xp_events_user_event_key_unique_idx");
+    expect(healthQuestHardeningMigration).toContain("streak_freezes_user_event_key_unique_idx");
+    expect(healthQuestHardeningMigration).toContain("health_quest_family_members_pending_invite_idx");
+    expect(healthQuestHardeningMigration).toContain("invite_token_hash");
+    expect(healthQuestHardeningMigration).toContain("accept_health_quest_family_invite");
+    expect(healthQuestHardeningMigration).not.toMatch(/\bdrop table\b|\btruncate\b|\bdelete from public\./iu);
+  });
+
+  it("keeps Health Quest RLS and read-only public lesson/template contracts explicit", () => {
+    for (const table of [
+      "user_health_quest_profiles",
+      "user_quest_preferences",
+      "user_onboarding_answers",
+      "user_lesson_progress",
+      "doctor_prep_missions",
+      "doctor_prep_answers",
+      "health_quest_family_permissions",
+    ]) {
+      expect(allMigrations).toContain(`alter table public.${table} enable row level security`);
+    }
+
+    expect(allMigrations).toContain("lesson_tracks_public_read");
+    expect(allMigrations).toContain("lesson_nodes_public_read");
+    expect(allMigrations).toContain("quest_templates_public_read");
+    expect(allMigrations).toContain("grant insert on public.health_quest_analytics_events to authenticated");
+    expect(allMigrations).not.toContain("grant select on public.health_quest_analytics_events");
+  });
+
+  it("seeds lesson tracks and nodes for staging smoke checks", () => {
+    expect(allMigrations).toContain("insert into public.lesson_tracks");
+    expect(allMigrations).toContain("hydration-basics");
+    expect(allMigrations).toContain("insurance-education");
+    expect(allMigrations).toContain("doctor-visit-prep");
+    expect(allMigrations).toContain("insert into public.lesson_nodes");
   });
 });

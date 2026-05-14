@@ -14,7 +14,7 @@ export const insuranceBoundary: LocalizedText = {
   en: "Organize your insurance questions. This is not insurance advice. We do not decide eligibility, pricing, coverage, claim outcomes, or care access.",
 };
 
-const forbiddenGuaranteePattern = /(you are covered|will be approved|claim should pass|premium|insurer must pay|decides your eligibility|一定受保|一定批核|索償會成功|保費改善|必須賠|決定資格)/iu;
+const forbiddenGuaranteePattern = /(you are covered|will be approved|claim (should|will) pass|premium|insurer must pay|decides? (your )?eligibility|一定受保|一定批核|索償會成功|保費改善|必須賠|決定資格)/iu;
 const sensitiveInsurancePattern = /(policy text|claim text|保單全文|索償全文|hkid|身份證|phone|電話|email|電郵)/iu;
 
 export function sanitizeInsuranceMissionInput(input: z.infer<typeof insuranceMissionSchema>) {

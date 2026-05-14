@@ -25,7 +25,7 @@ export function evaluateQuestSafety({
   const emergency = detectEmergencyFromText(text);
   const contextFlags = healthContext?.safetyFlags ?? [];
   const urgentFlags = [...crisis, ...emergency, ...contextFlags].filter((flag) =>
-    /999|emergency|urgent|crisis|self|suicid|chest|stroke|breath|blood|severe|自殺|自殘|胸|中風|呼吸|出血|嚴重|急/iu.test(flag),
+    /999|emergency|urgent|crisis|self|suicid|chest|stroke|breath|blood|severe|faint|collapse|自殺|自殘|胸|中風|呼吸|出血|嚴重|暈倒|昏厥|急/iu.test(flag),
   );
   const urgent = explicitUrgent || urgentFlags.length > 0;
 

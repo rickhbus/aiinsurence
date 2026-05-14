@@ -9,16 +9,10 @@ import { buildMockDailyQuestState } from "@/lib/health-quest/mock-data";
 import { buildDailyQuestState, questTypeToLifeTrackerAction } from "@/lib/health-quest/quest-engine";
 import type { DailyQuest, DailyQuestState, QuestLocale } from "@/lib/health-quest/types";
 import { getSupabaseRequestHeaders } from "@/lib/supabase/client";
-import { CoachNoteCard } from "./coach-note-card";
-import { QuestCompletionModal } from "./quest-completion-modal";
 import { QuestErrorState } from "./quest-error-state";
-import { QuestHeader } from "./quest-header";
 import { QuestLoadingState } from "./quest-loading-state";
-import { QuestPath } from "./quest-path";
-import { RecoveryModeCard } from "./recovery-mode-card";
-import { SafetyQuestBanner } from "./safety-quest-banner";
 import { showQuestRewardToast } from "./quest-reward-toast";
-import { WeeklyReviewCard } from "./weekly-review-card";
+import { TodayGameHome } from "./today-game-home";
 
 type ApiStateResponse = {
   state?: DailyQuestState;
@@ -241,45 +235,20 @@ export function TodayQuestPage({ locale = "zh-Hant" }: { locale?: QuestLocale })
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-      <QuestHeader state={state} locale={locale} />
-      <SafetyQuestBanner state={state} locale={locale} />
-      <RecoveryModeCard state={state} locale={locale} onSwitchToRecovery={switchToRecovery} busy={isPending} />
-
-      {error ? (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-muted-foreground">
-          {locale === "zh-Hant" ? "目前使用本機示範任務；匿名 Supabase session 準備好後會保存真實進度。" : "Using demo quests for now; real progress saves after the anonymous Supabase session is ready."}
-        </div>
-      ) : null}
-
-      <QuestPath
-        state={state}
-        locale={locale}
-        busy={isPending}
-        onComplete={completeQuest}
-        onSkip={skipQuest}
-        onMakeEasier={makeEasier}
-        onWhyThis={whyThis}
-      />
-
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <CoachNoteCard state={state} locale={locale} />
-        <WeeklyReviewCard locale={locale} />
-      </div>
-
-      <footer className="rounded-2xl border border-border/60 bg-card/70 p-4 text-xs leading-5 text-muted-foreground">
-        <p>{text(healthQuestCopy.notMedicalAdvice, locale)}</p>
-        <p className="mt-1">{text(healthQuestCopy.insuranceBoundary, locale)}</p>
-      </footer>
-
-      <QuestCompletionModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        quest={completedQuest}
-        state={state}
-        locale={locale}
-      />
-    </div>
+    <TodayGameHome
+      state={state}
+      locale={locale}
+      busy={isPending}
+      apiFallback={Boolean(error)}
+      completedQuest={completedQuest}
+      celebrationOpen={modalOpen}
+      onCelebrationOpenChange={setModalOpen}
+      onComplete={completeQuest}
+      onSkip={skipQuest}
+      onMakeEasier={makeEasier}
+      onWhyThis={whyThis}
+      onSwitchToRecovery={switchToRecovery}
+    />
   );
 }
 

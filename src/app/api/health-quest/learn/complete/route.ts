@@ -3,6 +3,7 @@ import { trackHealthQuestEvent } from "@/lib/health-quest/analytics";
 import { getLessonBySlug } from "@/lib/health-quest/lessons";
 import { insertXPEvent } from "@/lib/health-quest/storage";
 import type { XPEvent } from "@/lib/health-quest/types";
+import { buildLessonEventKey } from "@/lib/health-quest/xp";
 import { getAuthenticatedSupabase, readValidatedJson } from "@/lib/server/persistence-auth";
 import { getRequestId, jsonWithRequestId } from "@/lib/server/request-context";
 
@@ -86,6 +87,7 @@ export async function POST(request: Request) {
         amount: localLesson.lesson.xp,
         reason: `lesson_completed:${parsed.data.trackSlug}:${parsed.data.lessonSlug}`,
         createdAt: new Date().toISOString(),
+        eventKey: buildLessonEventKey(lessonRow.data.id),
       };
       await insertXPEvent(auth.supabase, auth.user.id, event, {
         source: "health_quest",

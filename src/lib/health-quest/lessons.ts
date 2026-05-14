@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { lessonTracks, type LessonNodeContent } from "./lesson-content";
 import type { XPEvent } from "./types";
+import { buildLessonEventKey } from "./xp";
 
 type LessonClient = Pick<SupabaseClient, "from">;
 
@@ -21,6 +22,7 @@ export function buildLessonXpEvent(lesson: LessonNodeContent, now = new Date().t
     amount: lesson.xp,
     reason: `lesson_completed:${lesson.slug}`,
     createdAt: now,
+    eventKey: buildLessonEventKey(lesson.slug),
   };
 }
 

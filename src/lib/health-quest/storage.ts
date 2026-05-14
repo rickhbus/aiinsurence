@@ -158,13 +158,18 @@ export async function insertXPEvent(
       quest_id: event.questId ?? null,
       amount: event.amount,
       reason: event.reason,
+      event_key: event.eventKey ?? null,
       metadata: sanitizeXPMetadata(metadata),
       created_at: event.createdAt,
     })
-    .select("id,user_id,quest_id,amount,reason,created_at")
+    .select("id,user_id,quest_id,amount,reason,event_key,created_at")
     .single();
 
   if (error) {
+    if (event.eventKey && isDuplicateKeyError(error)) {
+      return loadXPEventByKey(supabase, userId, event.eventKey);
+    }
+
     throw new Error(`Could not create XP event: ${error.message}`);
   }
 
@@ -174,6 +179,37 @@ export async function insertXPEvent(
     amount: data.amount as number,
     reason: data.reason as string,
     createdAt: data.created_at as string,
+    eventKey: data.event_key as string | null,
+  };
+}
+
+export async function loadXPEventByKey(
+  supabase: QuestDataClient,
+  userId: string,
+  eventKey: string,
+) {
+  const { data, error } = await supabase
+    .from("user_xp_events")
+    .select("id,user_id,quest_id,amount,reason,event_key,created_at")
+    .eq("user_id", userId)
+    .eq("event_key", eventKey)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Could not load XP event: ${error.message}`);
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return {
+    id: data.id as string,
+    questId: data.quest_id as string | undefined,
+    amount: data.amount as number,
+    reason: data.reason as string,
+    createdAt: data.created_at as string,
+    eventKey: data.event_key as string | null,
   };
 }
 
@@ -184,7 +220,7 @@ export async function loadXPEvents(
 ) {
   const { data, error } = await supabase
     .from("user_xp_events")
-    .select("id,quest_id,amount,reason,created_at")
+    .select("id,quest_id,amount,reason,event_key,created_at")
     .eq("user_id", userId)
     .gte("created_at", sinceIso)
     .order("created_at", { ascending: false })
@@ -200,6 +236,7 @@ export async function loadXPEvents(
     amount: row.amount as number,
     reason: row.reason as string,
     createdAt: row.created_at as string,
+    eventKey: row.event_key as string | null,
   }));
 }
 
@@ -286,6 +323,39 @@ export async function saveQuestLifeTrackerLog({
   });
 }
 
+export async function insertStreakFreezeAward({
+  supabase,
+  userId,
+  localDate,
+  eventKey,
+  reason,
+}: {
+  supabase: QuestDataClient;
+  userId: string;
+  localDate: string;
+  eventKey: string;
+  reason: string;
+}) {
+  const { error } = await supabase
+    .from("streak_freezes")
+    .insert({
+      user_id: userId,
+      local_date: localDate,
+      event_key: eventKey,
+      reason,
+    });
+
+  if (!error) {
+    return { inserted: true };
+  }
+
+  if (isDuplicateKeyError(error)) {
+    return { inserted: false };
+  }
+
+  throw new Error(`Could not create streak-freeze award: ${error.message}`);
+}
+
 export function mapQuestRow(row: DailyQuestRow): DailyQuest {
   return {
     id: row.id,
@@ -329,4 +399,8 @@ function toQuestInsert(userId: string, quest: DailyQuest) {
     completed_at: quest.completedAt ?? null,
     skipped_at: quest.skippedAt ?? null,
   };
+}
+
+function isDuplicateKeyError(error: { code?: string; message?: string }) {
+  return error.code === "23505" || /duplicate key value violates unique constraint/iu.test(error.message ?? "");
 }

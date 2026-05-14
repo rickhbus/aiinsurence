@@ -33,6 +33,22 @@ const crisisTerms = [
   "暴力",
 ];
 
+const directEmergencyTerms = [
+  "cannot breathe",
+  "can't breathe",
+  "blood in stool",
+  "blood in urine",
+  "fainting",
+  "collapsed",
+  "severe abdominal pain",
+  "唞唔到氣",
+  "大便有血",
+  "小便有血",
+  "暈倒",
+  "昏厥",
+  "劇烈腹痛",
+];
+
 export type SimpleDiscomfortCategory =
   | "dizzy"
   | "chest_pain"
@@ -54,8 +70,13 @@ export function detectEmergencyFromText(text: string | null | undefined) {
   }
 
   const result = analyzeIntake("medical", trimmed);
+  const directMatches = directEmergencyTerms.filter((term) =>
+    trimmed.toLowerCase().includes(term.toLowerCase()),
+  );
 
-  return result.urgency.level === 1 ? result.matchedSignals : [];
+  return result.urgency.level === 1 || directMatches.length > 0
+    ? Array.from(new Set([...result.matchedSignals, ...directMatches]))
+    : [];
 }
 
 export function getSimpleDiscomfortSafety(category: SimpleDiscomfortCategory) {

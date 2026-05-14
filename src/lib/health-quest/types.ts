@@ -207,6 +207,7 @@ export type XPEvent = {
   amount: number;
   reason: string;
   createdAt: string;
+  eventKey?: string | null;
 };
 
 export type DailyQuestMode = "normal" | "recovery" | "safety";

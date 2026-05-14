@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   Stethoscope,
   Sun,
+  Trophy,
   UserRound,
   Users,
   Waves,
@@ -46,6 +47,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { GameBottomNav } from "@/components/health-quest/game-bottom-nav";
 
 type NavChild = {
   label: LocalizedText;
@@ -71,6 +73,7 @@ export const navGroups: NavGroup[] = [
     children: [
       { label: { zh: "健康任務", en: "Health Quest" }, href: "/today", page: "today", icon: Home },
       { label: { zh: "進階資料", en: "Advanced" }, href: "/today/advanced", page: "today-advanced", icon: BarChart3 },
+      { label: { zh: "練習", en: "Practice" }, href: "/practice", page: "practice", icon: BookOpenCheck },
     ],
   },
   {
@@ -88,6 +91,7 @@ export const navGroups: NavGroup[] = [
     icon: BarChart3,
     children: [
       { label: { zh: "任務進度", en: "Quest Progress" }, href: "/progress", page: "progress", icon: BarChart3 },
+      { label: { zh: "健康聯賽", en: "Health Leagues" }, href: "/leagues", page: "leagues", icon: Trophy },
       { label: { zh: "每週建議", en: "Reports" }, href: "/reports", page: "reports", icon: BarChart3 },
     ],
   },
@@ -124,14 +128,6 @@ export const navGroups: NavGroup[] = [
       { label: ui.settings, href: "/settings", page: "settings", icon: UserRound },
     ],
   },
-];
-
-const bottomNavItems = [
-  { label: { zh: "今日", en: "Today" }, href: "/today", icon: Home, activePages: ["today", "today-advanced"] as HealthPage[] },
-  { label: { zh: "教練", en: "Coach" }, href: "/coach", icon: Brain, activePages: ["coach", "healthcare", "symptom-routing"] as HealthPage[] },
-  { label: { zh: "進度", en: "Progress" }, href: "/progress", icon: BarChart3, activePages: ["progress", "reports", "goals"] as HealthPage[] },
-  { label: { zh: "學習", en: "Learn" }, href: "/learn", icon: BookOpenCheck, activePages: ["learn", "lesson", "insurance"] as HealthPage[] },
-  { label: { zh: "更多", en: "More" }, href: "/more", icon: MoreHorizontal, activePages: ["more", "check-in", "mood", "food", "hydration", "toilet", "gym", "gym-templates", "track", "running", "walking", "sports", "body", "sleep", "water", "nutrition", "food-log", "diet-plan", "family", "doctor", "pricing", "business", "gbl", "emotion", "history", "profile", "memory", "settings"] as HealthPage[] },
 ];
 
 export function Sidebar({
@@ -378,26 +374,7 @@ export function TopHeader({
 }
 
 export function MobileBottomNav({ currentPage, locale }: { currentPage: HealthPage; locale: Locale }) {
-  return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 grid min-h-20 grid-cols-5 border-t border-border/40 bg-background/90 px-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-2xl lg:hidden" aria-label="Mobile bottom navigation">
-      {bottomNavItems.map((item) => {
-        const active = item.activePages.includes(currentPage);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex min-h-12 flex-col items-center justify-center gap-1 rounded-2xl text-[0.62rem] font-medium text-muted-foreground transition-all duration-200 min-[380px]:text-[0.68rem]",
-              active && "bg-gradient-to-b from-primary to-primary/85 text-primary-foreground shadow-md shadow-primary/25",
-            )}
-          >
-            <item.icon aria-hidden="true" />
-            <span className="truncate">{text(item.label, locale)}</span>
-          </Link>
-        );
-      })}
-    </nav>
-  );
+  return <GameBottomNav currentPage={currentPage} locale={locale} />;
 }
 
 export function WelcomeStrip({ locale, data }: { locale: Locale; data?: DashboardData | null }) {
@@ -573,9 +550,9 @@ function groupIncludesPage(group: NavGroup, page: HealthPage) {
   }
 
   return (
-    (group.id === "today" && (page === "today" || page === "today-advanced")) ||
+    (group.id === "today" && (page === "today" || page === "today-advanced" || page === "practice")) ||
     (group.id === "coach" && ["coach", "healthcare", "symptom-routing"].includes(page)) ||
-    (group.id === "progress" && ["progress", "reports", "goals"].includes(page)) ||
+    (group.id === "progress" && ["progress", "reports", "goals", "leagues"].includes(page)) ||
     (group.id === "learn" && ["learn", "lesson", "insurance"].includes(page)) ||
     (group.id === "more" && [
       "more",

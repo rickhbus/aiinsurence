@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { buildDailyQuestState } from "../quest-engine";
-import { getCompletionXp, getQuestXp, sanitizeXPMetadata } from "../xp";
+import {
+  buildLessonEventKey,
+  buildQuestCompletionEventKey,
+  buildStreakFreezeEventKey,
+  buildWeeklyReviewEventKey,
+  getCompletionXp,
+  getQuestXp,
+  sanitizeXPMetadata,
+} from "../xp";
 
 describe("health quest XP", () => {
   it("uses fixed completion XP instead of good-looking health values", () => {
@@ -30,5 +38,12 @@ describe("health quest XP", () => {
     const quest = buildDailyQuestState({ localDate: "2026-05-14", safetyStatus: "red" }).quests[0];
 
     expect(getCompletionXp(quest)).toBe(0);
+  });
+
+  it("builds stable idempotency keys for retry-safe awards", () => {
+    expect(buildQuestCompletionEventKey("quest-123")).toBe("quest:quest-123");
+    expect(buildLessonEventKey("00000000-0000-0000-0000-000000000123")).toBe("lesson:00000000-0000-0000-0000-000000000123");
+    expect(buildWeeklyReviewEventKey("2026-05-14")).toBe("weekly_review:2026-w20");
+    expect(buildStreakFreezeEventKey({ plan: "plus", activeDays: 20, threshold: 10 })).toBe("streak_freeze:plus:2");
   });
 });
