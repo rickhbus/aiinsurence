@@ -23,6 +23,8 @@ describe("AI.GBL engine", () => {
     expect(result.status).toBe("fallback");
     expect(result.analysisType).toBe("insurance_analysis");
     expect(["anxious", "confused"]).toContain(result.emotion?.primary_emotion);
+    expect(result.workflowPlan.lane).toBe("insurance_education");
+    expect(result.workflowPlan.blockedUses.join(" ")).toContain("claim outcome guarantees");
     expect(result.recommendations.some((item) => item.humanReview)).toBe(true);
     expect(result.disclaimers.join(" ")).toContain("does not guarantee");
   });
@@ -39,6 +41,22 @@ describe("AI.GBL engine", () => {
 
     expect(result.status).toBe("safety_locked");
     expect(result.safetyFlags.emergency).toBe(true);
+    expect(result.workflowPlan.lane).toBe("safety");
     expect(result.userVisibleSummary).toContain("999");
+  });
+
+  it("returns zh-Hant workflow copy for Hong Kong user-facing analysis", async () => {
+    const result = await runGblAnalysis({
+      title: "家庭照護",
+      analysisType: "healthcare_navigation",
+      userType: "patient_member",
+      language: "zh-Hant",
+      primaryConcern: "爸爸皮膚痕咗兩個星期，想準備睇醫生。",
+      save: false,
+    }, "00000000-0000-4000-8000-000000000005");
+
+    expect(result.userVisibleSummary).toContain("照護導航");
+    expect(result.workflowPlan.primaryUse).toContain("症狀時間線");
+    expect(result.recommendations[0].label).toContain("核實");
   });
 });

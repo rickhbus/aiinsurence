@@ -78,6 +78,22 @@ export type GblRecommendation = {
   humanReview: boolean;
 };
 
+export type GblWorkflowPlan = {
+  lane:
+    | "safety"
+    | "care_navigation"
+    | "insurance_education"
+    | "emotion_support"
+    | "business_partner"
+    | "general";
+  stage: string;
+  primaryUse: string;
+  blockedUses: string[];
+  immediateActions: string[];
+  handoff: string;
+  businessValue: string;
+};
+
 export type GblAuditEvent = {
   requestId: string;
   event: string;
@@ -94,6 +110,7 @@ export type GblAnalysisResult = {
   caseContext: GblCaseContext;
   aiReadySummary: string;
   userVisibleSummary: string;
+  workflowPlan: GblWorkflowPlan;
   recommendations: GblRecommendation[];
   safetyFlags: GblSafetyFlags;
   emotion?: EmotionAnalysisResult | null;

@@ -341,22 +341,155 @@ export function PricingPage() {
 }
 
 export function BusinessPage() {
-  const businessCards: Array<{ title: string; icon: LucideIcon; body: string }> = [
-    { title: "Gym/PT", icon: Dumbbell, body: "Member workout logs and adherence reports." },
-    { title: "Employer wellness", icon: BriefcaseBusiness, body: "Privacy-safe aggregate insights only." },
-    { title: "Clinic prep", icon: ClipboardList, body: "Doctor visit preparation, no diagnosis." },
+  const businessLanes: Array<{ title: string; icon: LucideIcon; body: string; signal: string }> = [
+    {
+      title: "家庭訂閱 / Family subscriptions",
+      icon: Users,
+      body: "Plus HK$58、Pro HK$128、Family Care HK$198：每日一撳、家庭 check-in、覆診摘要和保險文件教育。",
+      signal: "D2C",
+    },
+    {
+      title: "Gym / PT retention",
+      icon: Dumbbell,
+      body: "把訓練記錄、恢復提示和習慣連續性變成教練可跟進的會員留存流程；不提供醫療或用藥建議。",
+      signal: "Partner",
+    },
+    {
+      title: "Employer wellness",
+      icon: BriefcaseBusiness,
+      body: "只做私隱安全的匯總趨勢、挑戰和壓力教育；不披露個別僱員健康狀態或保險風險。",
+      signal: "B2B",
+    },
+    {
+      title: "Clinic prep",
+      icon: Stethoscope,
+      body: "把每日記錄整理成覆診時間線、問題清單和文件準備；不診斷、不分流取代臨床判斷。",
+      signal: "Workflow",
+    },
+    {
+      title: "Insurance education",
+      icon: ShieldCheck,
+      body: "只做保障類別學習、文件清單和要問保險公司/持牌顧問的問題；不做銷售建議或索償判斷。",
+      signal: "Education",
+    },
+    {
+      title: "AI.GBL platform",
+      icon: Brain,
+      body: "把安全規則、AI 正規化、情緒語氣和人工交接變成可審核的產品層，支援多條收入線。",
+      signal: "Core IP",
+    },
+  ];
+  const revenueRows = [
+    ["Free", "HK$0", "一鍵每日記錄、999 / 急症室提示、7 日基本紀錄", "低摩擦獲客"],
+    ["Plus / Care", "HK$58 / month", "每日 AI 建議、健康任務、基本醫生摘要", "個人付費入口"],
+    ["Pro", "HK$128 / month", "長期趨勢、進階摘要、個人化學習路徑", "高意圖健康管理"],
+    ["Family Care", "HK$198 / month", "家庭 check-in、照顧者分享、weekly family report、insurance document checklist", "父母照護主收入線"],
+    ["Business", "Contact sales", "Gym/PT、僱主、診所和教育型合作流程", "B2B 擴展"],
+  ];
+  const milestones = [
+    ["0-30 days", "打磨家庭每日 check-in、AI.GBL 輸出、付款和照顧者邀請流程。"],
+    ["31-90 days", "用 Family Care 轉化、weekly report 和覆診摘要驗證留存。"],
+    ["3-6 months", "啟動 Gym/PT、診所準備和 employer wellness 試點；只看匯總和同意資料。"],
+  ];
+  const guardrails = [
+    "不出售或外洩個人健康、心情、飲食、症狀、家庭或保單內容。",
+    "不用任何資料作保險資格、定價、保障、索償結果或照護使用權決定。",
+    "不聲稱診斷、治療、法律、保險或合規保證；緊急情況永遠先提示 999 / 急症室。",
   ];
 
   return (
-    <PageFrame title="Business Wellness" description="Gym, PT, employer, clinic and preparation partnerships">
-      <div className="grid gap-4 md:grid-cols-3">
-        {businessCards.map(({ title, icon: Icon, body }) => (
+    <PageFrame
+      title="Business Plan / 商業計劃"
+      description="Family-first health operating system with AI.GBL safety logic, recurring subscriptions, and privacy-safe partnerships."
+    >
+      <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_360px]">
+        <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-xl">
+          <CardHeader>
+            <CardTitle>定位 / Positioning</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 text-sm leading-6 text-muted-foreground">
+            <p>
+              智健導航先從家庭照護開始：長者、小朋友、照顧者和自僱人士每日只需簡短記錄，AI 把資料整理成覆診準備、家庭安心和保險教育文件清單。
+            </p>
+            <p>
+              The business is a trusted daily health OS: D2C family subscriptions first, then gyms, PTs, clinics, employers, and education-only insurance partners.
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/60 bg-primary/8 shadow-sm backdrop-blur-xl">
+          <CardHeader>
+            <CardTitle>North star</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 text-sm leading-6 text-muted-foreground">
+            <p className="text-2xl font-bold tracking-normal text-foreground">daily qualified care actions</p>
+            <p>每日完成一個安全健康行動：check-in、喝水、記錄、覆診問題、家庭分享或文件整理。</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+        {businessLanes.map(({ title, icon: Icon, body, signal }) => (
           <Card key={title} className="border-border/60 bg-card/80 shadow-sm backdrop-blur-xl">
-            <CardHeader><Icon aria-hidden="true" className="size-5 text-primary" /><CardTitle>{title}</CardTitle></CardHeader>
+            <CardHeader>
+              <div className="flex items-center justify-between gap-3">
+                <Icon aria-hidden="true" className="size-5 text-primary" />
+                <Badge variant="secondary">{signal}</Badge>
+              </div>
+              <CardTitle className="text-lg">{title}</CardTitle>
+            </CardHeader>
             <CardContent className="text-sm leading-6 text-muted-foreground">{body}</CardContent>
           </Card>
         ))}
+      </section>
+
+      <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-xl">
+        <CardHeader><CardTitle>Revenue model / 收入模型</CardTitle></CardHeader>
+        <CardContent className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-left text-sm">
+            <thead className="text-muted-foreground">
+              <tr>
+                <th className="py-2 pr-4">Plan</th>
+                <th className="py-2 pr-4">Price</th>
+                <th className="py-2 pr-4">Value</th>
+                <th className="py-2 pr-4">Business role</th>
+              </tr>
+            </thead>
+            <tbody>
+              {revenueRows.map((row) => (
+                <tr key={row[0]} className="border-t border-border/60">
+                  {row.map((cell) => <td key={cell} className="py-3 pr-4 align-top">{cell}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_420px]">
+        <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-xl">
+          <CardHeader><CardTitle>Execution roadmap / 執行路線</CardTitle></CardHeader>
+          <CardContent className="grid gap-3">
+            {milestones.map(([time, body]) => (
+              <div key={time} className="rounded-xl border border-border/60 bg-background/50 p-4">
+                <p className="font-semibold">{time}</p>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">{body}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+        <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-xl">
+          <CardHeader><CardTitle>Non-negotiables / 安全底線</CardTitle></CardHeader>
+          <CardContent className="grid gap-3 text-sm leading-6 text-muted-foreground">
+            {guardrails.map((item) => (
+              <p key={item} className="rounded-xl bg-muted/30 p-3 ring-1 ring-border/40">
+                <ShieldCheck data-icon="inline-start" aria-hidden="true" />
+                {item}
+              </p>
+            ))}
+          </CardContent>
+        </Card>
       </div>
+
       <B2BLeadForm />
     </PageFrame>
   );

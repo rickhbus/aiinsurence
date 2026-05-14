@@ -16,10 +16,17 @@ const plans = [
   },
   {
     id: "care",
-    name: "Care",
+    name: "Plus / Care",
     price: "HK$58/month",
-    badge: "每日安心",
-    features: ["每日簡短 AI 建議", "飲食 / 飲水 / 心情 / 活動記錄", "基本醫生摘要"],
+    badge: "每日安心 / Daily support",
+    features: ["每日簡短 AI 建議", "飲食 / 飲水 / 心情 / 活動記錄", "基本醫生摘要", "不影響保險資格、定價或索償"],
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    price: "HK$128/month",
+    badge: "進階準備 / Advanced prep",
+    features: ["長期趨勢", "進階醫生摘要", "個人化學習路徑", "Gym / recovery insights"],
   },
   {
     id: "family",
@@ -151,10 +158,10 @@ function PricingAction({
   loading: boolean;
   onCheckout: () => void;
 }) {
-  if (planId === "free" || planId === "partner" || planId === "employer") {
+  if (planId === "free" || planId === "pro" || planId === "partner" || planId === "employer") {
     return (
       <Button variant="outline" className="w-full" disabled>
-        目前方案 / Current option
+        {planId === "pro" ? "Roadmap / 即將推出" : "目前方案 / Current option"}
       </Button>
     );
   }

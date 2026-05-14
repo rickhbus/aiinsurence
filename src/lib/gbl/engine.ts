@@ -42,6 +42,7 @@ export async function runGblAnalysis(
     caseContext: context,
     aiReadySummary: deterministic.aiReadySummary,
     userVisibleSummary: provider.summary ?? deterministic.userVisibleSummary,
+    workflowPlan: deterministic.workflowPlan,
     recommendations: deterministic.recommendations,
     safetyFlags,
     emotion: context.emotion.analysis,
