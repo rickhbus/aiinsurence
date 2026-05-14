@@ -20,8 +20,8 @@ export function WeeklyReviewCard({ locale }: { locale: QuestLocale }) {
       </CardContent>
       <CardFooter>
         <Button asChild variant="outline" className="w-full sm:w-fit">
-          <Link href="/progress">
-            {locale === "zh-Hant" ? "睇進度" : "View progress"}
+          <Link href="/weekly-review">
+            {locale === "zh-Hant" ? "開啟回顧" : "Open review"}
             <ChevronRight data-icon="inline-end" aria-hidden="true" />
           </Link>
         </Button>

@@ -18,6 +18,9 @@ export function buildQuestProgressSummary({
   }, {});
   const xpThisWeek = sumXpSince(xpEvents, daysAgo(7));
   const xpLast30Days = sumXpSince(xpEvents, daysAgo(30));
+  const activeDays = new Set(completed.map((quest) => quest.localDate)).size;
+  const recoveryDays = new Set(quests.filter((quest) => quest.source === "recovery" || quest.type === "recovery").map((quest) => quest.localDate)).size;
+  const lessonsCompleted = xpEvents.filter((event) => event.reason.startsWith("lesson_completed")).length;
 
   return {
     currentStreak,
@@ -28,6 +31,10 @@ export function buildQuestProgressSummary({
     hydrationConsistency: ratio(completedByType.water ?? 0, 7),
     movementConsistency: ratio(completedByType.movement ?? 0, 7),
     moodConsistency: ratio(completedByType.mood ?? 0, 7),
+    activeDays,
+    recoveryDays,
+    lessonsCompleted,
+    weeklyReviewHref: "/weekly-review",
     weeklyReview: {
       zh: "本週重點係一致性，不係完美。飲水、心情同輕量郁動都會累積。",
       en: "This week is about consistency, not perfection. Water, mood, and gentle movement all add up.",

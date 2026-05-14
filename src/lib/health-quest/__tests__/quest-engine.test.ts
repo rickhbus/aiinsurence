@@ -7,23 +7,22 @@ import type { DailyQuest } from "../types";
 const baseDate = "2026-05-14";
 
 describe("health quest engine", () => {
-  it("generates a normal daily quest path with 3-6 tiny quests", () => {
+  it("generates a normal daily quest path with 2-5 tiny quests", () => {
     const state = buildDailyQuestState({
       localDate: baseDate,
       todaySummary: buildDailyHealthSummary({ locale: "zh-Hant" }),
     });
 
     expect(state.mode).toBe("normal");
-    expect(state.quests).toHaveLength(6);
+    expect(state.quests).toHaveLength(5);
     expect(state.quests.map((quest) => quest.type)).toEqual([
-      "wake",
       "water",
+      "mood",
       "meal",
       "movement",
-      "mood",
-      "health_review",
+      "sleep_prep",
     ]);
-    expect(state.totalRequiredCount).toBe(4);
+    expect(state.totalRequiredCount).toBe(3);
     expect(state.quests[0].status).toBe("active");
   });
 
@@ -41,9 +40,9 @@ describe("health quest engine", () => {
 
   it("marks completed quests from existing daily check-ins", () => {
     const checkins: DailyCheckinRow[] = [
-      checkin("wake_up"),
       checkin("water"),
       checkin("meal"),
+      checkin("health_review"),
     ];
     const state = buildDailyQuestState({
       localDate: baseDate,
@@ -69,9 +68,9 @@ describe("health quest engine", () => {
     const state = buildDailyQuestState({
       localDate: baseDate,
       existingQuests: [
-        done("wake", 0, true),
-        done("water", 1, true),
-        done("meal", 2, true),
+        done("water", 0, true),
+        done("meal", 1, true),
+        done("mood", 2, true),
         { ...done("movement", 3, false), status: "skipped", completedAt: null, skippedAt: `${baseDate}T01:00:00.000Z` },
       ],
     });

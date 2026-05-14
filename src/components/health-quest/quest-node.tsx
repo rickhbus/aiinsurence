@@ -18,11 +18,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { text } from "@/lib/health-quest/copy";
 import type { DailyQuest, QuestLocale, QuestStatus, QuestType } from "@/lib/health-quest/types";
 import { cn } from "@/lib/utils";
+import { QuestActions } from "./quest-actions";
 
 const questIcons: Record<QuestType, LucideIcon> = {
   wake: Moon,
@@ -44,12 +44,16 @@ export function QuestNode({
   busy,
   onComplete,
   onSkip,
+  onMakeEasier,
+  onWhyThis,
 }: {
   quest: DailyQuest;
   locale: QuestLocale;
   busy?: boolean;
   onComplete: (quest: DailyQuest) => void;
   onSkip: (quest: DailyQuest) => void;
+  onMakeEasier: (quest: DailyQuest) => void;
+  onWhyThis: (quest: DailyQuest) => void;
 }) {
   const Icon = quest.status === "blocked_by_safety" ? ShieldAlert : quest.status === "locked" ? Lock : quest.status === "done" ? Check : questIcons[quest.type];
   const active = quest.status === "active" || quest.status === "recovery";
@@ -95,17 +99,16 @@ export function QuestNode({
         </CardHeader>
         <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <QuestStatusBadge status={quest.status} />
-          <div className="flex gap-2">
-            {!quest.required && quest.status !== "done" ? (
-              <Button type="button" variant="ghost" disabled={busy || quest.status === "locked"} onClick={() => onSkip(quest)}>
-                {locale === "zh-Hant" ? "跳過" : "Skip"}
-              </Button>
-            ) : null}
-            <Button type="button" className="min-h-11 flex-1 sm:flex-none" disabled={disabled} onClick={() => onComplete(quest)}>
-              {quest.status === "done" ? <Check data-icon="inline-start" aria-hidden="true" /> : null}
-              {quest.status === "done" ? text(quest.completedLabel, locale) : text(quest.actionLabel, locale)}
-            </Button>
-          </div>
+          <QuestActions
+            quest={quest}
+            locale={locale}
+            busy={busy}
+            disabled={disabled}
+            onComplete={onComplete}
+            onSkip={onSkip}
+            onMakeEasier={onMakeEasier}
+            onWhyThis={onWhyThis}
+          />
         </CardContent>
       </Card>
     </motion.div>

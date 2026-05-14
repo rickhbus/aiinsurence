@@ -1,6 +1,6 @@
 import { getAuthenticatedSupabase } from "@/lib/server/persistence-auth";
 import { getRequestId, jsonWithRequestId } from "@/lib/server/request-context";
-import { loadOrCreateTodayQuestState } from "@/lib/health-quest/server";
+import { hasCompletedHealthQuestOnboarding, loadOrCreateTodayQuestState } from "@/lib/health-quest/server";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +13,12 @@ export async function GET(request: Request) {
   }
 
   try {
+    const onboardingCompleted = await hasCompletedHealthQuestOnboarding(auth.supabase, auth.user.id);
+
+    if (!onboardingCompleted) {
+      return jsonWithRequestId({ needsOnboarding: true }, { status: 428 }, requestId);
+    }
+
     const state = await loadOrCreateTodayQuestState({
       supabase: auth.supabase,
       userId: auth.user.id,

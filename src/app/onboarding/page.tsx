@@ -1,5 +1,5 @@
-import { HealthAppShell } from "@/components/health-app/app-shell";
+import { OnboardingShell } from "@/components/health-quest/onboarding/onboarding-shell";
 
 export default function OnboardingRoute() {
-  return <HealthAppShell currentPage="onboarding" />;
+  return <OnboardingShell locale="zh-Hant" />;
 }

@@ -7,9 +7,9 @@ describe("health quest streaks", () => {
     const state = buildDailyQuestState({
       localDate: "2026-05-14",
       dailyCheckins: [
-        checkin("wake_up"),
         checkin("water"),
         checkin("meal"),
+        checkin("health_review"),
       ],
     });
 

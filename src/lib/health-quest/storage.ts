@@ -209,7 +209,7 @@ export async function loadHealthQuestStreak(
 ): Promise<UserStreak> {
   const { data, error } = await supabase
     .from("user_streaks")
-    .select("current_streak,longest_streak,last_completed_date,streak_freeze_count,protected_today,current_count,best_count,last_logged_date")
+    .select("current_streak,longest_streak,last_completed_date,streak_freeze_count,protected_today,current_count,best_count,last_logged_date,total_freezes_earned,total_freezes_consumed,last_freeze_earned_at,last_freeze_consumed_at")
     .eq("user_id", userId)
     .eq("streak_type", HEALTH_QUEST_STREAK_TYPE)
     .maybeSingle();
@@ -234,6 +234,10 @@ export async function loadHealthQuestStreak(
     lastCompletedDate: (data.last_completed_date ?? data.last_logged_date ?? null) as string | null,
     streakFreezeCount: Number(data.streak_freeze_count ?? 0),
     protectedToday: Boolean(data.protected_today ?? false),
+    totalFreezesEarned: Number(data.total_freezes_earned ?? 0),
+    totalFreezesConsumed: Number(data.total_freezes_consumed ?? 0),
+    lastFreezeEarnedAt: (data.last_freeze_earned_at ?? null) as string | null,
+    lastFreezeConsumedAt: (data.last_freeze_consumed_at ?? null) as string | null,
   };
 }
 
@@ -255,6 +259,10 @@ export async function upsertHealthQuestStreak(
       last_completed_date: streak.lastCompletedDate,
       streak_freeze_count: streak.streakFreezeCount,
       protected_today: streak.protectedToday,
+      total_freezes_earned: streak.totalFreezesEarned ?? 0,
+      total_freezes_consumed: streak.totalFreezesConsumed ?? 0,
+      last_freeze_earned_at: streak.lastFreezeEarnedAt ?? null,
+      last_freeze_consumed_at: streak.lastFreezeConsumedAt ?? null,
     }, { onConflict: "user_id,streak_type" });
 
   if (error) {

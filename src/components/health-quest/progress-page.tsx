@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BarChart3, Droplets, Dumbbell, Flame, Smile, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { BookOpenCheck, Droplets, Dumbbell, Flame, HeartPulse, Smile, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProgressChart } from "@/components/health-app/charts";
@@ -74,8 +76,8 @@ export function HealthQuestProgressPage({ locale }: { locale: QuestLocale }) {
       <div className="grid gap-3 md:grid-cols-4">
         <MetricCard icon={Flame} label="Streak" value={`${progress.currentStreak}`} detail="current days" />
         <MetricCard icon={Sparkles} label="Week XP" value={`${progress.xpThisWeek}`} detail="completion XP" />
-        <MetricCard icon={BarChart3} label="30d XP" value={`${progress.xpLast30Days}`} detail="privacy-safe total" />
-        <MetricCard icon={Flame} label="Best" value={`${progress.longestStreak}`} detail="longest streak" />
+        <MetricCard icon={HeartPulse} label="Active" value={`${progress.activeDays}`} detail="active days" />
+        <MetricCard icon={BookOpenCheck} label="Lessons" value={`${progress.lessonsCompleted}`} detail="completed" />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
@@ -95,6 +97,10 @@ export function HealthQuestProgressPage({ locale }: { locale: QuestLocale }) {
       </div>
 
       <WeeklyReviewCard locale={locale} />
+
+      <Button asChild className="w-fit">
+        <Link href={progress.weeklyReviewHref}>{locale === "zh-Hant" ? "開啟一週健康回顧" : "Open weekly review"}</Link>
+      </Button>
 
       <Card className="border-border/60 bg-card/82 shadow-sm">
         <CardContent className="pt-4 text-sm leading-6 text-muted-foreground">

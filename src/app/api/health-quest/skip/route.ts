@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { trackHealthQuestEvent } from "@/lib/health-quest/analytics";
 import { loadOrCreateTodayQuestState } from "@/lib/health-quest/server";
 import { loadQuestById, markQuestSkipped } from "@/lib/health-quest/storage";
 import {
@@ -37,6 +38,12 @@ export async function POST(request: Request) {
     if (!quest.required) {
       await markQuestSkipped(auth.supabase, auth.user.id, quest.id, new Date().toISOString());
     }
+
+    await trackHealthQuestEvent(auth.supabase, {
+      userId: auth.user.id,
+      eventName: "quest_skipped",
+      properties: { questType: quest.type, required: quest.required },
+    }).catch(() => undefined);
 
     const state = await loadOrCreateTodayQuestState({
       supabase: auth.supabase,

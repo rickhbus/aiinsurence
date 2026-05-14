@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { LifeTrackerLogInput } from "@/lib/health-data/life-tracker";
+import { trackHealthQuestEvent } from "@/lib/health-quest/analytics";
 import { questTypeToLifeTrackerAction } from "@/lib/health-quest/quest-engine";
 import { logQuestReviewCheckin, loadOrCreateTodayQuestState } from "@/lib/health-quest/server";
 import {
@@ -86,6 +87,11 @@ export async function POST(request: Request) {
         questType: completed.type,
         source: "health_quest",
       });
+      await trackHealthQuestEvent(auth.supabase, {
+        userId: auth.user.id,
+        eventName: "quest_completed",
+        properties: { questType: completed.type, xp: event.amount },
+      }).catch(() => undefined);
     }
 
     const state = await loadOrCreateTodayQuestState({

@@ -10,12 +10,16 @@ export function QuestPath({
   busy,
   onComplete,
   onSkip,
+  onMakeEasier,
+  onWhyThis,
 }: {
   state: DailyQuestState;
   locale: QuestLocale;
   busy?: boolean;
   onComplete: (quest: DailyQuest) => void;
   onSkip: (quest: DailyQuest) => void;
+  onMakeEasier: (quest: DailyQuest) => void;
+  onWhyThis: (quest: DailyQuest) => void;
 }) {
   if (state.quests.length === 0) {
     return <QuestEmptyState locale={locale} />;
@@ -33,6 +37,8 @@ export function QuestPath({
             busy={busy}
             onComplete={onComplete}
             onSkip={onSkip}
+            onMakeEasier={onMakeEasier}
+            onWhyThis={onWhyThis}
           />
         </div>
       ))}

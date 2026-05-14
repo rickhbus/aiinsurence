@@ -1,8 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { healthQuestCopy, text } from "@/lib/health-quest/copy";
+import { makeQuestEasier } from "@/lib/health-quest/make-easier";
 import { buildMockDailyQuestState } from "@/lib/health-quest/mock-data";
 import { buildDailyQuestState, questTypeToLifeTrackerAction } from "@/lib/health-quest/quest-engine";
 import type { DailyQuest, DailyQuestState, QuestLocale } from "@/lib/health-quest/types";
@@ -21,9 +23,11 @@ import { WeeklyReviewCard } from "./weekly-review-card";
 type ApiStateResponse = {
   state?: DailyQuestState;
   error?: string;
+  needsOnboarding?: boolean;
 };
 
 export function TodayQuestPage({ locale = "zh-Hant" }: { locale?: QuestLocale }) {
+  const router = useRouter();
   const [state, setState] = useState<DailyQuestState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [completedQuest, setCompletedQuest] = useState<DailyQuest | null>(null);
@@ -42,6 +46,11 @@ export function TodayQuestPage({ locale = "zh-Hant" }: { locale?: QuestLocale })
         return;
       }
 
+      if (response.status === 428 && body?.needsOnboarding) {
+        router.replace("/onboarding");
+        return;
+      }
+
       setState(buildMockDailyQuestState());
       if (response.status !== 401 && response.status !== 503) {
         setError(body?.error ?? "Quest API unavailable.");
@@ -50,7 +59,7 @@ export function TodayQuestPage({ locale = "zh-Hant" }: { locale?: QuestLocale })
       setState(buildMockDailyQuestState());
       setError(null);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -134,6 +143,52 @@ export function TodayQuestPage({ locale = "zh-Hant" }: { locale?: QuestLocale })
     });
   }
 
+  async function makeEasier(quest: DailyQuest) {
+    if (!state || isPending) {
+      return;
+    }
+
+    const easierQuest = makeQuestEasier(quest);
+    setState({
+      ...state,
+      quests: state.quests.map((item) => item.id === quest.id ? easierQuest : item),
+    });
+
+    startTransition(async () => {
+      try {
+        const headers = await getSupabaseRequestHeaders({
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        });
+        await fetch("/api/health-quest/make-easier", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ questId: quest.id }),
+        });
+      } catch {
+        // Local/demo mode still shows the easier version.
+      } finally {
+        toast(locale === "en" ? "Made easier." : "已轉做簡單啲。");
+      }
+    });
+  }
+
+  async function whyThis(quest: DailyQuest) {
+    try {
+      const headers = await getSupabaseRequestHeaders({
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      });
+      await fetch("/api/health-quest/why-this", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ questType: quest.type, questId: quest.id }),
+      });
+    } catch {
+      // Explanation display is client-side; analytics is best effort.
+    }
+  }
+
   function switchToRecovery() {
     if (!state || isPending) {
       return;
@@ -162,7 +217,7 @@ export function TodayQuestPage({ locale = "zh-Hant" }: { locale?: QuestLocale })
         const next = buildDailyQuestState({
           localDate: state.localDate,
           healthContext: {
-            locale,
+            locale: locale === "bilingual" ? "zh-Hant" : locale,
             dailyLog: { energyScore: 2, sleepMinutes: 250 },
           },
           previousStreak: state.streak,
@@ -203,6 +258,8 @@ export function TodayQuestPage({ locale = "zh-Hant" }: { locale?: QuestLocale })
         busy={isPending}
         onComplete={completeQuest}
         onSkip={skipQuest}
+        onMakeEasier={makeEasier}
+        onWhyThis={whyThis}
       />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">

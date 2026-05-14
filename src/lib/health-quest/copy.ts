@@ -1,6 +1,10 @@
 import type { LocalizedText, QuestLocale, QuestType } from "./types";
 
 export function text(value: LocalizedText, locale: QuestLocale = "zh-Hant") {
+  if (locale === "bilingual") {
+    return `${value.zh} / ${value.en}`;
+  }
+
   return locale === "en" ? value.en : value.zh;
 }
 
@@ -11,11 +15,11 @@ export const healthQuestCopy = {
   },
   subtitle: {
     en: "Complete a few tiny actions to protect your streak.",
-    zh: "完成幾個小任務，守住你的健康連續紀錄。",
+    zh: "完成幾個小任務，守住你嘅連續紀錄。",
   },
   streakSafe: {
     en: "Your streak is safe. Small steps count.",
-    zh: "你的連續紀錄已保護。細小一步都算數。",
+    zh: "你嘅連續紀錄已保護。細小一步都算數。",
   },
   recoveryMode: {
     en: "Recovery counts today. We made your quests gentler.",
@@ -31,7 +35,7 @@ export const healthQuestCopy = {
   },
   insuranceBoundary: {
     en: "Your health logs are not used for insurance eligibility, pricing, coverage, claim outcomes, or care-access decisions.",
-    zh: "你的健康紀錄不會用作保險資格、定價、保障、索償結果或醫療服務取用決定。",
+    zh: "你嘅健康紀錄不會用作保險資格、定價、保障、索償結果或醫療服務取用決定。",
   },
   lifestyleSignal: {
     en: "This looks like a lifestyle signal, not a diagnosis.",

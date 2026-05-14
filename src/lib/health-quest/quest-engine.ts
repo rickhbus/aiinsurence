@@ -1,4 +1,5 @@
 import type { DailyCheckinRow, DailyCheckinType } from "@/lib/health-data/types";
+import { buildAdaptiveQuestPlan, buildDefaultAdaptationInput } from "./adaptive-engine";
 import { healthQuestCopy, coachNotes, questTypeCopy } from "./copy";
 import { buildEnergyBattery, shouldUseRecoveryMode } from "./recovery-mode";
 import { evaluateQuestSafety } from "./safety-gates";
@@ -8,17 +9,18 @@ import type {
   DailyQuest,
   DailyQuestMode,
   DailyQuestState,
+  AdaptiveQuestPlan,
   QuestBuildInput,
   QuestSafetyLevel,
   QuestStatus,
   QuestType,
 } from "./types";
 
-const normalQuestTypes: QuestType[] = ["wake", "water", "meal", "movement", "mood", "health_review"];
+const normalQuestTypes: QuestType[] = ["water", "mood", "meal", "movement", "health_review"];
 const simpleQuestTypes: QuestType[] = ["mood", "water", "meal", "movement"];
 const recoveryQuestTypes: QuestType[] = ["recovery", "water", "movement", "mood", "doctor_prep"];
 
-const requiredNormal = new Set<QuestType>(["wake", "water", "meal", "mood"]);
+const requiredNormal = new Set<QuestType>(["water", "meal", "mood"]);
 const requiredRecovery = new Set<QuestType>(["recovery", "water", "mood"]);
 
 export function buildDailyQuestState(input: QuestBuildInput): DailyQuestState {
@@ -33,10 +35,31 @@ export function buildDailyQuestState(input: QuestBuildInput): DailyQuestState {
     healthContext: input.healthContext,
     dailyCheckins: input.dailyCheckins,
   });
+  const previousStreak = input.previousStreak ?? emptyStreak;
+  const adaptivePlan = buildAdaptiveQuestPlan(buildDefaultAdaptationInput({
+    userId: input.userId,
+    localDate: input.localDate,
+    locale: input.locale ?? input.profile?.preferredLocale ?? "zh-Hant",
+    profile: input.profile,
+    preferences: input.preferences,
+    currentStreak: previousStreak.currentStreak,
+    streakAtRisk: Boolean(previousStreak.lastCompletedDate && previousStreak.lastCompletedDate !== input.localDate),
+    energyTrend: energyBattery.label === "low" ? "down" : "stable",
+    moodTrend: energyBattery.reasons.includes("low_mood") ? "down" : "stable",
+    hydrationConsistency: deriveHydrationConsistency(input.hydrationLogs, input.dailyCheckins),
+    movementConsistency: deriveMovementConsistency(input.gymWorkouts, input.dailyCheckins),
+    sleepConsistency: energyBattery.reasons.includes("low_sleep") || energyBattery.reasons.includes("poor_sleep_quality") ? 30 : 70,
+    recoveryDaysLast7: input.forceMode === "recovery" ? 1 : 0,
+    safetyEventsLast30: safetyGate.urgent ? 1 : 0,
+    painOrSoreness: energyBattery.reasons.includes("body_caution_signal"),
+    ...input.adaptiveInput,
+  }));
   const mode: DailyQuestMode = safetyGate.urgent
     ? "safety"
     : input.forceMode === "recovery"
       ? "recovery"
+      : adaptivePlan.recoveryModeRecommended
+        ? "recovery"
       : shouldUseRecoveryMode({
       todaySummary: input.todaySummary,
       healthContext: input.healthContext,
@@ -49,6 +72,7 @@ export function buildDailyQuestState(input: QuestBuildInput): DailyQuestState {
     mode,
     localDate: input.localDate,
     userId: input.userId,
+    adaptivePlan,
   });
   const questBase = mergeExistingQuests(generated, input.existingQuests ?? []);
   const completedFromLogs = markCompletedFromLogs(questBase, input.dailyCheckins ?? [], now);
@@ -72,8 +96,9 @@ export function buildDailyQuestState(input: QuestBuildInput): DailyQuestState {
     streak,
     energyBattery,
     mode,
-    coachNote: buildCoachNote(mode, protectedToday),
+    coachNote: buildCoachNote(mode, protectedToday, adaptivePlan),
     safetyMessage: safetyGate.message,
+    adaptivePlan,
   };
 }
 
@@ -81,10 +106,12 @@ export function generateQuestPath({
   mode,
   localDate,
   userId,
+  adaptivePlan,
 }: {
   mode: DailyQuestMode;
   localDate: string;
   userId?: string;
+  adaptivePlan?: AdaptiveQuestPlan;
 }): DailyQuest[] {
   if (mode === "safety") {
     return [
@@ -101,18 +128,30 @@ export function generateQuestPath({
     ];
   }
 
-  const types = mode === "recovery" ? recoveryQuestTypes : normalQuestTypes;
+  const types = selectQuestTypes(mode, adaptivePlan);
+  const requiredCount = mode === "recovery"
+    ? Math.min(types.length, adaptivePlan?.minimumRequiredQuests ?? 2)
+    : Math.min(types.length, adaptivePlan?.minimumRequiredQuests ?? 3);
+  const unlockChainRemoved = adaptivePlan?.adaptationReasons.some((reason) =>
+    ["low_completion", "new_user", "time_budget"].includes(reason),
+  ) ?? false;
 
   return types.map((type, index) => buildQuest({
     type,
     localDate,
     userId,
     orderIndex: index,
-    required: mode === "recovery" ? requiredRecovery.has(type) : requiredNormal.has(type),
-    status: index === 0 ? (mode === "recovery" ? "recovery" : "active") : "locked",
+    required: index < requiredCount && (mode === "recovery" ? requiredRecovery.has(type) || index < requiredCount : requiredNormal.has(type) || index < requiredCount),
+    status: unlockChainRemoved ? (mode === "recovery" && index === 0 ? "recovery" : "active") : index === 0 ? (mode === "recovery" ? "recovery" : "active") : "locked",
     safetyLevel: mode === "recovery" && type === "doctor_prep" ? "caution" : "normal",
     source: mode === "recovery" ? "recovery" : "generated",
-    unlocksAfter: index > 0 ? [`${localDate}-${types[index - 1]}`] : [],
+    unlocksAfter: unlockChainRemoved ? [] : index > 0 ? [`${localDate}-${types[index - 1]}`] : [],
+    metadata: {
+      difficulty: adaptivePlan?.difficulty ?? "easy",
+      adaptationReasons: adaptivePlan?.adaptationReasons ?? [],
+      unlockChainRemoved,
+      offerChallengeQuest: adaptivePlan?.offerChallengeQuest ?? false,
+    },
   }));
 }
 
@@ -141,6 +180,10 @@ export function unlockQuests(quests: DailyQuest[]): DailyQuest[] {
         hasActive = true;
       }
 
+      return quest;
+    }
+
+    if (quest.metadata?.unlockChainRemoved === true && quest.status === "active") {
       return quest;
     }
 
@@ -301,7 +344,7 @@ function blockForSafety(quests: DailyQuest[]): DailyQuest[] {
   }));
 }
 
-function buildCoachNote(mode: DailyQuestMode, protectedToday: boolean) {
+function buildCoachNote(mode: DailyQuestMode, protectedToday: boolean, adaptivePlan?: AdaptiveQuestPlan) {
   if (mode === "safety") {
     return coachNotes.safety;
   }
@@ -311,8 +354,41 @@ function buildCoachNote(mode: DailyQuestMode, protectedToday: boolean) {
   }
 
   if (mode === "recovery") {
-    return healthQuestCopy.recoveryMode;
+    return adaptivePlan?.coachNote ?? healthQuestCopy.recoveryMode;
   }
 
-  return coachNotes.normal;
+  return adaptivePlan?.coachNote ?? coachNotes.normal;
+}
+
+function selectQuestTypes(mode: DailyQuestMode, adaptivePlan?: AdaptiveQuestPlan): QuestType[] {
+  if (mode === "recovery") {
+    return limitQuests(uniqueTypes([...recoveryQuestTypes, ...(adaptivePlan?.questTypeBias ?? [])]), adaptivePlan?.maxDailyQuests ?? 5);
+  }
+
+  const preferred = adaptivePlan?.questTypeBias.length
+    ? adaptivePlan.questTypeBias
+    : normalQuestTypes;
+  const withoutAvoided = preferred.filter((type) => !(adaptivePlan?.avoidQuestTypes ?? []).includes(type));
+  const base = uniqueTypes([...withoutAvoided, ...normalQuestTypes]);
+  const max = adaptivePlan?.maxDailyQuests ?? 5;
+
+  return limitQuests(base, max);
+}
+
+function limitQuests(types: QuestType[], max: number) {
+  return types.filter((type) => type !== "wake" && type !== "toilet_optional").slice(0, Math.max(2, Math.min(5, max)));
+}
+
+function uniqueTypes(types: QuestType[]) {
+  return Array.from(new Set(types));
+}
+
+function deriveHydrationConsistency(hydrationLogs?: unknown[], dailyCheckins?: DailyCheckinRow[]) {
+  const hasWater = (hydrationLogs?.length ?? 0) > 0 || (dailyCheckins ?? []).some((checkin) => checkin.checkin_type === "water");
+  return hasWater ? 80 : 55;
+}
+
+function deriveMovementConsistency(gymWorkouts?: unknown[], dailyCheckins?: DailyCheckinRow[]) {
+  const hasMovement = (gymWorkouts?.length ?? 0) > 0 || (dailyCheckins ?? []).some((checkin) => checkin.checkin_type === "exercise");
+  return hasMovement ? 80 : 55;
 }
